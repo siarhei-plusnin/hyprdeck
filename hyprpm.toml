@@ -1,0 +1,12 @@
+[repository]
+name = "hyprdeck"
+authors = ["siarhei-plusnin"]
+
+[hyprdeck]
+description = "Workspace overview for Hyprland"
+authors = ["siarhei-plusnin"]
+output = "build/hyprdeck.so"
+build = [
+    "cmake -S . -B build -DCMAKE_BUILD_TYPE=Release",
+    "cmake --build build",
+]
