@@ -16,5 +16,8 @@ namespace hyprdeck {
     bool                     activeWorkspaceBackground();
     std::string              configuredFontFamily();
     EShortcutsFooterMode     configuredShortcutsFooterMode();
+    const std::vector<std::string>& configuredBlockingOverlayNames();
+    const std::vector<std::string>& configuredNonBlockingOverlayNames();
+    const std::vector<std::string>& configuredDisplayCaptureOverlayNames();
 
 } // namespace hyprdeck

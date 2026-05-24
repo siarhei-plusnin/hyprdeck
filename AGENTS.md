@@ -3,7 +3,7 @@
 ## Commands
 - Configure/build exactly as HyprPM does: `cmake -S . -B build -DCMAKE_BUILD_TYPE=Release` then `cmake --build build`.
 - For a focused compile check after source edits, use `cmake --build build` when `build/` already exists.
-- After a successful build, reload the plugin with `hyprctl plugin unload "$XDG_CONFIG_HOME/hypr/plugins/hyprdeck/build/hyprdeck.so"` then `hyprctl plugin load "$XDG_CONFIG_HOME/hypr/plugins/hyprdeck/build/hyprdeck.so"`.
+- After a successful build, reload the plugin with `hyprctl plugin unload "$XDG_CONFIG_HOME/hypr/plugins/hyprdeck.so"` then `hyprctl plugin load "$XDG_CONFIG_HOME/hypr/plugins/hyprdeck.so"`.
 - `.clangd` expects `build/compile_commands.json`; re-run the CMake configure command if compile commands or Hyprland include paths go stale.
 - No test target, CI, or test files were found; the CMake build is the available verification step.
 

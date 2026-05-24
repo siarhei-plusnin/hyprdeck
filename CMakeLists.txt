@@ -23,6 +23,7 @@ set(HYPRDECK_SOURCES
     src/overview.cpp
     src/overview_controller.cpp
     src/overview_interaction.cpp
+    src/overlays.cpp
     src/rendering.cpp
     src/selection.cpp
     src/shortcut_catalog.cpp

@@ -5,10 +5,9 @@
 #include "overview.hpp"
 #include "overview_controller.hpp"
 #include "overview_interaction.hpp"
+#include "overlays.hpp"
 #include "shortcuts.hpp"
 #include "state.hpp"
-
-#include <helpers/Monitor.hpp>
 
 namespace hyprdeck {
 
@@ -34,6 +33,9 @@ namespace hyprdeck {
             closeOverview();
             return;
         }
+
+        if (externalOverlayActive(monitor))
+            return;
 
         if (mode == EInputMode::SHORTCUTS) {
             info.cancelled = true;

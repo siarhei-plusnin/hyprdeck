@@ -3,6 +3,7 @@
 #include "config.hpp"
 #include "layout.hpp"
 #include "naming.hpp"
+#include "overlays.hpp"
 #include "shortcuts.hpp"
 #include "state.hpp"
 #include "ui.hpp"
@@ -28,8 +29,10 @@ namespace hyprdeck {
 
         struct SPreviewRenderData {
             std::array<std::vector<PHLLS>, 4>                       layers;
+            std::array<std::vector<PHLLS>, 4>                       externalLayers;
             std::unordered_map<WORKSPACEID, std::vector<PHLWINDOW>> workspaceWindows;
             std::vector<PHLWINDOW>                                  pinnedWindows;
+            std::vector<PHLWINDOW>                                  externalWindows;
             PHLWINDOW                                               focusedWindow;
         };
 
@@ -121,6 +124,21 @@ namespace hyprdeck {
                 renderLayerSurfacePreview(layer, card, monitor);
         }
 
+        SWorkspaceCard monitorCard(const PHLMONITOR& monitor) {
+            const auto viewSize = monitor->m_transformedSize;
+            return SWorkspaceCard{.box = CBox{0, 0, viewSize.x, viewSize.y}};
+        }
+
+        void renderLayerGroupOnMonitor(const std::vector<PHLLS>& layers, const PHLMONITOR& monitor) {
+            const auto card = monitorCard(monitor);
+            for (const auto& layer : layers) {
+                if (!layerShouldRenderOverOverview(layer))
+                    continue;
+
+                renderLayerSurfacePreview(layer, card, monitor);
+            }
+        }
+
         SPreviewRenderData buildPreviewRenderData(const PHLMONITOR& monitor) {
             SPreviewRenderData data;
             const auto         focusState = Desktop::focusState();
@@ -132,7 +150,12 @@ namespace hyprdeck {
             for (size_t i = 0; i < data.layers.size() && i < monitor->m_layerSurfaceLayers.size(); ++i) {
                 for (const auto& weakLayer : monitor->m_layerSurfaceLayers[i]) {
                     const auto layer = weakLayer.lock();
-                    if (layerVisibleOnMonitor(layer, monitor))
+                    if (!layerVisibleOnMonitor(layer, monitor))
+                        continue;
+
+                    if (layerIsExternalOverlay(layer))
+                        data.externalLayers[i].push_back(layer);
+                    else
                         data.layers[i].push_back(layer);
                 }
             }
@@ -144,7 +167,9 @@ namespace hyprdeck {
                 if (!windowBelongsToMonitor(window, monitor))
                     continue;
 
-                if (window->m_pinned)
+                if (windowIsExternalOverlay(window))
+                    data.externalWindows.push_back(window);
+                else if (window->m_pinned)
                     data.pinnedWindows.push_back(window);
                 else if (window->m_workspace)
                     data.workspaceWindows[window->m_workspace->m_id].push_back(window);
@@ -263,6 +288,19 @@ namespace hyprdeck {
             renderLayerGroupPreview(data.layers[0], backgroundCard, monitor);
         }
 
+        void renderExternalOverlays(const PHLMONITOR& monitor, const SPreviewRenderData& data) {
+            const auto card = monitorCard(monitor);
+
+            renderLayerGroupOnMonitor(data.externalLayers[0], monitor);
+            renderLayerGroupOnMonitor(data.externalLayers[1], monitor);
+
+            for (const auto& window : data.externalWindows)
+                renderWindowPreview(window, card, monitor);
+
+            renderLayerGroupOnMonitor(data.externalLayers[2], monitor);
+            renderLayerGroupOnMonitor(data.externalLayers[3], monitor);
+        }
+
     } // namespace
 
     void renderOverview(const PHLMONITOR& monitor) {
@@ -285,6 +323,7 @@ namespace hyprdeck {
         renderShortcutFooter(monitor);
         renderNamingPrompt(monitor);
         renderShortcutMenu(monitor);
+        renderExternalOverlays(monitor, data);
     }
 
     void renderCursorOverlay(const PHLMONITOR& monitor) {

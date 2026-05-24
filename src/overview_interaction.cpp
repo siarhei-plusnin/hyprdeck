@@ -4,6 +4,7 @@
 #include "layout.hpp"
 #include "monitors.hpp"
 #include "overview.hpp"
+#include "overlays.hpp"
 #include "rendering.hpp"
 #include "selection.hpp"
 #include "state.hpp"
@@ -22,13 +23,16 @@ namespace hyprdeck {
         if (!current.session.active)
             return;
 
-        info.cancelled = true;
-
         const auto monitor = overviewMonitor();
         if (!monitor) {
             closeOverview();
             return;
         }
+
+        if (externalOverlayActive(monitor))
+            return;
+
+        info.cancelled = true;
 
         const auto renderPos = (position - monitor->m_position) * monitor->m_scale;
 
@@ -52,6 +56,15 @@ namespace hyprdeck {
         if (!current.session.active)
             return;
 
+        const auto monitor = overviewMonitor();
+        if (!monitor) {
+            closeOverview();
+            return;
+        }
+
+        if (externalOverlayActive(monitor))
+            return;
+
         if (event.button == BTN_RIGHT) {
             closeOverview();
             return;
@@ -61,12 +74,6 @@ namespace hyprdeck {
             return;
 
         info.cancelled = true;
-
-        const auto monitor = overviewMonitor();
-        if (!monitor) {
-            closeOverview();
-            return;
-        }
 
         recalculateCards(monitor);
 
@@ -97,13 +104,16 @@ namespace hyprdeck {
         if (!state().session.active)
             return;
 
-        info.cancelled = true;
-
         const auto monitor = overviewMonitor();
         if (!monitor) {
             closeOverview();
             return;
         }
+
+        if (externalOverlayActive(monitor))
+            return;
+
+        info.cancelled = true;
 
         recalculateCards(monitor);
 
@@ -128,8 +138,17 @@ namespace hyprdeck {
         if (!renderMonitor || renderMonitor->m_id != current.session.monitorID)
             return;
 
+        const bool externalInputActive = externalOverlayActive(renderMonitor);
+        if (externalInputActive) {
+            if (g_pPointerManager->softwareLockedFor(renderMonitor))
+                g_pPointerManager->unlockSoftwareForMonitor(renderMonitor);
+            g_pHyprRenderer->setCursorHidden(false);
+        } else if (!g_pPointerManager->softwareLockedFor(renderMonitor))
+            g_pPointerManager->lockSoftwareForMonitor(renderMonitor);
+
         renderOverview(renderMonitor);
-        renderCursorOverlay(renderMonitor);
+        if (!externalInputActive)
+            renderCursorOverlay(renderMonitor);
     }
 
 } // namespace hyprdeck

@@ -56,8 +56,17 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
         s_pluginHandle,
         Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:font_family", "Font family used by hyprdeck text", "monospace"));
     HyprlandAPI::addConfigValueV2(s_pluginHandle,
-                                  Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:shortcuts_footer",
-                                                                                                "Keyboard shortcuts footer visibility: full, hint, or none", "full"));
+                                   Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:shortcuts_footer",
+                                                                                                 "Keyboard shortcuts footer visibility: full, hint, or none", "full"));
+    HyprlandAPI::addConfigValueV2(s_pluginHandle,
+                                  Config::Values::makeConfigValue<Config::Values::CStringValue>(
+                                      "plugin:hyprdeck:blocking_overlays", "Comma-separated case-insensitive overlay name substrings that block hyprdeck input", ""));
+    HyprlandAPI::addConfigValueV2(s_pluginHandle,
+                                  Config::Values::makeConfigValue<Config::Values::CStringValue>(
+                                      "plugin:hyprdeck:non_blocking_overlays", "Comma-separated case-insensitive overlay name substrings rendered over hyprdeck without blocking input", ""));
+    HyprlandAPI::addConfigValueV2(s_pluginHandle,
+                                  Config::Values::makeConfigValue<Config::Values::CStringValue>(
+                                      "plugin:hyprdeck:display_capture_overlays", "Comma-separated case-insensitive capture overlay names hidden under hyprdeck", ""));
 
     HyprlandAPI::addDispatcherV2(s_pluginHandle, "hyprdeck:toggle", hyprdeck::toggleOverview);
     HyprlandAPI::addLuaFunction(s_pluginHandle, "hyprdeck", "toggle", hyprdeck::luaToggleOverview);
