@@ -170,6 +170,9 @@ namespace hyprdeck {
     }
 
     void openRenameSpecialPrompt(const PHLMONITOR& monitor) {
+        if (state().selection.selectedRow != ESelectedRow::SPECIAL)
+            return;
+
         recalculateCards(monitor);
 
         const auto label = selectedSpecialWorkspaceLabel();
