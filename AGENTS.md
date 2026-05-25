@@ -11,7 +11,7 @@
 - This is a Hyprland C++ plugin named `hyprdeck`; HyprPM expects the artifact at `build/hyprdeck.so`.
 - Treat `build/` as generated output except for reading `compile_commands.json`; source of truth is `CMakeLists.txt`, `hyprpm.toml`, and `src/`.
 - Plugin entrypoints are in `src/main.cpp`: `PLUGIN_API_VERSION`, `PLUGIN_INIT`, and `PLUGIN_EXIT`.
-- `PLUGIN_INIT` registers dispatcher `hyprdeck:toggle`, Lua function `hyprdeck.toggle`, config keys `plugin:hyprdeck:named_special_workspaces`, `plugin:hyprdeck:default_zoom`, `plugin:hyprdeck:active_workspace_background`, `plugin:hyprdeck:font_family`, and `plugin:hyprdeck:shortcuts_footer`, and render/input hooks.
+- `PLUGIN_INIT` registers dispatcher `hyprdeck:toggle`, Lua function `hyprdeck.toggle`, config keys `plugin:hyprdeck:named_special_workspaces`, `plugin:hyprdeck:default_zoom`, `plugin:hyprdeck:active_workspace_background`, `plugin:hyprdeck:font_family`, `plugin:hyprdeck:shortcuts_footer`, `plugin:hyprdeck:blocking_overlays`, `plugin:hyprdeck:non_blocking_overlays`, and `plugin:hyprdeck:display_capture_overlays`, and render/input hooks.
 - Global runtime state is `hyprdeck::state()` in `src/state.*`; use nested groups (`session`, `interaction`, `layout`, `selection`, `naming`, `filter`, `confirmation`, `shortcuts`, `renderCache`, `hooks`) directly.
 
 ## Module Map
@@ -37,6 +37,7 @@
 - `rendering.*` draws workspace previews, cursor overlay, and labels; it builds per-render window/layer snapshots before drawing cards, and prompt drawing is delegated to `naming.*`.
 
 ## Behavior Gotchas
+- When adding, removing, renaming, or changing defaults/accepted values for plugin config options, update `README.md` in the same change.
 - Named special workspace config is read from the Hyprland config string; current behavior trims whitespace, strips a leading `special:`, and de-duplicates names.
 - `plugin:hyprdeck:active_workspace_background = false` draws an empty-workspace backdrop by rendering the monitor background layer surfaces, so wallpaper remains visible without active workspace windows.
 - The normal row only shows positive numeric workspaces; the special row only shows special workspaces on the current monitor that are active or have windows.
