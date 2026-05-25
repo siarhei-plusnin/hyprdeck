@@ -182,6 +182,14 @@ namespace hyprdeck {
 
         cleanupPendingSpecialWorkspace(monitor);
 
+        if (id == activeNormalWorkspaceID(monitor)) {
+            if (monitor->m_activeSpecialWorkspace)
+                monitor->setSpecialWorkspace(nullptr);
+
+            closeOverview();
+            return;
+        }
+
         const auto workspace = g_pCompositor->getWorkspaceByID(id);
         switchWorkspaceCard(
             SWorkspaceCard{
