@@ -1,6 +1,5 @@
 #include "navigation.hpp"
 
-#include "constants.hpp"
 #include "layout.hpp"
 #include "naming.hpp"
 #include "selection.hpp"
@@ -15,7 +14,6 @@
 #include <managers/EventManager.hpp>
 #include <render/Renderer.hpp>
 
-#include <algorithm>
 #include <string>
 
 namespace hyprdeck {
@@ -52,6 +50,8 @@ namespace hyprdeck {
 
             monitor->setSpecialWorkspace(workspace);
             invalidateLayout();
+            recalculateCards(monitor);
+            centerSpecialCard(cardIndexByID(state().layout.specialCards, workspace->m_id));
             g_pHyprRenderer->damageMonitor(monitor);
         }
 
@@ -86,7 +86,6 @@ namespace hyprdeck {
                 return false;
 
             auto&      current   = state();
-            auto&      layout    = current.layout;
             auto&      selection = current.selection;
             const auto workspace = card->workspace;
             workspace->m_name    = "special:" + normalizedName;
@@ -100,9 +99,7 @@ namespace hyprdeck {
             selection.selectedSpecialID = workspace->m_id;
             resetNamingPromptState();
             invalidateLayout();
-
             recalculateCards(monitor);
-            centerSpecialCard(cardIndexByID(layout.specialCards, workspace->m_id));
             g_pHyprRenderer->damageMonitor(monitor);
             return true;
         }
