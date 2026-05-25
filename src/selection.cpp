@@ -51,7 +51,7 @@ namespace hyprdeck {
             return;
         }
 
-        if (card->action == EWorkspaceCardAction::SWITCH && !card->special && (cardIsActive(*card, monitor) || cardIsSelected(*card))) {
+        if (!card->special && (cardIsActive(*card, monitor) || cardIsSelected(*card))) {
             monitor->setSpecialWorkspace(nullptr);
             closeOverview();
             return;
@@ -213,7 +213,7 @@ namespace hyprdeck {
         auto& selection = current.selection;
         if (selection.selectedRow == ESelectedRow::NORMAL) {
             const auto* card = selectedNormalCard();
-            if (!card || card->action != EWorkspaceCardAction::SWITCH || !isNormalNumericWorkspace(card->workspace))
+            if (!card || !isNormalNumericWorkspace(card->workspace))
                 return;
 
             openCloseNormalWorkspaceConfirmation(card->workspace->m_id, monitor);
@@ -224,7 +224,7 @@ namespace hyprdeck {
             return;
 
         const auto* card = selectedSpecialCard();
-        if (!card || card->action != EWorkspaceCardAction::SWITCH || !card->workspace)
+        if (!card || !card->workspace)
             return;
 
         const int oldIndex = cardIndexByID(layout.specialCards, selection.selectedSpecialID);

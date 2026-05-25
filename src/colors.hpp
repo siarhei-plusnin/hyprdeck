@@ -40,28 +40,12 @@ namespace hyprdeck::colors {
         return CHyprColor(0.08F, 0.085F, 0.10F, 1.0F);
     }
 
-    inline CHyprColor actionCardBackground() {
-        return CHyprColor(0.10F, 0.11F, 0.14F, 1.0F);
-    }
-
     inline CHyprColor whiteOverlay(const float alpha) {
         return CHyprColor(1.0F, 1.0F, 1.0F, alpha);
     }
 
     inline CHyprColor inactiveCardBorder() {
         return whiteOverlay(0.12F);
-    }
-
-    inline CHyprColor actionCardBorder() {
-        return whiteOverlay(0.14F);
-    }
-
-    inline CHyprColor actionCardSelectedBorder() {
-        return whiteOverlay(0.24F);
-    }
-
-    inline CHyprColor actionCardSelectionGlow() {
-        return whiteOverlay(0.28F);
     }
 
     inline CHyprColor activeCardSelectionGlow() {

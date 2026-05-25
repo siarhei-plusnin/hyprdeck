@@ -131,9 +131,6 @@ namespace hyprdeck {
     }
 
     bool cardIsActive(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
-        if (card.action != EWorkspaceCardAction::SWITCH)
-            return false;
-
         if (card.special)
             return card.workspace && monitor && monitor->m_activeSpecialWorkspace == card.workspace;
 

@@ -31,10 +31,6 @@ namespace hyprdeck {
         RENAME_SPECIAL,
     };
 
-    enum class EWorkspaceCardAction {
-        SWITCH,
-    };
-
     enum class EInputMode {
         INACTIVE,
         OVERVIEW,
@@ -50,7 +46,6 @@ namespace hyprdeck {
         PHLWORKSPACE         workspace = nullptr;
         std::string          label;
         bool                 special = false;
-        EWorkspaceCardAction action  = EWorkspaceCardAction::SWITCH;
     };
 
     struct SSessionState {

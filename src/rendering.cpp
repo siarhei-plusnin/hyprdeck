@@ -247,23 +247,6 @@ namespace hyprdeck {
             const bool current  = cardIsActive(card, monitor);
             const bool selected = cardIsSelected(card);
 
-            if (card.action != EWorkspaceCardAction::SWITCH) {
-                if (selected)
-                    addRect(expanded(card.box, 7.0), colors::actionCardSelectionGlow(), 16);
-
-                addRect(expanded(card.box, 3.0), selected ? colors::actionCardSelectedBorder() : colors::actionCardBorder(), 14);
-                addRect(card.box, colors::actionCardBackground(), 12);
-
-                const auto texture = labelTexture(card.label, 18, 650);
-                if (!texture || !texture->ok())
-                    return;
-
-                const CBox labelBox{card.box.x + ((card.box.w - texture->m_size.x) / 2.0), card.box.y + ((card.box.h - texture->m_size.y) / 2.0), texture->m_size.x,
-                                    texture->m_size.y};
-                addTexture(texture, labelBox, 1.0F);
-                return;
-            }
-
             if (selected)
                 addRect(expanded(card.box, current ? 11.0 : 7.0), current ? colors::activeCardSelectionGlow() : colors::inactiveCardSelectionGlow());
 
