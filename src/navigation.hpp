@@ -6,7 +6,7 @@
 
 namespace hyprdeck {
 
-    bool switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor, bool closeAfterSwitch, bool suppressAutoCenter = false);
+    bool switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor);
     bool cleanupPendingSpecialWorkspace(const PHLMONITOR& monitor);
     void closeWorkspaceWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor = nullptr);
     void createSimpleSpecialWorkspace(const PHLMONITOR& monitor);

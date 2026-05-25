@@ -21,8 +21,6 @@ namespace hyprdeck {
             auto& interaction                = current.interaction;
             interaction.dragging             = false;
             interaction.dragRow              = EDragRow::NONE;
-            interaction.suppressNextActiveCenter = false;
-            interaction.showSpecialTemplate  = false;
             resetNamingPromptState();
             resetWorkspaceFilterPromptState();
             resetConfirmationState();

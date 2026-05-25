@@ -63,19 +63,17 @@ namespace hyprdeck {
             if (!monitor)
                 return;
 
-            auto& current     = state();
-            auto& interaction = current.interaction;
-            auto& layout      = current.layout;
-            auto& selection   = current.selection;
+            auto& current   = state();
+            auto& layout    = current.layout;
+            auto& selection = current.selection;
 
             const auto activeSpecialID = activeSpecialWorkspaceID(monitor);
             const auto activeNormalID  = activeNormalWorkspaceID(monitor);
 
-            interaction.suppressNextActiveCenter = false;
-            layout.resetCamera                   = true;
-            selection.selectedNormalID           = activeNormalID;
-            selection.selectedSpecialID          = activeSpecialID;
-            selection.selectedRow                = activeSpecialID != WORKSPACE_INVALID ? ESelectedRow::SPECIAL : ESelectedRow::NORMAL;
+            layout.resetCamera          = true;
+            selection.selectedNormalID  = activeNormalID;
+            selection.selectedSpecialID = activeSpecialID;
+            selection.selectedRow       = activeSpecialID != WORKSPACE_INVALID ? ESelectedRow::SPECIAL : ESelectedRow::NORMAL;
 
             invalidateLayout();
             recalculateCards(monitor);
@@ -363,7 +361,7 @@ namespace hyprdeck {
             return ids;
 
         for (const auto& window : g_pCompositor->m_windows) {
-            if (!windowReadyForFilter(window, monitor) || !isNormalNumericWorkspace(window->m_workspace))
+            if (!windowReadyForFilter(window, monitor) || !isNormalWorkspace(window->m_workspace))
                 continue;
 
             if (windowTextMatchesFilter(window, loweredQuery))

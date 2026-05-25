@@ -17,12 +17,12 @@ namespace hyprdeck {
             if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden())
                 return false;
 
-            return windowBelongsToMonitor(window, monitor) && isNormalNumericWorkspace(window->m_workspace);
+            return windowBelongsToMonitor(window, monitor) && isNormalWorkspace(window->m_workspace);
         }
 
     } // namespace
 
-    bool isNormalNumericWorkspace(const PHLWORKSPACE& workspace) {
+    bool isNormalWorkspace(const PHLWORKSPACE& workspace) {
         return workspace && !workspace->m_isSpecialWorkspace && workspace->m_id > 0;
     }
 
@@ -108,7 +108,7 @@ namespace hyprdeck {
     }
 
     WORKSPACEID activeNormalWorkspaceID(const PHLMONITOR& monitor) {
-        if (monitor && isNormalNumericWorkspace(monitor->m_activeWorkspace))
+        if (monitor && isNormalWorkspace(monitor->m_activeWorkspace))
             return monitor->m_activeWorkspace->m_id;
 
         return 1;

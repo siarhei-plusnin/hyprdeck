@@ -58,7 +58,7 @@ namespace hyprdeck {
             const auto workspace = g_pCompositor->getWorkspaceByID(confirmation.normalWorkspaceID);
             resetConfirmationState();
 
-            if (!isNormalNumericWorkspace(workspace)) {
+            if (!isNormalWorkspace(workspace)) {
                 damageConfirmation(monitor);
                 return;
             }

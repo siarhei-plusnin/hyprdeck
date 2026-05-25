@@ -3,7 +3,6 @@
 #include "constants.hpp"
 #include "layout.hpp"
 #include "naming.hpp"
-#include "overview.hpp"
 #include "selection.hpp"
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
@@ -173,7 +172,7 @@ namespace hyprdeck {
         closeWindows(workspaceWindows(workspace, monitor));
     }
 
-    bool switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor, const bool closeAfterSwitch, const bool suppressAutoCenter) {
+    bool switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
         auto workspace = card.workspace;
 
         if (!workspace && !card.special) {
@@ -187,10 +186,7 @@ namespace hyprdeck {
             return false;
 
         auto& current = state();
-        auto& interaction = current.interaction;
         auto& selection = current.selection;
-        if (suppressAutoCenter)
-            interaction.suppressNextActiveCenter = true;
 
         if (card.special) {
             selection.selectedRow       = ESelectedRow::SPECIAL;
@@ -208,11 +204,7 @@ namespace hyprdeck {
         }
 
         invalidateLayout();
-
-        if (closeAfterSwitch)
-            closeOverview();
-        else
-            g_pHyprRenderer->damageMonitor(monitor);
+        g_pHyprRenderer->damageMonitor(monitor);
 
         return true;
     }

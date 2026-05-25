@@ -93,7 +93,7 @@ namespace hyprdeck {
             if (event.keycode == KEY_H || event.keycode == KEY_LEFT || event.keycode == KEY_L || event.keycode == KEY_RIGHT)
                 return modifiers.shift ? EShortcutCommand::JUMP_SELECTION : EShortcutCommand::MOVE_SELECTION;
             if (event.keycode == KEY_SPACE)
-                return EShortcutCommand::SPACE_ACTION;
+                return EShortcutCommand::TOGGLE_SELECTION;
             if (event.keycode == KEY_ENTER || event.keycode == KEY_KPENTER)
                 return EShortcutCommand::OPEN_SELECTION;
             if (event.keycode == KEY_Q)
@@ -136,20 +136,28 @@ namespace hyprdeck {
         const auto command = commandForKey(event, modifiers);
         switch (command) {
             case EShortcutCommand::CLOSE_OVERLAY: closeOverview(); break;
+
             case EShortcutCommand::ZOOM_PRESET: setPresetZoom(directionForKey(event.keycode), monitor); break;
+
             case EShortcutCommand::OPEN_WORKSPACE_FILTER: openWorkspaceFilterPrompt(monitor); break;
             case EShortcutCommand::CLEAR_WORKSPACE_FILTER: clearWorkspaceFilter(monitor); break;
+
             case EShortcutCommand::SWITCH_NORMAL_WORKSPACE: switchNormalWorkspaceByID(normalWorkspaceKey(event.keycode), monitor); break;
-            case EShortcutCommand::MOVE_SELECTION: moveKeyboardSelection(directionForKey(event.keycode), monitor); break;
-            case EShortcutCommand::JUMP_SELECTION: jumpKeyboardSelection(directionForKey(event.keycode), monitor); break;
-            case EShortcutCommand::SPACE_ACTION: spaceKeyboardSelection(monitor); break;
-            case EShortcutCommand::OPEN_SELECTION: openSelectedSpecialAndClose(monitor); break;
+
+            case EShortcutCommand::MOVE_SELECTION: moveSelection(directionForKey(event.keycode), monitor); break;
+            case EShortcutCommand::JUMP_SELECTION: jumpSelection(directionForKey(event.keycode), monitor); break;
+            case EShortcutCommand::TOGGLE_SELECTION: toggleSelection(monitor); break;
+            case EShortcutCommand::OPEN_SELECTION: openSelection(monitor); break;
+
             case EShortcutCommand::CLOSE_WORKSPACE_WINDOWS: closeSelectedWorkspaceWindows(monitor); break;
+
             case EShortcutCommand::CREATE_SIMPLE_SPECIAL: createSimpleSpecialWorkspace(monitor); break;
             case EShortcutCommand::CREATE_NAMED_SPECIAL: openNamedSpecialPrompt(monitor); break;
+
             case EShortcutCommand::RENAME_SPECIAL: openRenameSpecialPrompt(monitor); break;
-            case EShortcutCommand::SELECT_SPECIAL_ROW: selectKeyboardRow(ESelectedRow::SPECIAL, monitor); break;
-            case EShortcutCommand::SELECT_NORMAL_ROW: selectKeyboardRow(ESelectedRow::NORMAL, monitor); break;
+
+            case EShortcutCommand::SELECT_SPECIAL_ROW: selectRow(ESelectedRow::SPECIAL, monitor); break;
+            case EShortcutCommand::SELECT_NORMAL_ROW: selectRow(ESelectedRow::NORMAL, monitor); break;
             default: break;
         }
 

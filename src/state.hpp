@@ -48,23 +48,6 @@ namespace hyprdeck {
         bool                 special = false;
     };
 
-    struct SSessionState {
-        bool      active          = false;
-        bool      zoomInitialized = false;
-        MONITORID monitorID       = MONITOR_INVALID;
-        double    zoom            = DEFAULT_ZOOM;
-    };
-
-    struct SInteractionState {
-        bool     dragging                 = false;
-        bool     suppressNextActiveCenter = false;
-        bool     showSpecialTemplate      = false;
-        double   dragStartCameraX         = 0.0;
-        double   dragStartSpecialCameraX  = 0.0;
-        Vector2D dragStart                = {};
-        EDragRow dragRow                  = EDragRow::NONE;
-    };
-
     struct SLayoutSignature {
         MONITORID                 monitorID                = MONITOR_INVALID;
         double                    transformedW             = 0.0;
@@ -75,7 +58,6 @@ namespace hyprdeck {
         double                    cameraX                  = 0.0;
         double                    specialCameraX           = 0.0;
         bool                      resetCamera              = false;
-        bool                      suppressNextActiveCenter = false;
         ESelectedRow              selectedRow              = ESelectedRow::NORMAL;
         WORKSPACEID               selectedNormalID         = 1;
         WORKSPACEID               selectedSpecialID        = WORKSPACE_INVALID;
@@ -86,6 +68,21 @@ namespace hyprdeck {
         std::vector<WORKSPACEID>  normalWorkspaceIDs;
         std::vector<std::string>  specialWorkspaceKeys;
         std::string               workspaceFilter;
+    };
+
+    struct SSessionState {
+        bool      active          = false;
+        bool      zoomInitialized = false;
+        MONITORID monitorID       = MONITOR_INVALID;
+        double    zoom            = DEFAULT_ZOOM;
+    };
+
+    struct SInteractionState {
+        bool     dragging                = false;
+        double   dragStartCameraX        = 0.0;
+        double   dragStartSpecialCameraX = 0.0;
+        Vector2D dragStart               = {};
+        EDragRow dragRow                 = EDragRow::NONE;
     };
 
     struct SLayoutState {

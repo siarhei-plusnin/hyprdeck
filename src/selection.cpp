@@ -57,12 +57,12 @@ namespace hyprdeck {
             return;
         }
 
-        switchWorkspaceCard(*card, monitor, false, true);
+        switchWorkspaceCard(*card, monitor);
     }
 
-    void selectKeyboardRow(const ESelectedRow row, const PHLMONITOR& monitor) {
-        auto& current = state();
-        auto& layout = current.layout;
+    void selectRow(const ESelectedRow row, const PHLMONITOR& monitor) {
+        auto& current   = state();
+        auto& layout    = current.layout;
         auto& selection = current.selection;
         resetNamingPromptState();
 
@@ -88,52 +88,19 @@ namespace hyprdeck {
         g_pHyprRenderer->damageMonitor(monitor);
     }
 
-    namespace {
-
-        void confirmKeyboardSelection(const PHLMONITOR& monitor) {
-            recalculateCards(monitor);
-            ensureSelection(monitor);
-
-            auto& current   = state();
-            auto& layout    = current.layout;
-            auto& selection = current.selection;
-            if (selection.selectedRow == ESelectedRow::NORMAL) {
-                const int index = cardIndexByID(layout.cards, selection.selectedNormalID);
-                if (index < 0)
-                    return;
-
-                if (monitor->m_activeSpecialWorkspace)
-                    monitor->setSpecialWorkspace(nullptr);
-
-                closeOverview();
-
-                return;
-            }
-
-            if (layout.specialCards.empty())
-                return;
-
-            const int index = cardIndexByID(layout.specialCards, selection.selectedSpecialID);
-            if (index < 0)
-                return;
-
-            centerSpecialCard(index);
-            switchWorkspaceCard(layout.specialCards[index], monitor, false);
-        }
-
-    } // namespace
-
-    void spaceKeyboardSelection(const PHLMONITOR& monitor) {
+    void toggleSelection(const PHLMONITOR& monitor) {
         recalculateCards(monitor);
         ensureSelection(monitor);
 
-        auto& selection = state().selection;
+        auto& current = state();
+
+        auto& selection = current.selection;
         if (selection.selectedRow == ESelectedRow::NORMAL) {
             if (monitor->m_activeSpecialWorkspace)
                 monitor->setSpecialWorkspace(nullptr);
 
             if (const auto* card = selectedNormalCard())
-                switchWorkspaceCard(*card, monitor, false);
+                switchWorkspaceCard(*card, monitor);
             else {
                 invalidateLayout();
                 g_pHyprRenderer->damageMonitor(monitor);
@@ -141,10 +108,15 @@ namespace hyprdeck {
             return;
         }
 
-        confirmKeyboardSelection(monitor);
+        if (const auto* card = selectedSpecialCard())
+            switchWorkspaceCard(*card, monitor);
+        else {
+            invalidateLayout();
+            g_pHyprRenderer->damageMonitor(monitor);
+        }
     }
 
-    void openSelectedSpecialAndClose(const PHLMONITOR& monitor) {
+    void openSelection(const PHLMONITOR& monitor) {
         recalculateCards(monitor);
         ensureSelection(monitor);
 
@@ -155,9 +127,10 @@ namespace hyprdeck {
             if (monitor->m_activeSpecialWorkspace)
                 monitor->setSpecialWorkspace(nullptr);
 
-            if (const auto* card = selectedNormalCard())
-                switchWorkspaceCard(*card, monitor, true);
-            else
+            if (const auto* card = selectedNormalCard()) {
+                if (switchWorkspaceCard(*card, monitor))
+                    closeOverview();
+            } else
                 closeOverview();
             return;
         }
@@ -165,13 +138,10 @@ namespace hyprdeck {
         if (layout.specialCards.empty())
             return;
 
-        const int index = cardIndexByID(layout.specialCards, selection.selectedSpecialID);
-        if (index < 0)
-            return;
-
-        const auto& card = layout.specialCards[index];
-        if (card.workspace && monitor->m_activeSpecialWorkspace != card.workspace)
-            monitor->setSpecialWorkspace(card.workspace);
+        if (const auto* card = selectedSpecialCard()) {
+            if (card->workspace && monitor->m_activeSpecialWorkspace != card->workspace)
+                monitor->setSpecialWorkspace(card->workspace);
+        }
 
         closeOverview();
     }
@@ -194,11 +164,11 @@ namespace hyprdeck {
         switchWorkspaceCard(
             SWorkspaceCard{
                 .id        = id,
-                .workspace = isNormalNumericWorkspace(workspace) ? workspace : nullptr,
+                .workspace = isNormalWorkspace(workspace) ? workspace : nullptr,
                 .label     = std::to_string(id),
                 .special   = false,
             },
-            monitor, false);
+            monitor);
 
         recalculateCards(monitor);
         centerNormalCard(cardIndexByID(state().layout.cards, id));
@@ -213,15 +183,12 @@ namespace hyprdeck {
         auto& selection = current.selection;
         if (selection.selectedRow == ESelectedRow::NORMAL) {
             const auto* card = selectedNormalCard();
-            if (!card || !isNormalNumericWorkspace(card->workspace))
+            if (!card || !isNormalWorkspace(card->workspace))
                 return;
 
             openCloseNormalWorkspaceConfirmation(card->workspace->m_id, monitor);
             return;
         }
-
-        if (selection.selectedRow != ESelectedRow::SPECIAL)
-            return;
 
         const auto* card = selectedSpecialCard();
         if (!card || !card->workspace)
@@ -255,11 +222,11 @@ namespace hyprdeck {
         g_pHyprRenderer->damageMonitor(monitor);
     }
 
-    void moveKeyboardSelection(const int direction, const PHLMONITOR& monitor) {
+    void moveSelection(const int direction, const PHLMONITOR& monitor) {
         recalculateCards(monitor);
 
-        auto& current = state();
-        auto& layout = current.layout;
+        auto& current   = state();
+        auto& layout    = current.layout;
         auto& selection = current.selection;
         if (selection.selectedRow == ESelectedRow::SPECIAL && layout.specialCards.empty()) {
             selection.selectedRow = ESelectedRow::NORMAL;
@@ -309,14 +276,14 @@ namespace hyprdeck {
         invalidateLayout();
         centerNormalCard(index);
 
-        switchWorkspaceCard(*target, monitor, false);
+        switchWorkspaceCard(*target, monitor);
     }
 
-    void jumpKeyboardSelection(const int direction, const PHLMONITOR& monitor) {
+    void jumpSelection(const int direction, const PHLMONITOR& monitor) {
         recalculateCards(monitor);
 
-        auto& current = state();
-        auto& layout = current.layout;
+        auto& current   = state();
+        auto& layout    = current.layout;
         auto& selection = current.selection;
         if (selection.selectedRow == ESelectedRow::SPECIAL && layout.specialCards.empty()) {
             selection.selectedRow = ESelectedRow::NORMAL;
@@ -340,7 +307,7 @@ namespace hyprdeck {
             return;
         }
 
-        const auto& target = cards[index];
+        const auto& target         = cards[index];
         selection.selectedNormalID = target.id;
         invalidateLayout();
         centerNormalCard(index);
@@ -348,7 +315,7 @@ namespace hyprdeck {
         if (cardIsActive(target, monitor))
             g_pHyprRenderer->damageMonitor(monitor);
         else
-            switchWorkspaceCard(target, monitor, false);
+            switchWorkspaceCard(target, monitor);
     }
 
 } // namespace hyprdeck

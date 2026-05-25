@@ -17,12 +17,12 @@ namespace hyprdeck {
             if (selection.selectedRow == ESelectedRow::NORMAL) {
                 actions.push_back({.command = EShortcutCommand::SELECT_SPECIAL_ROW, .key = "j, down", .label = "Special row", .description = "Move focus to the special workspace row", .footer = true});
                 actions.push_back({.command = EShortcutCommand::SWITCH_NORMAL_WORKSPACE, .key = "1-0", .label = "Switch", .description = "Switch to normal workspace 1-10", .footer = true});
-                actions.push_back({.command = EShortcutCommand::SPACE_ACTION, .key = "space", .label = "Hide special", .description = "Close the active special workspace without leaving overview", .footer = false});
+                actions.push_back({.command = EShortcutCommand::TOGGLE_SELECTION, .key = "space", .label = "Hide special", .description = "Close the active special workspace without leaving overview", .footer = false});
                 actions.push_back({.command = EShortcutCommand::OPEN_SELECTION, .key = "enter", .label = "Open normal", .description = "Close overview on the selected normal workspace", .footer = false});
                 actions.push_back({.command = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS, .key = "q", .label = "Close apps", .description = "Ask all windows on the selected normal workspace to close", .footer = true});
             } else {
                 actions.push_back({.command = EShortcutCommand::SELECT_NORMAL_ROW, .key = "k, up", .label = "Normal row", .description = "Move focus to the normal workspace row", .footer = true});
-                actions.push_back({.command = EShortcutCommand::SPACE_ACTION, .key = "space", .label = "Toggle special", .description = "Open or hide the selected special workspace", .footer = false});
+                actions.push_back({.command = EShortcutCommand::TOGGLE_SELECTION, .key = "space", .label = "Toggle special", .description = "Open or hide the selected special workspace", .footer = false});
                 actions.push_back({.command = EShortcutCommand::OPEN_SELECTION, .key = "enter", .label = "Open special", .description = "Open the selected special workspace and close overview", .footer = true});
                 actions.push_back({.command = EShortcutCommand::RENAME_SPECIAL, .key = "r", .label = "Rename", .description = "Rename the selected special workspace", .footer = true});
                 actions.push_back({.command = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS, .key = "q", .label = "Close apps", .description = "Ask all windows on the selected special workspace to close", .footer = true});

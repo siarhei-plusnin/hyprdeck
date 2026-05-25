@@ -10,7 +10,7 @@
 
 namespace hyprdeck {
 
-    bool                      isNormalNumericWorkspace(const PHLWORKSPACE& workspace);
+    bool                      isNormalWorkspace(const PHLWORKSPACE& workspace);
     bool                      windowBelongsToMonitor(const PHLWINDOW& window, const PHLMONITOR& monitor);
     bool                      windowBelongsToWorkspace(const PHLWINDOW& window, const PHLWORKSPACE& workspace);
     bool                      workspaceHasAnyWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor);
