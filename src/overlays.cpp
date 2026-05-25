@@ -1,6 +1,7 @@
 #include "overlays.hpp"
 
 #include "config.hpp"
+#include "strings.hpp"
 
 #include <Compositor.hpp>
 #include <desktop/view/LayerSurface.hpp>
@@ -8,9 +9,7 @@
 #include <helpers/Monitor.hpp>
 #include <managers/input/InputManager.hpp>
 
-#include <algorithm>
 #include <array>
-#include <cctype>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -18,23 +17,9 @@
 namespace hyprdeck {
     namespace {
 
-        std::string lower(std::string_view value) {
-            std::string lowered;
-            lowered.reserve(value.size());
-            for (const char character : value)
-                lowered.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
-
-            return lowered;
-        }
-
         template <size_t SIZE>
         bool namespaceMatches(std::string_view value, const std::array<std::string_view, SIZE>& builtInNames, const std::vector<std::string>& configuredNames) {
-            const auto lowered = lower(value);
-
-            if (std::ranges::any_of(builtInNames, [&](const auto name) { return lowered.contains(name); }))
-                return true;
-
-            return std::ranges::any_of(configuredNames, [&](const auto& name) { return lowered.contains(name); });
+            return strings::containsAnyLowered(value, builtInNames, configuredNames);
         }
 
         bool layerReadyForDetection(const PHLLS& layer) {

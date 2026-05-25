@@ -4,6 +4,7 @@
 #include "layout.hpp"
 #include "naming.hpp"
 #include "selection.hpp"
+#include "strings.hpp"
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
@@ -15,31 +16,11 @@
 #include <render/Renderer.hpp>
 
 #include <algorithm>
-#include <cctype>
 #include <string>
-#include <string_view>
 
 namespace hyprdeck {
 
     namespace {
-
-        std::string trim(std::string_view value) {
-            while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front())))
-                value.remove_prefix(1);
-
-            while (!value.empty() && std::isspace(static_cast<unsigned char>(value.back())))
-                value.remove_suffix(1);
-
-            return std::string{value};
-        }
-
-        std::string normalizeSpecialWorkspaceName(std::string_view value) {
-            auto name = trim(value);
-            if (name.starts_with("special:"))
-                name = name.substr(8);
-
-            return trim(name);
-        }
 
         PHLWORKSPACE          createSpecialWorkspace(const PHLMONITOR& monitor, const std::string& name = "") {
             const auto id = g_pCompositor->getNewSpecialID();
@@ -78,7 +59,7 @@ namespace hyprdeck {
             if (workspaceFilterApplied())
                 return false;
 
-            const auto normalizedName = normalizeSpecialWorkspaceName(name);
+            const auto normalizedName = strings::normalizeSpecialWorkspaceName(name);
             if (normalizedName.empty())
                 return false;
 
@@ -96,7 +77,7 @@ namespace hyprdeck {
         }
 
         bool renameSelectedSpecialWorkspaceInternal(const std::string& name, const PHLMONITOR& monitor) {
-            const auto normalizedName = normalizeSpecialWorkspaceName(name);
+            const auto normalizedName = strings::normalizeSpecialWorkspaceName(name);
             if (normalizedName.empty())
                 return false;
 

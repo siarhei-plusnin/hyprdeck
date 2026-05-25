@@ -14,6 +14,7 @@ set(HYPRDECK_SOURCES
     src/main.cpp
     src/confirmation.cpp
     src/config.cpp
+    src/env.cpp
     src/input.cpp
     src/keyboard.cpp
     src/layout.cpp
@@ -32,6 +33,7 @@ set(HYPRDECK_SOURCES
     src/shortcuts_menu.cpp
     src/shortcuts_render.cpp
     src/state.cpp
+    src/strings.cpp
     src/textinput.cpp
     src/textinput_repeat.cpp
     src/ui.cpp

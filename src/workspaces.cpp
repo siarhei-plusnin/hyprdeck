@@ -1,6 +1,7 @@
 #include "workspaces.hpp"
 #include "SharedDefs.hpp"
 #include "macros.hpp"
+#include "strings.hpp"
 
 #include <Compositor.hpp>
 #include <algorithm>
@@ -64,9 +65,7 @@ namespace hyprdeck {
         if (!workspace)
             return "special";
 
-        auto label = workspace->m_name;
-        if (label.starts_with("special:"))
-            label = label.substr(8);
+        auto label = strings::stripPrefix(workspace->m_name, "special:");
 
         return label.empty() ? "special" : label;
     }

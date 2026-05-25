@@ -7,6 +7,7 @@
 #include "overlays.hpp"
 #include "shortcut_catalog.hpp"
 #include "state.hpp"
+#include "strings.hpp"
 #include "textinput.hpp"
 #include "textinput_repeat.hpp"
 #include "ui.hpp"
@@ -19,7 +20,6 @@
 #include <render/Texture.hpp>
 
 #include <algorithm>
-#include <cctype>
 #include <linux/input-event-codes.h>
 #include <string>
 #include <string_view>
@@ -27,19 +27,6 @@
 
 namespace hyprdeck {
     namespace {
-
-        std::string lower(std::string_view value) {
-            std::string lowered;
-            lowered.reserve(value.size());
-            for (const char character : value)
-                lowered.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
-
-            return lowered;
-        }
-
-        bool containsLowered(std::string_view value, std::string_view loweredQuery) {
-            return lower(value).contains(loweredQuery);
-        }
 
         bool windowReadyForFilter(const PHLWINDOW& window, const PHLMONITOR& monitor) {
             if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden() || window->m_pinned || windowIsExternalOverlay(window))
@@ -49,8 +36,8 @@ namespace hyprdeck {
         }
 
         bool windowTextMatchesFilter(const PHLWINDOW& window, std::string_view loweredQuery) {
-            return containsLowered(window->m_class, loweredQuery) || containsLowered(window->m_initialClass, loweredQuery) || containsLowered(window->m_title, loweredQuery) ||
-                containsLowered(window->m_initialTitle, loweredQuery);
+            return strings::containsLowered(window->m_class, loweredQuery) || strings::containsLowered(window->m_initialClass, loweredQuery) ||
+                strings::containsLowered(window->m_title, loweredQuery) || strings::containsLowered(window->m_initialTitle, loweredQuery);
         }
 
         void damageFilter(const PHLMONITOR& monitor) {
@@ -336,7 +323,7 @@ namespace hyprdeck {
         if (!workspace || !monitor)
             return false;
 
-        const auto loweredQuery = lower(workspaceFilterText());
+        const auto loweredQuery = strings::lower(workspaceFilterText());
         if (loweredQuery.empty())
             return true;
 
@@ -356,7 +343,7 @@ namespace hyprdeck {
         if (!monitor)
             return ids;
 
-        const auto loweredQuery = lower(workspaceFilterText());
+        const auto loweredQuery = strings::lower(workspaceFilterText());
         if (loweredQuery.empty())
             return ids;
 

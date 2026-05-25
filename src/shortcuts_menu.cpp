@@ -3,6 +3,7 @@
 #include "colors.hpp"
 #include "shortcut_catalog.hpp"
 #include "state.hpp"
+#include "strings.hpp"
 #include "textinput.hpp"
 #include "ui.hpp"
 
@@ -10,25 +11,10 @@
 #include <render/Texture.hpp>
 
 #include <algorithm>
-#include <cctype>
 #include <string>
-#include <string_view>
 
 namespace hyprdeck {
     namespace {
-
-        std::string lower(std::string_view value) {
-            std::string lowered;
-            lowered.reserve(value.size());
-            for (const char character : value)
-                lowered.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(character))));
-
-            return lowered;
-        }
-
-        bool containsInsensitive(std::string_view value, std::string_view query) {
-            return lower(value).contains(lower(query));
-        }
 
         SP<Render::ITexture> labelTexture(const std::string& label, const int fontSize = 20, const int weight = 600, const ETextCacheMode cacheMode = ETextCacheMode::PERSISTENT) {
             return textTexture("shortcuts", label, colors::textSecondary(), fontSize, weight, cacheMode);
@@ -42,8 +28,10 @@ namespace hyprdeck {
         if (query.empty())
             return actions;
 
+        const auto loweredQuery = strings::lower(query);
         std::erase_if(actions, [&](const auto& action) {
-            return !containsInsensitive(action.key, query) && !containsInsensitive(action.label, query) && !containsInsensitive(action.description, query);
+            return !strings::containsLowered(action.key, loweredQuery) && !strings::containsLowered(action.label, loweredQuery) &&
+                !strings::containsLowered(action.description, loweredQuery);
         });
         return actions;
     }
