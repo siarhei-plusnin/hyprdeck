@@ -41,7 +41,7 @@ namespace hyprdeck::colors {
     }
 
     inline CHyprColor actionCardBackground() {
-        return CHyprColor(0.10F, 0.11F, 0.14F, 0.95F);
+        return CHyprColor(0.10F, 0.11F, 0.14F, 1.0F);
     }
 
     inline CHyprColor whiteOverlay(const float alpha) {
@@ -74,6 +74,22 @@ namespace hyprdeck::colors {
 
     inline CHyprColor inputBackground() {
         return whiteOverlay(0.10F);
+    }
+
+    inline CHyprColor componentBackground() {
+        return CHyprColor(0.0F, 0.0F, 0.0F, 1.0F);
+    }
+
+    inline CHyprColor componentSurface() {
+        return CHyprColor(0.10F, 0.105F, 0.12F, 1.0F);
+    }
+
+    inline CHyprColor componentSelected() {
+        return CHyprColor(0.18F, 0.185F, 0.20F, 1.0F);
+    }
+
+    inline CHyprColor componentBorder() {
+        return CHyprColor(0.28F, 0.29F, 0.31F, 1.0F);
     }
 
     inline CHyprColor selectedPromptRow() {

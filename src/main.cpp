@@ -6,6 +6,7 @@
 #include <helpers/Color.hpp>
 
 #include "colors.hpp"
+#include "confirmation.hpp"
 #include "input.hpp"
 #include "constants.hpp"
 #include "naming.hpp"
@@ -14,6 +15,7 @@
 #include "shortcuts.hpp"
 #include "state.hpp"
 #include "textinput_repeat.hpp"
+#include "workspace_filter.hpp"
 
 #include <string>
 
@@ -91,6 +93,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 APICALL EXPORT void PLUGIN_EXIT() {
     hyprdeck::closeOverview();
     hyprdeck::resetNamingComponent();
+    hyprdeck::resetWorkspaceFilterState();
+    hyprdeck::resetConfirmationState();
     hyprdeck::resetShortcutState();
     hyprdeck::resetTextInputRepeatComponent();
     hyprdeck::resetHooks();

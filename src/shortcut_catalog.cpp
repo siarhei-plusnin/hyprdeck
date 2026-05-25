@@ -1,7 +1,9 @@
 #include "shortcut_catalog.hpp"
 
+#include "confirmation.hpp"
 #include "config.hpp"
 #include "state.hpp"
+#include "workspace_filter.hpp"
 
 namespace hyprdeck {
     namespace {
@@ -26,14 +28,47 @@ namespace hyprdeck {
                 actions.push_back({.command = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS, .key = "q", .label = "Close apps", .description = "Ask all windows on the selected special workspace to close", .footer = true});
             }
 
-            actions.push_back({.command = EShortcutCommand::CREATE_SIMPLE_SPECIAL, .key = "a", .label = "New special", .description = "Create an unnamed special workspace", .footer = true});
-            actions.push_back({.command = EShortcutCommand::CREATE_NAMED_SPECIAL, .key = "n", .label = "Named special", .description = "Create a preset or dynamically named special workspace", .footer = true});
+            if (!workspaceFilterApplied()) {
+                actions.push_back({.command = EShortcutCommand::CREATE_SIMPLE_SPECIAL, .key = "a", .label = "New special", .description = "Create an unnamed special workspace", .footer = true});
+                actions.push_back({.command = EShortcutCommand::CREATE_NAMED_SPECIAL, .key = "n", .label = "Named special", .description = "Create a preset or dynamically named special workspace", .footer = true});
+            }
+
             actions.push_back({.command = EShortcutCommand::JUMP_SELECTION, .key = "shift+h/l", .label = "Jump", .description = "Jump to the first or last card in the current row", .footer = false});
             actions.push_back({.command = EShortcutCommand::ZOOM_PRESET, .key = "ctrl+= / ctrl+-", .label = "Zoom", .description = "Cycle workspace preview zoom presets", .footer = false});
+            actions.push_back({.command = EShortcutCommand::OPEN_WORKSPACE_FILTER, .key = "ctrl+f", .label = "Filter", .description = "Filter workspaces by window class or title", .footer = true});
+
+            actions.push_back({.command = EShortcutCommand::CLEAR_WORKSPACE_FILTER,
+                               .key = "delete / ctrl+c",
+                               .label = "Clear filter",
+                               .description = "Show all workspaces again when a filter is active",
+                               .footer = workspaceFilterApplied()});
+
             actions.push_back({.command = EShortcutCommand::PAN_ROW, .key = "scroll / drag", .label = "Pan", .description = "Move the row under the pointer", .footer = false});
             actions.push_back({.command = EShortcutCommand::CLOSE_OVERLAY, .key = "esc / right click", .label = "Close", .description = "Close the overview", .footer = false});
             actions.push_back({.command = EShortcutCommand::OPEN_KEYBINDINGS, .key = "?", .label = "Keybindings", .description = "Open this searchable shortcuts menu", .footer = true});
             return actions;
+        }
+
+        std::vector<SShortcutAction> workspaceFilterActions() {
+            return {
+                {.command = EShortcutCommand::CONFIRM_TEXT, .key = "enter", .label = "Apply", .description = "Keep this workspace filter active", .footer = true},
+                {.command = EShortcutCommand::CANCEL_TEXT, .key = "esc", .label = "Cancel", .description = "Close the filter field without applying edits", .footer = true},
+                {.command = EShortcutCommand::DELETE_TEXT_BACKWARD, .key = "backspace", .label = "Delete", .description = "Edit the filter text; hold to repeat", .footer = true},
+                {.command = EShortcutCommand::DELETE_TEXT_FORWARD, .key = "delete", .label = "Delete forward", .description = "Edit the filter text; hold to repeat", .footer = false},
+                {.command = EShortcutCommand::MOVE_TEXT_CURSOR, .key = "left/right", .label = "Move cursor", .description = "Move inside the filter text", .footer = true},
+                {.command = EShortcutCommand::MOVE_TEXT_WORD, .key = "ctrl+left/right", .label = "Move word", .description = "Move the cursor by word", .footer = false},
+                {.command = EShortcutCommand::CLEAR_TEXT, .key = "ctrl+u / ctrl+k", .label = "Clear", .description = "Clear the filter field", .footer = false},
+                {.command = EShortcutCommand::TYPE_TEXT, .key = "type", .label = "Type", .description = "Filter by window class or title", .footer = false},
+                {.command = EShortcutCommand::OPEN_KEYBINDINGS, .key = "?", .label = "Keybindings", .description = "Open this searchable shortcuts menu", .footer = true},
+            };
+        }
+
+        std::vector<SShortcutAction> confirmationActions() {
+            return {
+                {.command = EShortcutCommand::CONFIRM_TEXT, .key = "enter", .label = "Close", .description = "Close all windows on the selected normal workspace", .footer = true},
+                {.command = EShortcutCommand::CANCEL_TEXT, .key = "esc", .label = "Cancel", .description = "Keep the workspace windows open", .footer = true},
+                {.command = EShortcutCommand::OPEN_KEYBINDINGS, .key = "?", .label = "Keybindings", .description = "Open this searchable shortcuts menu", .footer = true},
+            };
         }
 
         std::vector<SShortcutAction> namingActions() {
@@ -70,6 +105,12 @@ namespace hyprdeck {
     } // namespace
 
     std::vector<SShortcutAction> currentShortcutActions() {
+        if (workspaceFilterPromptOpen())
+            return workspaceFilterActions();
+
+        if (confirmationPromptOpen())
+            return confirmationActions();
+
         if (state().naming.promptMode != EPromptMode::NONE)
             return namingActions();
 
@@ -94,7 +135,7 @@ namespace hyprdeck {
             };
 
         auto actions = currentShortcutActions();
-        std::erase_if(actions, [](const auto& action) { return action.command == EShortcutCommand::PAN_ROW; });
+        std::erase_if(actions, [](const auto& action) { return !action.footer || action.command == EShortcutCommand::PAN_ROW; });
         return actions;
     }
 

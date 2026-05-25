@@ -39,6 +39,8 @@ namespace hyprdeck {
         INACTIVE,
         OVERVIEW,
         NAMING,
+        FILTER,
+        CONFIRMATION,
         SHORTCUTS,
     };
 
@@ -88,6 +90,7 @@ namespace hyprdeck {
         WORKSPACEID               lastWorkspace            = 0;
         std::vector<WORKSPACEID>  normalWorkspaceIDs;
         std::vector<std::string>  specialWorkspaceKeys;
+        std::string               workspaceFilter;
     };
 
     struct SLayoutState {
@@ -117,6 +120,18 @@ namespace hyprdeck {
         bool            promptCustomSelected    = false;
         size_t          namedSpecialPromptIndex = 0;
         STextInputState promptInput;
+    };
+
+    struct SWorkspaceFilterState {
+        bool            promptOpen = false;
+        std::string     text;
+        std::string     previousText;
+        STextInputState promptInput;
+    };
+
+    struct SConfirmationState {
+        bool        open              = false;
+        WORKSPACEID normalWorkspaceID = WORKSPACE_INVALID;
     };
 
     struct SShortcutMenuState {
@@ -151,6 +166,8 @@ namespace hyprdeck {
         SLayoutState                                           layout;
         SSelectionState                                        selection;
         SNamingState                                           naming;
+        SWorkspaceFilterState                                  filter;
+        SConfirmationState                                     confirmation;
         SShortcutMenuState                                     shortcuts;
         SRenderCache                                           renderCache;
         SHookState                                             hooks;

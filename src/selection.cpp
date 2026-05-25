@@ -1,5 +1,6 @@
 #include "selection.hpp"
 
+#include "confirmation.hpp"
 #include "layout.hpp"
 #include "naming.hpp"
 #include "navigation.hpp"
@@ -131,8 +132,12 @@ namespace hyprdeck {
             if (monitor->m_activeSpecialWorkspace)
                 monitor->setSpecialWorkspace(nullptr);
 
-            invalidateLayout();
-            g_pHyprRenderer->damageMonitor(monitor);
+            if (const auto* card = selectedNormalCard())
+                switchWorkspaceCard(*card, monitor, false);
+            else {
+                invalidateLayout();
+                g_pHyprRenderer->damageMonitor(monitor);
+            }
             return;
         }
 
@@ -150,7 +155,10 @@ namespace hyprdeck {
             if (monitor->m_activeSpecialWorkspace)
                 monitor->setSpecialWorkspace(nullptr);
 
-            closeOverview();
+            if (const auto* card = selectedNormalCard())
+                switchWorkspaceCard(*card, monitor, true);
+            else
+                closeOverview();
             return;
         }
 
@@ -200,8 +208,7 @@ namespace hyprdeck {
             if (!card || card->action != EWorkspaceCardAction::SWITCH || !isNormalNumericWorkspace(card->workspace))
                 return;
 
-            closeWorkspaceWindows(card->workspace, monitor);
-            g_pHyprRenderer->damageMonitor(monitor);
+            openCloseNormalWorkspaceConfirmation(card->workspace->m_id, monitor);
             return;
         }
 

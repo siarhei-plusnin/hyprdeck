@@ -21,6 +21,8 @@ namespace hyprdeck {
         CREATE_NAMED_SPECIAL,
         RENAME_SPECIAL,
         ZOOM_PRESET,
+        OPEN_WORKSPACE_FILTER,
+        CLEAR_WORKSPACE_FILTER,
         PAN_ROW,
         CLOSE_OVERLAY,
         OPEN_KEYBINDINGS,

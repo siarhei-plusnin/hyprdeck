@@ -18,6 +18,12 @@ namespace hyprdeck {
         if (current.naming.promptMode != EPromptMode::NONE)
             return EInputMode::NAMING;
 
+        if (current.filter.promptOpen)
+            return EInputMode::FILTER;
+
+        if (current.confirmation.open)
+            return EInputMode::CONFIRMATION;
+
         return EInputMode::OVERVIEW;
     }
 

@@ -12,7 +12,7 @@
 - Treat `build/` as generated output except for reading `compile_commands.json`; source of truth is `CMakeLists.txt`, `hyprpm.toml`, and `src/`.
 - Plugin entrypoints are in `src/main.cpp`: `PLUGIN_API_VERSION`, `PLUGIN_INIT`, and `PLUGIN_EXIT`.
 - `PLUGIN_INIT` registers dispatcher `hyprdeck:toggle`, Lua function `hyprdeck.toggle`, config keys `plugin:hyprdeck:named_special_workspaces`, `plugin:hyprdeck:default_zoom`, `plugin:hyprdeck:active_workspace_background`, `plugin:hyprdeck:font_family`, and `plugin:hyprdeck:shortcuts_footer`, and render/input hooks.
-- Global runtime state is `hyprdeck::state()` in `src/state.*`; use nested groups (`session`, `interaction`, `layout`, `selection`, `naming`, `shortcuts`, `renderCache`, `hooks`) directly.
+- Global runtime state is `hyprdeck::state()` in `src/state.*`; use nested groups (`session`, `interaction`, `layout`, `selection`, `naming`, `filter`, `confirmation`, `shortcuts`, `renderCache`, `hooks`) directly.
 
 ## Module Map
 - `colors.*` owns named UI color palette helpers; avoid inline `CHyprColor(...)` literals outside this file.
@@ -24,6 +24,8 @@
 - `input.*` owns Hyprland callback entrypoints and modal keyboard routing.
 - `layout.*` owns dirty/signature-based card recalculation, camera offsets, hit testing, and centering.
 - `naming.*` owns create/rename prompt state and text input routing; `naming_render.*` draws the prompt.
+- `confirmation.*` owns modal confirmation prompts for destructive overview actions.
+- `workspace_filter.*` owns overview workspace filter input, matching by window class/title, and filter status rendering.
 - `navigation.*` switches workspaces and creates/closes special workspaces.
 - `selection.*` owns selected-card lookup, mouse/keyboard selection actions, selected workspace window-close actions, and selection-driven camera centering.
 - `shortcut_catalog.*` is the single source for shortcut command IDs and keybinding descriptions used by overview/naming/search dispatch, footer, and searchable help.
@@ -44,3 +46,4 @@
 ## Style
 - CMake builds as C++26 and depends on `pkg-config` resolving `hyprland`.
 - `.clang-format` is LLVM-derived but preserves include order, uses 4-space indentation, pointer-left alignment, and a 180-column limit; do not sort includes.
+- New UI components must use square corners, opaque backgrounds, and neutral/dark component backgrounds; do not introduce rounded borders, blue backgrounds, or semi-transparent component backgrounds.

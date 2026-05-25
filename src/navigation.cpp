@@ -5,6 +5,7 @@
 #include "naming.hpp"
 #include "overview.hpp"
 #include "selection.hpp"
+#include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
 #include <Compositor.hpp>
@@ -75,6 +76,9 @@ namespace hyprdeck {
         }
 
         bool createNamedSpecialWorkspaceInternal(const std::string& name, const PHLMONITOR& monitor) {
+            if (workspaceFilterApplied())
+                return false;
+
             const auto normalizedName = normalizeSpecialWorkspaceName(name);
             if (normalizedName.empty())
                 return false;
@@ -172,8 +176,12 @@ namespace hyprdeck {
     bool switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor, const bool closeAfterSwitch, const bool suppressAutoCenter) {
         auto workspace = card.workspace;
 
-        if (!workspace && !card.special)
+        if (!workspace && !card.special) {
+            if (workspaceFilterApplied())
+                return false;
+
             workspace = g_pCompositor->createNewWorkspace(card.id, monitor->m_id, std::to_string(card.id), true);
+        }
 
         if (!workspace)
             return false;
@@ -218,6 +226,9 @@ namespace hyprdeck {
     }
 
     void createSimpleSpecialWorkspace(const PHLMONITOR& monitor) {
+        if (workspaceFilterApplied())
+            return;
+
         cleanupPendingSpecialWorkspace(monitor);
 
         resetNamingPromptState();

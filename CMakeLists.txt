@@ -12,6 +12,7 @@ pkg_check_modules(HYPRLAND REQUIRED hyprland)
 
 set(HYPRDECK_SOURCES
     src/main.cpp
+    src/confirmation.cpp
     src/config.cpp
     src/input.cpp
     src/keyboard.cpp
@@ -34,6 +35,7 @@ set(HYPRDECK_SOURCES
     src/textinput.cpp
     src/textinput_repeat.cpp
     src/ui.cpp
+    src/workspace_filter.cpp
     src/workspaces.cpp
 )
 

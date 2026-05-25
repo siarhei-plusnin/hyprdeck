@@ -21,6 +21,11 @@ namespace hyprdeck {
             return textTexture("naming", label, colors::textPrimary(), fontSize, weight, cacheMode);
         }
 
+        void renderComponentBox(const CBox& box) {
+            addRect(expanded(box, 2.0), colors::componentBorder());
+            addRect(box, colors::componentBackground());
+        }
+
     } // namespace
 
     void renderNamingPrompt(const PHLMONITOR& monitor) {
@@ -43,8 +48,7 @@ namespace hyprdeck {
         const double boxH           = 80.0 + inputH + (rowH * static_cast<double>(visibleRows));
         const CBox   box{(viewSize.x - boxW) / 2.0, (viewSize.y - boxH) / 2.0, boxW, boxH};
 
-        addRect(expanded(box, 3.0), colors::accent());
-        addRect(box, colors::opaqueBlack());
+        renderComponentBox(box);
 
         const auto title = labelTexture(createPrompt ? "Create special workspace" : "Rename special workspace", 22, 750);
         if (title && title->ok())
@@ -52,9 +56,7 @@ namespace hyprdeck {
 
         if (showInput) {
             const CBox inputBox{box.x + 18.0, box.y + 64.0, box.w - 36.0, 42.0};
-            if (naming.promptCustomSelected)
-                addRect(expanded(inputBox, 3.0), colors::accentSubtle());
-            addRect(inputBox, colors::inputBackground());
+            addRect(inputBox, colors::componentSurface());
 
             const auto input = labelTexture(naming.promptInput.withCursor(), 20, naming.promptInput.text.empty() ? 500 : 700, ETextCacheMode::NONE);
             if (input && input->ok())
@@ -76,7 +78,7 @@ namespace hyprdeck {
             const size_t i   = first + rowIndex;
             const CBox   row{box.x + 18.0, box.y + 64.0 + inputH + (static_cast<double>(rowIndex) * rowH), box.w - 36.0, rowH - 8.0};
             if (!naming.promptCustomSelected && i == selected)
-                addRect(row, colors::selectedPromptRow());
+                addRect(row, colors::componentSelected());
 
             const auto texture = labelTexture(names[i], 20, !naming.promptCustomSelected && i == selected ? 700 : 500);
             if (texture && texture->ok())

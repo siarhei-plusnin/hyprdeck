@@ -1,11 +1,13 @@
 #include "overview.hpp"
 
+#include "confirmation.hpp"
 #include "config.hpp"
 #include "layout.hpp"
 #include "monitors.hpp"
 #include "naming.hpp"
 #include "shortcuts.hpp"
 #include "state.hpp"
+#include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
 #include <helpers/Monitor.hpp>
@@ -22,6 +24,8 @@ namespace hyprdeck {
             interaction.suppressNextActiveCenter = false;
             interaction.showSpecialTemplate  = false;
             resetNamingPromptState();
+            resetWorkspaceFilterPromptState();
+            resetConfirmationState();
             resetShortcutState();
         }
 

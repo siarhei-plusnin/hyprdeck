@@ -9,6 +9,7 @@
 #include "selection.hpp"
 #include "shortcut_catalog.hpp"
 #include "state.hpp"
+#include "workspace_filter.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -83,6 +84,10 @@ namespace hyprdeck {
                 return EShortcutCommand::CLOSE_OVERLAY;
             if (modifiers.ctrl && (zoomInKey(event.keycode) || zoomOutKey(event.keycode)))
                 return EShortcutCommand::ZOOM_PRESET;
+            if (modifiers.ctrl && event.keycode == KEY_F)
+                return EShortcutCommand::OPEN_WORKSPACE_FILTER;
+            if ((event.keycode == KEY_DELETE || (modifiers.ctrl && event.keycode == KEY_C)) && workspaceFilterApplied())
+                return EShortcutCommand::CLEAR_WORKSPACE_FILTER;
             if (normalWorkspaceKey(event.keycode) != WORKSPACE_INVALID)
                 return EShortcutCommand::SWITCH_NORMAL_WORKSPACE;
             if (event.keycode == KEY_H || event.keycode == KEY_LEFT || event.keycode == KEY_L || event.keycode == KEY_RIGHT)
@@ -93,6 +98,8 @@ namespace hyprdeck {
                 return EShortcutCommand::OPEN_SELECTION;
             if (event.keycode == KEY_Q)
                 return EShortcutCommand::CLOSE_WORKSPACE_WINDOWS;
+            if (workspaceFilterApplied() && (event.keycode == KEY_A || event.keycode == KEY_N))
+                return EShortcutCommand::NONE;
             if (event.keycode == KEY_A)
                 return EShortcutCommand::CREATE_SIMPLE_SPECIAL;
             if (event.keycode == KEY_N)
@@ -126,6 +133,8 @@ namespace hyprdeck {
         switch (command) {
             case EShortcutCommand::CLOSE_OVERLAY: closeOverview(); return true;
             case EShortcutCommand::ZOOM_PRESET: setPresetZoom(directionForKey(event.keycode), monitor); return true;
+            case EShortcutCommand::OPEN_WORKSPACE_FILTER: openWorkspaceFilterPrompt(monitor); return true;
+            case EShortcutCommand::CLEAR_WORKSPACE_FILTER: clearWorkspaceFilter(monitor); return true;
             case EShortcutCommand::SWITCH_NORMAL_WORKSPACE: switchNormalWorkspaceByID(normalWorkspaceKey(event.keycode), monitor); return true;
             case EShortcutCommand::MOVE_SELECTION: moveKeyboardSelection(directionForKey(event.keycode), monitor); return true;
             case EShortcutCommand::JUMP_SELECTION: jumpKeyboardSelection(directionForKey(event.keycode), monitor); return true;

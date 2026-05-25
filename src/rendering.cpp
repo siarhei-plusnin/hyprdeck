@@ -1,5 +1,6 @@
 #include "rendering.hpp"
 #include "colors.hpp"
+#include "confirmation.hpp"
 #include "config.hpp"
 #include "layout.hpp"
 #include "naming.hpp"
@@ -7,6 +8,7 @@
 #include "shortcuts.hpp"
 #include "state.hpp"
 #include "ui.hpp"
+#include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
 #include <Compositor.hpp>
@@ -320,8 +322,10 @@ namespace hyprdeck {
         for (const auto& card : layout.specialCards)
             renderCard(card, monitor, data);
 
+        renderWorkspaceFilter(monitor);
         renderShortcutFooter(monitor);
         renderNamingPrompt(monitor);
+        renderConfirmationPrompt(monitor);
         renderShortcutMenu(monitor);
         renderExternalOverlays(monitor, data);
     }

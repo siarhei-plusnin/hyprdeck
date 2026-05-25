@@ -1,5 +1,6 @@
 #include "input.hpp"
 
+#include "confirmation.hpp"
 #include "monitors.hpp"
 #include "naming.hpp"
 #include "overview.hpp"
@@ -8,6 +9,7 @@
 #include "overlays.hpp"
 #include "shortcuts.hpp"
 #include "state.hpp"
+#include "workspace_filter.hpp"
 
 namespace hyprdeck {
 
@@ -52,6 +54,18 @@ namespace hyprdeck {
         if (mode == EInputMode::NAMING) {
             info.cancelled = true;
             handleNamingPromptKey(event, monitor);
+            return;
+        }
+
+        if (mode == EInputMode::FILTER) {
+            info.cancelled = true;
+            handleWorkspaceFilterKey(event, monitor);
+            return;
+        }
+
+        if (mode == EInputMode::CONFIRMATION) {
+            info.cancelled = true;
+            handleConfirmationKey(event, monitor);
             return;
         }
 

@@ -156,8 +156,14 @@ namespace hyprdeck {
         auto& layout    = current.layout;
         auto& selection = current.selection;
 
-        if (!layout.cards.empty() && cardIndexByID(layout.cards, selection.selectedNormalID) < 0)
-            selection.selectedNormalID = std::clamp(activeNormalWorkspaceID(monitor), layout.cards.front().id, layout.cards.back().id);
+        if (layout.cards.empty()) {
+            selection.selectedNormalID = WORKSPACE_INVALID;
+            if (selection.selectedRow == ESelectedRow::NORMAL && !layout.specialCards.empty())
+                selection.selectedRow = ESelectedRow::SPECIAL;
+        } else if (cardIndexByID(layout.cards, selection.selectedNormalID) < 0) {
+            const auto activeID = activeNormalWorkspaceID(monitor);
+            selection.selectedNormalID = cardIndexByID(layout.cards, activeID) >= 0 ? activeID : layout.cards.front().id;
+        }
 
         if (!layout.specialCards.empty()) {
             if (cardIndexByID(layout.specialCards, selection.selectedSpecialID) >= 0)
