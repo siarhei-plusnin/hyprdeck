@@ -32,6 +32,9 @@ namespace hyprdeck {
         if (externalOverlayActive(monitor))
             return;
 
+        if (!current.interaction.dragging && pointerOverNotificationOverlay(monitor))
+            return;
+
         info.cancelled = true;
 
         const auto renderPos = (position - monitor->m_position) * monitor->m_scale;
@@ -63,6 +66,9 @@ namespace hyprdeck {
         }
 
         if (externalOverlayActive(monitor))
+            return;
+
+        if (!current.interaction.dragging && pointerOverNotificationOverlay(monitor))
             return;
 
         if (event.button == BTN_RIGHT) {
@@ -113,6 +119,9 @@ namespace hyprdeck {
         if (externalOverlayActive(monitor))
             return;
 
+        if (pointerOverNotificationOverlay(monitor))
+            return;
+
         info.cancelled = true;
 
         recalculateCards(monitor);
@@ -138,7 +147,7 @@ namespace hyprdeck {
         if (!renderMonitor || renderMonitor->m_id != current.session.monitorID)
             return;
 
-        const bool externalInputActive = externalOverlayActive(renderMonitor);
+        const bool externalInputActive = externalOverlayActive(renderMonitor) || pointerOverNotificationOverlay(renderMonitor);
         if (externalInputActive) {
             if (g_pPointerManager->softwareLockedFor(renderMonitor))
                 g_pPointerManager->unlockSoftwareForMonitor(renderMonitor);
