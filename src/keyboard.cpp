@@ -1,4 +1,5 @@
 #include "keyboard.hpp"
+#include "devices/IKeyboard.hpp"
 
 #include <managers/SeatManager.hpp>
 #include <managers/input/InputManager.hpp>
@@ -12,6 +13,7 @@ namespace hyprdeck {
             const auto activeModifiers = keyboard->getModifiers();
             modifiers.ctrl             = modifiers.ctrl || (activeModifiers & HL_MODIFIER_CTRL);
             modifiers.shift            = modifiers.shift || (activeModifiers & HL_MODIFIER_SHIFT);
+            modifiers.super            = modifiers.super || (activeModifiers & HL_MODIFIER_META);
         }
 
         for (const auto& keyboard : g_pInputManager->m_keyboards) {
@@ -21,6 +23,7 @@ namespace hyprdeck {
             const auto activeModifiers = keyboard->getModifiers();
             modifiers.ctrl             = modifiers.ctrl || (activeModifiers & HL_MODIFIER_CTRL);
             modifiers.shift            = modifiers.shift || (activeModifiers & HL_MODIFIER_SHIFT);
+            modifiers.super            = modifiers.super || (activeModifiers & HL_MODIFIER_META);
         }
 
         return modifiers;
@@ -32,6 +35,10 @@ namespace hyprdeck {
 
     bool shiftPressed() {
         return keyboardModifiers().shift;
+    }
+
+    bool superPressed() {
+        return keyboardModifiers().super;
     }
 
     int keyboardRepeatRate() {
