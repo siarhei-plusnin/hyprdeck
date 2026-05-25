@@ -50,7 +50,7 @@ namespace hyprdeck {
 
     std::string shortcutSearchLabel() {
         const auto& input = state().shortcuts.searchInput;
-        return input.text.empty() ? std::string{"Search shortcuts"} : "Search: " + input.withCursor();
+        return input.text.empty() ? std::string{"Search shortcuts"} : "Search: " + input.text;
     }
 
     void measureShortcutMenu(const PHLMONITOR& monitor) {
@@ -89,7 +89,6 @@ namespace hyprdeck {
         shortcuts.keyWidth   = keyW;
         shortcuts.labelWidth = labelW;
         shortcuts.descWidth  = descriptionW;
-        shortcuts.sizeValid  = true;
     }
 
 } // namespace hyprdeck

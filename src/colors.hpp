@@ -72,6 +72,10 @@ namespace hyprdeck::colors {
         return CHyprColor(0.18F, 0.185F, 0.20F, 1.0F);
     }
 
+    inline CHyprColor textCursor() {
+        return CHyprColor(0.34F, 0.35F, 0.38F, 1.0F);
+    }
+
     inline CHyprColor componentBorder() {
         return CHyprColor(0.28F, 0.29F, 0.31F, 1.0F);
     }

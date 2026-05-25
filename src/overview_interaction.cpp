@@ -158,6 +158,10 @@ namespace hyprdeck {
         renderOverview(renderMonitor);
         if (!externalInputActive)
             renderCursorOverlay(renderMonitor);
+
+        const auto mode = currentInputMode();
+        if (mode == EInputMode::NAMING || mode == EInputMode::FILTER || mode == EInputMode::SHORTCUTS)
+            g_pHyprRenderer->damageMonitor(renderMonitor);
     }
 
 } // namespace hyprdeck

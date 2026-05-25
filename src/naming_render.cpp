@@ -5,6 +5,7 @@
 #include "layout.hpp"
 #include "state.hpp"
 #include "textinput.hpp"
+#include "textinput_render.hpp"
 #include "ui.hpp"
 
 #include <helpers/Monitor.hpp>
@@ -58,9 +59,7 @@ namespace hyprdeck {
             const CBox inputBox{box.x + 18.0, box.y + 64.0, box.w - 36.0, 42.0};
             addRect(inputBox, colors::componentSurface());
 
-            const auto input = labelTexture(naming.promptInput.withCursor(), 20, naming.promptInput.text.empty() ? 500 : 700, ETextCacheMode::NONE);
-            if (input && input->ok())
-                addTexture(input, CBox{inputBox.x + 14.0, inputBox.y + ((inputBox.h - input->m_size.y) / 2.0), input->m_size.x, input->m_size.y});
+            renderTextInputLine("naming", naming.promptInput, inputBox, "", "", colors::textPrimary(), 20, naming.promptInput.text.empty() ? 500 : 700);
         }
 
         if (names.empty())

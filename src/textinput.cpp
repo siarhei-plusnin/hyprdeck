@@ -106,23 +106,12 @@ namespace hyprdeck {
         cursor = text.size();
     }
 
-    std::string STextInputState::withCursor() const {
-        auto value = text;
-        value.insert(std::min(cursor, value.size()), "|");
-        return value;
-    }
-
     void resetTextInput(STextInputState& input) {
         input.reset();
     }
 
     void setTextInputText(STextInputState& input, std::string text) {
         input.setText(std::move(text));
-    }
-
-    std::string textInputWithCursor(const STextInputState& input) {
-        auto text = input.withCursor();
-        return text;
     }
 
     ETextInputAction textInputActionForKey(const IKeyboard::SKeyEvent event, const bool ctrl) {

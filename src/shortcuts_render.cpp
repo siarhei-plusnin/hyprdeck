@@ -4,6 +4,7 @@
 #include "layout.hpp"
 #include "shortcuts_menu.hpp"
 #include "state.hpp"
+#include "textinput_render.hpp"
 #include "ui.hpp"
 
 #include <helpers/Monitor.hpp>
@@ -50,10 +51,6 @@ namespace hyprdeck {
         const auto   viewSize = monitor->m_transformedSize;
         const double rowH     = 52.0;
         const auto   title    = labelTexture("Keybindings", 30, 750);
-        const auto   search   = labelTexture(shortcutSearchLabel(), 23, shortcuts.searchInput.text.empty() ? 500 : 700, ETextCacheMode::NONE);
-
-        if (!shortcuts.sizeValid)
-            return;
 
         std::vector<SP<Render::ITexture>> keyTextures;
         std::vector<SP<Render::ITexture>> labelTextures;
@@ -78,17 +75,15 @@ namespace hyprdeck {
         const double boxH = std::min(viewSize.y - 64.0, shortcuts.height);
         const CBox   box{(viewSize.x - boxW) / 2.0, (viewSize.y - boxH) / 2.0, boxW, boxH};
 
-        addRect(expanded(box, 3.0), colors::accent());
-        addRect(box, colors::opaqueBlack());
+        addRect(expanded(box, 2.0), colors::componentBorder());
+        addRect(box, colors::componentBackground());
 
         if (title && title->ok())
             addTexture(title, CBox{box.x + 24.0, box.y + 22.0, title->m_size.x, title->m_size.y});
 
         const CBox searchBox{box.x + 18.0, box.y + 68.0, box.w - 36.0, 44.0};
-        addRect(searchBox, colors::inputBackground());
-
-        if (search && search->ok())
-            addTexture(search, CBox{searchBox.x + 14.0, searchBox.y + ((searchBox.h - search->m_size.y) / 2.0), search->m_size.x, search->m_size.y});
+        addRect(searchBox, colors::componentSurface());
+        renderTextInputLine("shortcuts", shortcuts.searchInput, searchBox, "Search: ", "Search shortcuts", colors::textSecondary(), 23, shortcuts.searchInput.text.empty() ? 500 : 700);
 
         if (actions.empty()) {
             const auto empty = labelTexture("No matching keybindings", 22, 600);

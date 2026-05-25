@@ -9,6 +9,7 @@
 #include "state.hpp"
 #include "strings.hpp"
 #include "textinput.hpp"
+#include "textinput_render.hpp"
 #include "textinput_repeat.hpp"
 #include "ui.hpp"
 #include "workspaces.hpp"
@@ -158,15 +159,11 @@ namespace hyprdeck {
             return CBox{(viewSize.x - boxW) / 2.0, filterY(monitor, boxH), boxW, boxH};
         }
 
-        void renderFilterPromptBox(const PHLMONITOR& monitor, const std::string& label) {
-            const auto texture = filterTexture(label, 20, 700);
-            if (!texture || !texture->ok())
-                return;
-
+        void renderFilterPromptBox(const PHLMONITOR& monitor) {
             const auto box = filterBox(monitor);
 
             renderFilterBox(box);
-            addTexture(texture, CBox{box.x + 14.0, box.y + ((box.h - texture->m_size.y) / 2.0), texture->m_size.x, texture->m_size.y}, 1.0F, 0, box);
+            renderTextInputLine("workspace-filter", state().filter.promptInput, box, "Filter: ", "Filter workspaces", colors::textPrimary(), 20, 700);
         }
 
         void renderAppliedFilterBox(const PHLMONITOR& monitor, const std::string& text) {
@@ -308,8 +305,7 @@ namespace hyprdeck {
 
         const auto& filter = state().filter;
         if (filter.promptOpen) {
-            const auto label = filter.promptInput.text.empty() ? std::string{"Filter workspaces"} : "Filter: " + filter.promptInput.withCursor();
-            renderFilterPromptBox(monitor, label);
+            renderFilterPromptBox(monitor);
             return;
         }
 

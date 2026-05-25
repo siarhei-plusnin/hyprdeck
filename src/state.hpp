@@ -41,33 +41,33 @@ namespace hyprdeck {
     };
 
     struct SWorkspaceCard {
-        WORKSPACEID          id        = 0;
-        CBox                 box       = {};
-        PHLWORKSPACE         workspace = nullptr;
-        std::string          label;
-        bool                 special = false;
+        WORKSPACEID  id        = 0;
+        CBox         box       = {};
+        PHLWORKSPACE workspace = nullptr;
+        std::string  label;
+        bool         special = false;
     };
 
     struct SLayoutSignature {
-        MONITORID                 monitorID                = MONITOR_INVALID;
-        double                    transformedW             = 0.0;
-        double                    transformedH             = 0.0;
-        double                    pixelW                   = 0.0;
-        double                    pixelH                   = 0.0;
-        double                    zoom                     = DEFAULT_ZOOM;
-        double                    cameraX                  = 0.0;
-        double                    specialCameraX           = 0.0;
-        bool                      resetCamera              = false;
-        ESelectedRow              selectedRow              = ESelectedRow::NORMAL;
-        WORKSPACEID               selectedNormalID         = 1;
-        WORKSPACEID               selectedSpecialID        = WORKSPACE_INVALID;
-        WORKSPACEID               pendingSpecialID         = WORKSPACE_INVALID;
-        WORKSPACEID               activeNormalID           = WORKSPACE_INVALID;
-        WORKSPACEID               activeSpecialID          = WORKSPACE_INVALID;
-        WORKSPACEID               lastWorkspace            = 0;
-        std::vector<WORKSPACEID>  normalWorkspaceIDs;
-        std::vector<std::string>  specialWorkspaceKeys;
-        std::string               workspaceFilter;
+        MONITORID                monitorID         = MONITOR_INVALID;
+        double                   transformedW      = 0.0;
+        double                   transformedH      = 0.0;
+        double                   pixelW            = 0.0;
+        double                   pixelH            = 0.0;
+        double                   zoom              = DEFAULT_ZOOM;
+        double                   cameraX           = 0.0;
+        double                   specialCameraX    = 0.0;
+        bool                     resetCamera       = false;
+        ESelectedRow             selectedRow       = ESelectedRow::NORMAL;
+        WORKSPACEID              selectedNormalID  = 1;
+        WORKSPACEID              selectedSpecialID = WORKSPACE_INVALID;
+        WORKSPACEID              pendingSpecialID  = WORKSPACE_INVALID;
+        WORKSPACEID              activeNormalID    = WORKSPACE_INVALID;
+        WORKSPACEID              activeSpecialID   = WORKSPACE_INVALID;
+        WORKSPACEID              lastWorkspace     = 0;
+        std::vector<WORKSPACEID> normalWorkspaceIDs;
+        std::vector<std::string> specialWorkspaceKeys;
+        std::string              workspaceFilter;
     };
 
     struct SSessionState {
@@ -128,7 +128,6 @@ namespace hyprdeck {
 
     struct SShortcutMenuState {
         bool            open       = false;
-        bool            sizeValid  = false;
         double          width      = 0.0;
         double          height     = 0.0;
         double          keyWidth   = 0.0;
@@ -153,16 +152,16 @@ namespace hyprdeck {
     };
 
     struct SOverviewState {
-        SSessionState                                          session;
-        SInteractionState                                      interaction;
-        SLayoutState                                           layout;
-        SSelectionState                                        selection;
-        SNamingState                                           naming;
-        SWorkspaceFilterState                                  filter;
-        SConfirmationState                                     confirmation;
-        SShortcutMenuState                                     shortcuts;
-        SRenderCache                                           renderCache;
-        SHookState                                             hooks;
+        SSessionState         session;
+        SInteractionState     interaction;
+        SLayoutState          layout;
+        SSelectionState       selection;
+        SNamingState          naming;
+        SWorkspaceFilterState filter;
+        SConfirmationState    confirmation;
+        SShortcutMenuState    shortcuts;
+        SRenderCache          renderCache;
+        SHookState            hooks;
     };
 
     SOverviewState& state();

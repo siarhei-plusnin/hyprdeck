@@ -35,6 +35,7 @@ set(HYPRDECK_SOURCES
     src/state.cpp
     src/strings.cpp
     src/textinput.cpp
+    src/textinput_render.cpp
     src/textinput_repeat.cpp
     src/ui.cpp
     src/workspace_filter.cpp

@@ -29,14 +29,12 @@ namespace hyprdeck {
 
         void        reset();
         void        setText(std::string value);
-        std::string withCursor() const;
         bool        apply(ETextInputAction action);
         bool        handleKey(IKeyboard::SKeyEvent event, bool ctrl, bool shift);
     };
 
     void             resetTextInput(STextInputState& input);
     void             setTextInputText(STextInputState& input, std::string text);
-    std::string      textInputWithCursor(const STextInputState& input);
     ETextInputAction textInputActionForKey(IKeyboard::SKeyEvent event, bool ctrl);
     bool             applyTextInputAction(STextInputState& input, ETextInputAction action);
     bool             handleTextInputKey(STextInputState& input, IKeyboard::SKeyEvent event, bool ctrl, bool shift);

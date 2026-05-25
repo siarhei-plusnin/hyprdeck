@@ -32,8 +32,6 @@ namespace hyprdeck {
         }
 
         void shortcutSearchTextChanged(const PHLMONITOR& monitor) {
-            auto& shortcuts     = state().shortcuts;
-            shortcuts.sizeValid = false;
             measureShortcutMenu(monitor);
 
             if (monitor)
@@ -57,7 +55,6 @@ namespace hyprdeck {
     void openShortcutMenu(const PHLMONITOR& monitor) {
         auto& shortcuts = state().shortcuts;
         shortcuts.open      = true;
-        shortcuts.sizeValid = false;
         shortcuts.searchInput.reset();
         measureShortcutMenu(monitor);
 
@@ -77,7 +74,6 @@ namespace hyprdeck {
     void resetShortcutState() {
         auto& shortcuts   = state().shortcuts;
         shortcuts.open       = false;
-        shortcuts.sizeValid  = false;
         shortcuts.width      = 0.0;
         shortcuts.height     = 0.0;
         shortcuts.keyWidth   = 0.0;
