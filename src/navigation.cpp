@@ -26,11 +26,7 @@ namespace hyprdeck {
                 return nullptr;
 
             const auto workspaceName = name.empty() ? "special:" + std::to_string(-id) : "special:" + name;
-            auto       workspace     = g_pCompositor->createNewWorkspace(id, monitor->m_id, workspaceName, true);
-            if (workspace)
-                state().selection.pendingSpecialID = workspace->m_id;
-
-            return workspace;
+            return g_pCompositor->createNewWorkspace(id, monitor->m_id, workspaceName, true);
         }
 
         void openSpecialWorkspace(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor, const bool selectSpecial = true) {
@@ -62,8 +58,6 @@ namespace hyprdeck {
             const auto normalizedName = strings::normalizeSpecialWorkspaceName(name);
             if (normalizedName.empty())
                 return false;
-
-            cleanupPendingSpecialWorkspace(monitor);
 
             auto workspace = g_pCompositor->getWorkspaceByName("special:" + normalizedName);
             if (!workspace)
@@ -121,31 +115,6 @@ namespace hyprdeck {
 
     } // namespace
 
-    bool cleanupPendingSpecialWorkspace(const PHLMONITOR& monitor) {
-        auto& selection = state().selection;
-        if (selection.pendingSpecialID == WORKSPACE_INVALID)
-            return false;
-
-        const auto pendingID     = selection.pendingSpecialID;
-        const auto workspace     = g_pCompositor->getWorkspaceByID(pendingID);
-        selection.pendingSpecialID = WORKSPACE_INVALID;
-        invalidateLayout();
-
-        if (!workspace || !workspace->m_isSpecialWorkspace)
-            return false;
-
-        if (workspaceHasAnyWindows(workspace, monitor))
-            return false;
-
-        if (monitor && monitor->m_activeSpecialWorkspace == workspace)
-            monitor->setSpecialWorkspace(nullptr);
-
-        if (selection.selectedSpecialID == pendingID)
-            selection.selectedSpecialID = WORKSPACE_INVALID;
-
-        return true;
-    }
-
     void closeWorkspaceWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) {
         closeWindows(workspaceWindows(workspace, monitor));
     }
@@ -198,8 +167,6 @@ namespace hyprdeck {
     void createSimpleSpecialWorkspace(const PHLMONITOR& monitor) {
         if (workspaceFilterApplied())
             return;
-
-        cleanupPendingSpecialWorkspace(monitor);
 
         resetNamingPromptState();
 

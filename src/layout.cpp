@@ -43,7 +43,6 @@ namespace hyprdeck {
             return lhs.monitorID == rhs.monitorID && lhs.transformedW == rhs.transformedW && lhs.transformedH == rhs.transformedH && lhs.pixelW == rhs.pixelW &&
                 lhs.pixelH == rhs.pixelH && lhs.zoom == rhs.zoom && lhs.cameraX == rhs.cameraX && lhs.specialCameraX == rhs.specialCameraX && lhs.resetCamera == rhs.resetCamera &&
                 lhs.selectedRow == rhs.selectedRow && lhs.selectedNormalID == rhs.selectedNormalID && lhs.selectedSpecialID == rhs.selectedSpecialID &&
-                lhs.pendingSpecialID == rhs.pendingSpecialID && lhs.activeNormalID == rhs.activeNormalID && lhs.activeSpecialID == rhs.activeSpecialID &&
                 lhs.lastWorkspace == rhs.lastWorkspace && lhs.normalWorkspaceIDs == rhs.normalWorkspaceIDs && lhs.specialWorkspaceKeys == rhs.specialWorkspaceKeys &&
                 lhs.workspaceFilter == rhs.workspaceFilter;
         }
@@ -98,7 +97,6 @@ namespace hyprdeck {
                         .selectedRow              = selection.selectedRow,
                         .selectedNormalID         = selection.selectedNormalID,
                         .selectedSpecialID        = selection.selectedSpecialID,
-                        .pendingSpecialID         = selection.pendingSpecialID,
                         .activeNormalID           = activeNormalID,
                         .activeSpecialID          = activeSpecialID,
                         .lastWorkspace            = lastWorkspace,
@@ -130,7 +128,6 @@ namespace hyprdeck {
             signature.selectedRow              = selection.selectedRow;
             signature.selectedNormalID         = selection.selectedNormalID;
             signature.selectedSpecialID        = selection.selectedSpecialID;
-            signature.pendingSpecialID         = selection.pendingSpecialID;
 
             layout.signature      = std::move(signature);
             layout.signatureValid = true;

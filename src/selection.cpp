@@ -66,9 +66,6 @@ namespace hyprdeck {
         auto& selection = current.selection;
         resetNamingPromptState();
 
-        if (row == ESelectedRow::NORMAL)
-            cleanupPendingSpecialWorkspace(monitor);
-
         recalculateCards(monitor);
 
         if (row == ESelectedRow::SPECIAL && layout.specialCards.empty()) {
@@ -150,8 +147,6 @@ namespace hyprdeck {
         if (!monitor || id < 1)
             return;
 
-        cleanupPendingSpecialWorkspace(monitor);
-
         if (id == activeNormalWorkspaceID(monitor)) {
             if (monitor->m_activeSpecialWorkspace)
                 monitor->setSpecialWorkspace(nullptr);
@@ -203,8 +198,6 @@ namespace hyprdeck {
 
         selection.selectedRow       = ESelectedRow::SPECIAL;
         selection.selectedSpecialID = WORKSPACE_INVALID;
-        if (selection.pendingSpecialID == card->id)
-            selection.pendingSpecialID = WORKSPACE_INVALID;
 
         invalidateLayout();
 

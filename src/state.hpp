@@ -61,7 +61,6 @@ namespace hyprdeck {
         ESelectedRow             selectedRow       = ESelectedRow::NORMAL;
         WORKSPACEID              selectedNormalID  = 1;
         WORKSPACEID              selectedSpecialID = WORKSPACE_INVALID;
-        WORKSPACEID              pendingSpecialID  = WORKSPACE_INVALID;
         WORKSPACEID              activeNormalID    = WORKSPACE_INVALID;
         WORKSPACEID              activeSpecialID   = WORKSPACE_INVALID;
         WORKSPACEID              lastWorkspace     = 0;
@@ -102,7 +101,6 @@ namespace hyprdeck {
         ESelectedRow selectedRow         = ESelectedRow::NORMAL;
         WORKSPACEID  selectedNormalID    = 1;
         WORKSPACEID  selectedSpecialID   = WORKSPACE_INVALID;
-        WORKSPACEID  pendingSpecialID    = WORKSPACE_INVALID;
         WORKSPACEID  lastActiveNormalID  = WORKSPACE_INVALID;
         WORKSPACEID  lastActiveSpecialID = WORKSPACE_INVALID;
     };

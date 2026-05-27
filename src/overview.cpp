@@ -32,7 +32,6 @@ namespace hyprdeck {
             selection.selectedRow          = ESelectedRow::NORMAL;
             selection.selectedNormalID     = 1;
             selection.selectedSpecialID    = WORKSPACE_INVALID;
-            selection.pendingSpecialID     = WORKSPACE_INVALID;
             selection.lastActiveNormalID   = WORKSPACE_INVALID;
             selection.lastActiveSpecialID  = WORKSPACE_INVALID;
         }
@@ -80,7 +79,6 @@ namespace hyprdeck {
         selection.selectedNormalID     = activeNormalWorkspaceID(monitor);
         selection.selectedSpecialID    = activeSpecialWorkspaceID(monitor);
         selection.selectedRow          = selection.selectedSpecialID != WORKSPACE_INVALID ? ESelectedRow::SPECIAL : ESelectedRow::NORMAL;
-        selection.pendingSpecialID     = WORKSPACE_INVALID;
         selection.lastActiveNormalID   = selection.selectedNormalID;
         selection.lastActiveSpecialID  = selection.selectedSpecialID;
         resetInteractionState(current);
