@@ -94,7 +94,7 @@ namespace hyprdeck {
                 return modifiers.shift ? EShortcutCommand::JUMP_SELECTION : EShortcutCommand::MOVE_SELECTION;
             if (event.keycode == KEY_SPACE)
                 return EShortcutCommand::TOGGLE_SELECTION;
-            if (event.keycode == KEY_ENTER || event.keycode == KEY_KPENTER)
+            if (event.keycode == KEY_ENTER || event.keycode == KEY_KPENTER || event.keycode == KEY_F)
                 return EShortcutCommand::OPEN_SELECTION;
             if (event.keycode == KEY_Q)
                 return EShortcutCommand::CLOSE_WORKSPACE_WINDOWS;
