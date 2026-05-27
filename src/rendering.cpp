@@ -110,7 +110,7 @@ namespace hyprdeck {
                 return false;
 
             const auto layerMonitor = layer->m_monitor.lock();
-            return layerMonitor && monitor && layerMonitor->m_id == monitor->m_id;
+            return layerMonitor && layerMonitor->m_id == monitor->m_id;
         }
 
         void renderLayerSurfacePreview(const PHLLS& layer, const SWorkspaceCard& card, const PHLMONITOR& monitor) {
@@ -145,9 +145,6 @@ namespace hyprdeck {
             SPreviewRenderData data;
             const auto         focusState = Desktop::focusState();
             data.focusedWindow            = focusState ? focusState->window() : PHLWINDOW{};
-
-            if (!monitor)
-                return data;
 
             for (size_t i = 0; i < data.layers.size() && i < monitor->m_layerSurfaceLayers.size(); ++i) {
                 for (const auto& weakLayer : monitor->m_layerSurfaceLayers[i]) {

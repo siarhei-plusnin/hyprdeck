@@ -33,9 +33,7 @@ namespace hyprdeck {
 
         void shortcutSearchTextChanged(const PHLMONITOR& monitor) {
             measureShortcutMenu(monitor);
-
-            if (monitor)
-                g_pHyprRenderer->damageMonitor(monitor);
+            g_pHyprRenderer->damageMonitor(monitor);
         }
 
         STextInputRepeatTarget shortcutSearchRepeatTarget() {
@@ -57,9 +55,7 @@ namespace hyprdeck {
         shortcuts.open      = true;
         shortcuts.searchInput.reset();
         measureShortcutMenu(monitor);
-
-        if (monitor)
-            g_pHyprRenderer->damageMonitor(monitor);
+        g_pHyprRenderer->damageMonitor(monitor);
     }
 
     void closeShortcutMenu(const PHLMONITOR& monitor) {
@@ -67,8 +63,7 @@ namespace hyprdeck {
             return;
 
         resetShortcutState();
-        if (monitor)
-            g_pHyprRenderer->damageMonitor(monitor);
+        g_pHyprRenderer->damageMonitor(monitor);
     }
 
     void resetShortcutState() {

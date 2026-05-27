@@ -21,8 +21,7 @@ namespace hyprdeck {
     namespace {
 
         void damagePrompt(const PHLMONITOR& monitor) {
-            if (monitor)
-                g_pHyprRenderer->damageMonitor(monitor);
+            g_pHyprRenderer->damageMonitor(monitor);
         }
 
         void syncCustomSelectionAfterEdit() {

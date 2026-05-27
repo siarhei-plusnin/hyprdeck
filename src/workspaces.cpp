@@ -28,7 +28,7 @@ namespace hyprdeck {
     }
 
     bool windowBelongsToMonitor(const PHLWINDOW& window, const PHLMONITOR& monitor) {
-        if (!window || !monitor)
+        if (!window)
             return false;
 
         const auto windowMonitor = window->m_monitor.lock();
@@ -40,7 +40,7 @@ namespace hyprdeck {
     }
 
     bool workspaceHasAnyWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) {
-        if (!workspace || !monitor)
+        if (!workspace)
             return false;
 
         for (const auto& window : g_pCompositor->m_windows) {
@@ -72,9 +72,6 @@ namespace hyprdeck {
 
     std::vector<PHLWORKSPACE> specialWorkspacesToShow(const PHLMONITOR& monitor) {
         std::vector<PHLWORKSPACE> workspaces;
-        if (!monitor)
-            return workspaces;
-
         for (const auto& workspace : g_pCompositor->getWorkspacesCopy()) {
             if (!workspace || !workspace->m_isSpecialWorkspace)
                 continue;
@@ -107,14 +104,14 @@ namespace hyprdeck {
     }
 
     WORKSPACEID activeNormalWorkspaceID(const PHLMONITOR& monitor) {
-        if (monitor && isNormalWorkspace(monitor->m_activeWorkspace))
+        if (isNormalWorkspace(monitor->m_activeWorkspace))
             return monitor->m_activeWorkspace->m_id;
 
         return 1;
     }
 
     WORKSPACEID activeSpecialWorkspaceID(const PHLMONITOR& monitor) {
-        if (monitor && monitor->m_activeSpecialWorkspace)
+        if (monitor->m_activeSpecialWorkspace)
             return monitor->m_activeSpecialWorkspace->m_id;
 
         return WORKSPACE_INVALID;
@@ -131,7 +128,7 @@ namespace hyprdeck {
 
     bool cardIsActive(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
         if (card.special)
-            return card.workspace && monitor && monitor->m_activeSpecialWorkspace == card.workspace;
+            return card.workspace && monitor->m_activeSpecialWorkspace == card.workspace;
 
         return card.id == activeNormalWorkspaceID(monitor);
     }
@@ -145,9 +142,6 @@ namespace hyprdeck {
     }
 
     void ensureSelection(const PHLMONITOR& monitor) {
-        if (!monitor)
-            return;
-
         auto& current   = state();
         auto& layout    = current.layout;
         auto& selection = current.selection;

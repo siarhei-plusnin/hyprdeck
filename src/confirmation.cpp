@@ -22,8 +22,7 @@ namespace hyprdeck {
     namespace {
 
         void damageConfirmation(const PHLMONITOR& monitor) {
-            if (monitor)
-                g_pHyprRenderer->damageMonitor(monitor);
+            g_pHyprRenderer->damageMonitor(monitor);
         }
 
         SP<Render::ITexture> confirmationTexture(const std::string& text, const int fontSize, const int weight, const CHyprColor& color = colors::textPrimary()) {
@@ -113,7 +112,7 @@ namespace hyprdeck {
 
     void renderConfirmationPrompt(const PHLMONITOR& monitor) {
         const auto& confirmation = state().confirmation;
-        if (!monitor || !confirmation.open)
+        if (!confirmation.open)
             return;
 
         const auto title    = confirmationTexture("Close all windows?", 22, 750);

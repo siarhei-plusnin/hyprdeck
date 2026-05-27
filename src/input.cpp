@@ -12,31 +12,56 @@
 #include "workspace_filter.hpp"
 
 namespace hyprdeck {
+    namespace {
+
+        PHLMONITOR activeInputMonitor() {
+            if (!state().session.active)
+                return nullptr;
+
+            const auto monitor = overviewMonitor();
+            if (!monitor)
+                closeOverview();
+
+            return monitor;
+        }
+
+        bool inputBlockedByExternalOverlay(const PHLMONITOR& monitor) {
+            return externalOverlayActive(monitor);
+        }
+
+    } // namespace
 
     void onMouseMove(Vector2D position, Event::SCallbackInfo& info) {
-        handleOverviewMouseMove(position, info);
+        const auto monitor = activeInputMonitor();
+        if (!monitor || inputBlockedByExternalOverlay(monitor))
+            return;
+
+        handleOverviewMouseMove(position, info, monitor);
     }
 
     void onMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
-        handleOverviewMouseButton(event, info);
+        const auto monitor = activeInputMonitor();
+        if (!monitor || inputBlockedByExternalOverlay(monitor))
+            return;
+
+        handleOverviewMouseButton(event, info, monitor);
     }
 
     void onMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info) {
-        handleOverviewMouseAxis(event, info);
+        const auto monitor = activeInputMonitor();
+        if (!monitor || inputBlockedByExternalOverlay(monitor))
+            return;
+
+        handleOverviewMouseAxis(event, info, monitor);
     }
 
     void onKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info) {
+        const auto monitor = activeInputMonitor();
+        if (!monitor || inputBlockedByExternalOverlay(monitor))
+            return;
+
         const auto mode = currentInputMode();
         if (mode == EInputMode::INACTIVE)
-            return;
-
-        const auto monitor = overviewMonitor();
-        if (!monitor) {
-            closeOverview();
-            return;
-        }
-
-        if (externalOverlayActive(monitor))
             return;
 
         if (mode == EInputMode::SHORTCUTS) {

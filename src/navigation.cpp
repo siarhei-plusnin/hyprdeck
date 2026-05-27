@@ -20,9 +20,9 @@ namespace hyprdeck {
 
     namespace {
 
-        PHLWORKSPACE          createSpecialWorkspace(const PHLMONITOR& monitor, const std::string& name = "") {
+        PHLWORKSPACE createSpecialWorkspace(const PHLMONITOR& monitor, const std::string& name = "") {
             const auto id = g_pCompositor->getNewSpecialID();
-            if (!monitor || !g_pCompositor->isWorkspaceSpecial(id))
+            if (!g_pCompositor->isWorkspaceSpecial(id))
                 return nullptr;
 
             const auto workspaceName = name.empty() ? "special:" + std::to_string(-id) : "special:" + name;
@@ -30,7 +30,7 @@ namespace hyprdeck {
         }
 
         void openSpecialWorkspace(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor, const bool selectSpecial = true) {
-            if (!workspace || !monitor)
+            if (!workspace)
                 return;
 
             auto& selection             = state().selection;

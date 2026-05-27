@@ -18,20 +18,8 @@
 
 namespace hyprdeck {
 
-    void handleOverviewMouseMove(Vector2D position, Event::SCallbackInfo& info) {
+    void handleOverviewMouseMove(Vector2D position, Event::SCallbackInfo& info, const PHLMONITOR& monitor) {
         auto& current = state();
-        if (!current.session.active)
-            return;
-
-        const auto monitor = overviewMonitor();
-        if (!monitor) {
-            closeOverview();
-            return;
-        }
-
-        if (externalOverlayActive(monitor))
-            return;
-
         if (!current.interaction.dragging && pointerOverNotificationOverlay(monitor))
             return;
 
@@ -54,20 +42,8 @@ namespace hyprdeck {
         g_pHyprRenderer->damageMonitor(monitor);
     }
 
-    void handleOverviewMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
+    void handleOverviewMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info, const PHLMONITOR& monitor) {
         auto& current = state();
-        if (!current.session.active)
-            return;
-
-        const auto monitor = overviewMonitor();
-        if (!monitor) {
-            closeOverview();
-            return;
-        }
-
-        if (externalOverlayActive(monitor))
-            return;
-
         if (!current.interaction.dragging && pointerOverNotificationOverlay(monitor))
             return;
 
@@ -106,19 +82,7 @@ namespace hyprdeck {
         }
     }
 
-    void handleOverviewMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info) {
-        if (!state().session.active)
-            return;
-
-        const auto monitor = overviewMonitor();
-        if (!monitor) {
-            closeOverview();
-            return;
-        }
-
-        if (externalOverlayActive(monitor))
-            return;
-
+    void handleOverviewMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info, const PHLMONITOR& monitor) {
         if (pointerOverNotificationOverlay(monitor))
             return;
 

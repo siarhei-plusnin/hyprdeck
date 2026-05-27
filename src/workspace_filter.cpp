@@ -43,14 +43,10 @@ namespace hyprdeck {
 
         void damageFilter(const PHLMONITOR& monitor) {
             invalidateLayout();
-            if (monitor)
-                g_pHyprRenderer->damageMonitor(monitor);
+            g_pHyprRenderer->damageMonitor(monitor);
         }
 
         void focusActiveWorkspace(const PHLMONITOR& monitor) {
-            if (!monitor)
-                return;
-
             auto& current   = state();
             auto& layout    = current.layout;
             auto& selection = current.selection;
@@ -218,11 +214,8 @@ namespace hyprdeck {
         filter.promptInput.reset();
         stopTextInputRepeat();
 
-        if (monitor) {
-            focusActiveWorkspace(monitor);
-            g_pHyprRenderer->damageMonitor(monitor);
-        } else
-            invalidateLayout();
+        focusActiveWorkspace(monitor);
+        g_pHyprRenderer->damageMonitor(monitor);
     }
 
     void clearWorkspaceFilter(const PHLMONITOR& monitor) {

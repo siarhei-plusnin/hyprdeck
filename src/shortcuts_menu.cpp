@@ -54,9 +54,6 @@ namespace hyprdeck {
     }
 
     void measureShortcutMenu(const PHLMONITOR& monitor) {
-        if (!monitor)
-            return;
-
         const auto   actions  = currentShortcutActions();
         auto&        shortcuts = state().shortcuts;
         const auto   viewSize = monitor->m_transformedSize;

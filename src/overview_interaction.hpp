@@ -7,9 +7,9 @@
 
 namespace hyprdeck {
 
-    void handleOverviewMouseMove(Vector2D position, Event::SCallbackInfo& info);
-    void handleOverviewMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info);
-    void handleOverviewMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info);
+    void handleOverviewMouseMove(Vector2D position, Event::SCallbackInfo& info, const PHLMONITOR& monitor);
+    void handleOverviewMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info, const PHLMONITOR& monitor);
+    void handleOverviewMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info, const PHLMONITOR& monitor);
     void handleOverviewRenderStage(eRenderStage stage);
 
 } // namespace hyprdeck

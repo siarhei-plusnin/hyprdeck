@@ -26,9 +26,6 @@ namespace hyprdeck {
     } // namespace
 
     void renderShortcutFooter(const PHLMONITOR& monitor) {
-        if (!monitor)
-            return;
-
         const auto text = shortcutFooterText();
         if (text.empty())
             return;
@@ -43,7 +40,7 @@ namespace hyprdeck {
     }
 
     void renderShortcutMenu(const PHLMONITOR& monitor) {
-        if (!monitor || !state().shortcuts.open)
+        if (!state().shortcuts.open)
             return;
 
         auto&        shortcuts = state().shortcuts;

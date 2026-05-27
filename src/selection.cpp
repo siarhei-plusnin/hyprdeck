@@ -144,7 +144,7 @@ namespace hyprdeck {
     }
 
     void switchNormalWorkspaceByID(const WORKSPACEID id, const PHLMONITOR& monitor) {
-        if (!monitor || id < 1)
+        if (id < 1)
             return;
 
         if (id == activeNormalWorkspaceID(monitor)) {

@@ -352,14 +352,6 @@ namespace hyprdeck {
         auto& layout      = current.layout;
         auto& selection   = current.selection;
 
-        if (!monitor) {
-            layout.cards.clear();
-            layout.specialCards.clear();
-            layout.signatureValid = false;
-            layout.dirty          = false;
-            return;
-        }
-
         const auto viewSize = monitor->m_transformedSize;
         if (viewSize.x <= 1 || viewSize.y <= 1) {
             layout.cards.clear();
@@ -408,9 +400,6 @@ namespace hyprdeck {
     }
 
     Vector2D cursorRenderPos(const PHLMONITOR& monitor) {
-        if (!monitor)
-            return {};
-
         return (g_pInputManager->getMouseCoordsInternal() - monitor->m_position) * monitor->m_scale;
     }
 

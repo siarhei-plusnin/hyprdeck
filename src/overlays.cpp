@@ -31,7 +31,7 @@ namespace hyprdeck {
         }
 
         bool layerVisibleOnMonitor(const PHLLS& layer, const PHLMONITOR& monitor) {
-            if (!layerReadyForDetection(layer) || !monitor)
+            if (!layerReadyForDetection(layer))
                 return false;
 
             const auto layerMonitor = layer->m_monitor.lock();
@@ -39,7 +39,7 @@ namespace hyprdeck {
         }
 
         bool windowVisibleOnMonitor(const PHLWINDOW& window, const PHLMONITOR& monitor) {
-            if (!windowReadyForDetection(window) || !monitor)
+            if (!windowReadyForDetection(window))
                 return false;
 
             const auto windowMonitor = window->m_monitor.lock();
@@ -78,9 +78,6 @@ namespace hyprdeck {
         }
 
         bool externalOverlayLayerActive(const PHLMONITOR& monitor) {
-            if (!monitor)
-                return false;
-
             for (const auto& layerRefs : monitor->m_layerSurfaceLayers) {
                 for (const auto& layerRef : layerRefs) {
                     const auto layer = layerRef.lock();
@@ -148,9 +145,6 @@ namespace hyprdeck {
     }
 
     bool pointerOverNotificationOverlay(const PHLMONITOR& monitor) {
-        if (!monitor)
-            return false;
-
         for (const auto& layerRefs : monitor->m_layerSurfaceLayers) {
             for (const auto& layerRef : layerRefs) {
                 const auto layer = layerRef.lock();
