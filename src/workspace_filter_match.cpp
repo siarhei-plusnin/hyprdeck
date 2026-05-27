@@ -1,0 +1,101 @@
+#include "workspace_filter_match.hpp"
+
+#include "overlays.hpp"
+#include "strings.hpp"
+#include "workspace_filter.hpp"
+#include "workspaces.hpp"
+
+#include <Compositor.hpp>
+#include <desktop/Workspace.hpp>
+#include <desktop/view/Window.hpp>
+#include <helpers/Monitor.hpp>
+
+#include <algorithm>
+#include <string_view>
+#include <utility>
+
+namespace hyprdeck {
+    namespace {
+
+        bool windowReadyForFilter(const PHLWINDOW& window, const PHLMONITOR& monitor) {
+            if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden() || window->m_pinned || windowIsExternalOverlay(window))
+                return false;
+
+            return windowBelongsToMonitor(window, monitor);
+        }
+
+        bool windowTextMatchesFilter(const PHLWINDOW& window, std::string_view loweredQuery) {
+            return strings::containsLowered(window->m_class, loweredQuery) || strings::containsLowered(window->m_initialClass, loweredQuery) ||
+                strings::containsLowered(window->m_title, loweredQuery) || strings::containsLowered(window->m_initialTitle, loweredQuery);
+        }
+
+        bool workspaceBelongsToMonitorForFilter(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) {
+            if (!workspace)
+                return false;
+
+            const auto workspaceMonitor = workspace->m_monitor.lock();
+            return workspaceMonitor && workspaceMonitor->m_id == monitor->m_id;
+        }
+
+        bool workspaceNameMatchesFilter(const PHLWORKSPACE& workspace, std::string_view loweredQuery) {
+            return workspace && strings::containsLowered(workspace->m_name, loweredQuery);
+        }
+
+        bool workspaceMatchesFilter(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor, std::string_view loweredQuery) {
+            if (!workspace)
+                return false;
+
+            if (workspaceNameMatchesFilter(workspace, loweredQuery))
+                return true;
+
+            for (const auto& window : g_pCompositor->m_windows) {
+                if (!windowReadyForFilter(window, monitor) || !windowBelongsToWorkspace(window, workspace))
+                    continue;
+
+                if (windowTextMatchesFilter(window, loweredQuery))
+                    return true;
+            }
+
+            return false;
+        }
+
+        std::vector<WORKSPACEID> normalWorkspaceIDsMatchingFilter(const PHLMONITOR& monitor, std::string_view loweredQuery) {
+            std::vector<WORKSPACEID> ids;
+
+            for (const auto& workspace : g_pCompositor->getWorkspacesCopy()) {
+                if (!isNormalWorkspace(workspace) || !workspaceBelongsToMonitorForFilter(workspace, monitor))
+                    continue;
+
+                if (workspaceNameMatchesFilter(workspace, loweredQuery))
+                    ids.push_back(workspace->m_id);
+            }
+
+            for (const auto& window : g_pCompositor->m_windows) {
+                if (!windowReadyForFilter(window, monitor) || !isNormalWorkspace(window->m_workspace))
+                    continue;
+
+                if (windowTextMatchesFilter(window, loweredQuery))
+                    ids.push_back(window->m_workspace->m_id);
+            }
+
+            std::ranges::sort(ids);
+            const auto duplicates = std::ranges::unique(ids);
+            ids.erase(duplicates.begin(), duplicates.end());
+            return ids;
+        }
+
+    } // namespace
+
+    SWorkspaceFilterRows applyWorkspaceFilter(const PHLMONITOR& monitor, std::vector<WORKSPACEID> normalWorkspaceIDs, std::vector<PHLWORKSPACE> specialWorkspaces) {
+        SWorkspaceFilterRows rows{.normalWorkspaceIDs = std::move(normalWorkspaceIDs), .specialWorkspaces = std::move(specialWorkspaces)};
+
+        const auto loweredQuery = strings::lower(workspaceFilterText());
+        if (loweredQuery.empty())
+            return rows;
+
+        rows.normalWorkspaceIDs = normalWorkspaceIDsMatchingFilter(monitor, loweredQuery);
+        std::erase_if(rows.specialWorkspaces, [&](const auto& workspace) { return !workspaceMatchesFilter(workspace, monitor, loweredQuery); });
+        return rows;
+    }
+
+} // namespace hyprdeck

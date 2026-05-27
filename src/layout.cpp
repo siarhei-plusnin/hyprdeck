@@ -2,6 +2,7 @@
 
 #include "constants.hpp"
 #include "workspace_filter.hpp"
+#include "workspace_filter_match.hpp"
 #include "workspaces.hpp"
 
 #include <Compositor.hpp>
@@ -72,15 +73,12 @@ namespace hyprdeck {
             const auto& session           = current.session;
             const auto& layout            = current.layout;
             const auto& selection         = current.selection;
-            auto        specialWorkspaces = specialWorkspacesToShow(monitor);
-            const auto  lastWorkspace     = lastWorkspaceToShow(monitor);
-            auto        normalIDs         = workspaceFilterActive() ? filteredNormalWorkspaceIDs(monitor) : defaultNormalWorkspaceIDs(lastWorkspace);
-            const auto  activeNormalID    = activeNormalWorkspaceID(monitor);
-            const auto  activeSpecialID   = activeSpecialWorkspaceID(monitor);
-
-            if (workspaceFilterActive()) {
-                std::erase_if(specialWorkspaces, [&](const auto& workspace) { return !workspaceMatchesFilter(workspace, monitor); });
-            }
+            const auto lastWorkspace     = lastWorkspaceToShow(monitor);
+            auto       rows              = applyWorkspaceFilter(monitor, defaultNormalWorkspaceIDs(lastWorkspace), specialWorkspacesToShow(monitor));
+            auto       normalIDs         = std::move(rows.normalWorkspaceIDs);
+            auto       specialWorkspaces = std::move(rows.specialWorkspaces);
+            const auto activeNormalID    = activeNormalWorkspaceID(monitor);
+            const auto activeSpecialID   = activeSpecialWorkspaceID(monitor);
 
             SLayoutInputs inputs{
                 .signature =

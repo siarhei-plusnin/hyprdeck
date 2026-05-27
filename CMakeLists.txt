@@ -39,6 +39,8 @@ set(HYPRDECK_SOURCES
     src/textinput_repeat.cpp
     src/ui.cpp
     src/workspace_filter.cpp
+    src/workspace_filter_match.cpp
+    src/workspace_filter_render.cpp
     src/workspaces.cpp
 )
 

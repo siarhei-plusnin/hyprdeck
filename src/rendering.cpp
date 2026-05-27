@@ -8,7 +8,7 @@
 #include "shortcuts.hpp"
 #include "state.hpp"
 #include "ui.hpp"
-#include "workspace_filter.hpp"
+#include "workspace_filter_render.hpp"
 #include "workspaces.hpp"
 
 #include <Compositor.hpp>

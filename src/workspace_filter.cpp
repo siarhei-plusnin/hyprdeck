@@ -1,45 +1,22 @@
 #include "workspace_filter.hpp"
 
-#include "colors.hpp"
-#include "constants.hpp"
 #include "keyboard.hpp"
 #include "layout.hpp"
-#include "overlays.hpp"
 #include "shortcut_catalog.hpp"
 #include "state.hpp"
-#include "strings.hpp"
 #include "textinput.hpp"
-#include "textinput_render.hpp"
 #include "textinput_repeat.hpp"
-#include "ui.hpp"
 #include "workspaces.hpp"
 
-#include <Compositor.hpp>
-#include <desktop/view/Window.hpp>
 #include <helpers/Monitor.hpp>
 #include <render/Renderer.hpp>
-#include <render/Texture.hpp>
 
-#include <algorithm>
 #include <linux/input-event-codes.h>
-#include <string>
 #include <string_view>
 #include <wayland-server-protocol.h>
 
 namespace hyprdeck {
     namespace {
-
-        bool windowReadyForFilter(const PHLWINDOW& window, const PHLMONITOR& monitor) {
-            if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden() || window->m_pinned || windowIsExternalOverlay(window))
-                return false;
-
-            return windowBelongsToMonitor(window, monitor);
-        }
-
-        bool windowTextMatchesFilter(const PHLWINDOW& window, std::string_view loweredQuery) {
-            return strings::containsLowered(window->m_class, loweredQuery) || strings::containsLowered(window->m_initialClass, loweredQuery) ||
-                strings::containsLowered(window->m_title, loweredQuery) || strings::containsLowered(window->m_initialTitle, loweredQuery);
-        }
 
         void damageFilter(const PHLMONITOR& monitor) {
             invalidateLayout();
@@ -121,60 +98,6 @@ namespace hyprdeck {
             damageFilter(monitor);
         }
 
-        double filterY(const PHLMONITOR& monitor, const double boxH) {
-            const auto& layout   = state().layout;
-            const auto  viewSize = monitor->m_transformedSize;
-            double      y        = (viewSize.y - boxH) / 2.0;
-
-            if (!layout.cards.empty() && !layout.specialCards.empty()) {
-                const double normalBottom = layout.cards.front().box.y + layout.cards.front().box.h;
-                const double specialTop   = layout.specialCards.front().box.y;
-                y                         = normalBottom + ((specialTop - normalBottom - boxH) / 2.0);
-            } else if (!layout.cards.empty()) {
-                y = layout.cards.front().box.y + layout.cards.front().box.h + (MIN_ROW_GAP / 2.0);
-            } else if (!layout.specialCards.empty()) {
-                y = layout.specialCards.front().box.y - boxH - (MIN_ROW_GAP / 2.0);
-            }
-
-            return std::clamp(y, 24.0, std::max(24.0, viewSize.y - boxH - 24.0));
-        }
-
-        SP<Render::ITexture> filterTexture(const std::string& label, const int fontSize, const int weight, const CHyprColor& color = colors::textPrimary()) {
-            return textTexture("workspace-filter", label, color, fontSize, weight, ETextCacheMode::NONE);
-        }
-
-        void renderFilterBox(const CBox& box) {
-            addRect(expanded(box, 2.0), colors::componentBorder());
-            addRect(box, colors::componentBackground());
-        }
-
-        CBox filterBox(const PHLMONITOR& monitor) {
-            const auto   viewSize = monitor->m_transformedSize;
-            const double boxW     = std::min(460.0, viewSize.x - 48.0);
-            const double boxH     = 40.0;
-            return CBox{(viewSize.x - boxW) / 2.0, filterY(monitor, boxH), boxW, boxH};
-        }
-
-        void renderFilterPromptBox(const PHLMONITOR& monitor) {
-            const auto box = filterBox(monitor);
-
-            renderFilterBox(box);
-            renderTextInputLine("workspace-filter", state().filter.promptInput, box, "Filter: ", colors::textPrimary(), 20, 700);
-        }
-
-        void renderAppliedFilterBox(const PHLMONITOR& monitor, const std::string& text) {
-            const auto label = filterTexture("Filter: " + text, 20, 700);
-            if (!label || !label->ok())
-                return;
-
-            const auto   box     = filterBox(monitor);
-            const double padding = 14.0;
-
-            renderFilterBox(box);
-            const CBox labelClip{box.x + padding, box.y, box.w - (padding * 2.0), box.h};
-            addTexture(label, CBox{labelClip.x, box.y + ((box.h - label->m_size.y) / 2.0), label->m_size.x, label->m_size.y}, 1.0F, 0, labelClip);
-        }
-
     } // namespace
 
     bool workspaceFilterPromptOpen() {
@@ -184,10 +107,6 @@ namespace hyprdeck {
     std::string_view workspaceFilterText() {
         const auto& filter = state().filter;
         return filter.promptOpen ? std::string_view{filter.promptInput.text} : std::string_view{filter.text};
-    }
-
-    bool workspaceFilterActive() {
-        return !workspaceFilterText().empty();
     }
 
     bool workspaceFilterApplied() {
@@ -290,64 +209,6 @@ namespace hyprdeck {
 
         if (dirty)
             workspaceFilterTextChanged(monitor);
-    }
-
-    void renderWorkspaceFilter(const PHLMONITOR& monitor) {
-        if (!monitor)
-            return;
-
-        const auto& filter = state().filter;
-        if (filter.promptOpen) {
-            renderFilterPromptBox(monitor);
-            return;
-        }
-
-        if (filter.text.empty())
-            return;
-
-        renderAppliedFilterBox(monitor, filter.text);
-    }
-
-    bool workspaceMatchesFilter(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) {
-        if (!workspace || !monitor)
-            return false;
-
-        const auto loweredQuery = strings::lower(workspaceFilterText());
-        if (loweredQuery.empty())
-            return true;
-
-        for (const auto& window : g_pCompositor->m_windows) {
-            if (!windowReadyForFilter(window, monitor) || !windowBelongsToWorkspace(window, workspace))
-                continue;
-
-            if (windowTextMatchesFilter(window, loweredQuery))
-                return true;
-        }
-
-        return false;
-    }
-
-    std::vector<WORKSPACEID> filteredNormalWorkspaceIDs(const PHLMONITOR& monitor) {
-        std::vector<WORKSPACEID> ids;
-        if (!monitor)
-            return ids;
-
-        const auto loweredQuery = strings::lower(workspaceFilterText());
-        if (loweredQuery.empty())
-            return ids;
-
-        for (const auto& window : g_pCompositor->m_windows) {
-            if (!windowReadyForFilter(window, monitor) || !isNormalWorkspace(window->m_workspace))
-                continue;
-
-            if (windowTextMatchesFilter(window, loweredQuery))
-                ids.push_back(window->m_workspace->m_id);
-        }
-
-        std::ranges::sort(ids);
-        const auto duplicates = std::ranges::unique(ids);
-        ids.erase(duplicates.begin(), duplicates.end());
-        return ids;
     }
 
 } // namespace hyprdeck
