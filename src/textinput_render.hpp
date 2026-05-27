@@ -10,7 +10,7 @@
 
 namespace hyprdeck {
 
-    void renderTextInputLine(std::string_view scope, const STextInputState& input, const CBox& box, std::string_view prefix, std::string_view placeholder,
-                             const CHyprColor& color, int fontSize, int weight, ETextCacheMode cacheMode = ETextCacheMode::NONE);
+    void renderTextInputLine(std::string_view scope, const STextInputState& input, const CBox& box, std::string_view prefix, const CHyprColor& color, int fontSize,
+                             int weight, ETextCacheMode cacheMode = ETextCacheMode::NONE);
 
 } // namespace hyprdeck

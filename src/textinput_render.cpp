@@ -49,14 +49,12 @@ namespace hyprdeck {
 
     } // namespace
 
-    void renderTextInputLine(const std::string_view scope, const STextInputState& input, const CBox& box, const std::string_view prefix, const std::string_view placeholder,
-                             const CHyprColor& color, const int fontSize, const int weight, const ETextCacheMode cacheMode) {
-        const bool showingPlaceholder = input.text.empty() && !placeholder.empty();
-        const auto text               = showingPlaceholder ? std::string{placeholder} : std::string{prefix} + input.text;
+    void renderTextInputLine(const std::string_view scope, const STextInputState& input, const CBox& box, const std::string_view prefix, const CHyprColor& color,
+                             const int fontSize, const int weight, const ETextCacheMode cacheMode) {
+        const auto text = std::string{prefix} + input.text;
 
         const CBox clipBox{box.x + INPUT_TEXT_PADDING, box.y, box.w - (INPUT_TEXT_PADDING * 2.0), box.h};
-        if (!showingPlaceholder)
-            renderCursor(scope, input, box, input.text.empty() ? std::string{} : std::string{prefix}, color, fontSize, weight, cacheMode);
+        renderCursor(scope, input, box, std::string{prefix}, color, fontSize, weight, cacheMode);
 
         const auto texture = textTexture(scope, text, color, fontSize, weight, cacheMode);
         if (texture && texture->ok())

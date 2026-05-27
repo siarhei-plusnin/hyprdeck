@@ -83,7 +83,7 @@ namespace hyprdeck {
 
         const CBox searchBox{box.x + 18.0, box.y + 68.0, box.w - 36.0, 44.0};
         addRect(searchBox, colors::componentSurface());
-        renderTextInputLine("shortcuts", shortcuts.searchInput, searchBox, "Search: ", "Search shortcuts", colors::textSecondary(), 23, shortcuts.searchInput.text.empty() ? 500 : 700);
+        renderTextInputLine("shortcuts", shortcuts.searchInput, searchBox, "Search: ", colors::textSecondary(), 23, 500);
 
         if (actions.empty()) {
             const auto empty = labelTexture("No matching keybindings", 22, 600);

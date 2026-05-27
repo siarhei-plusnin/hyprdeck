@@ -163,7 +163,7 @@ namespace hyprdeck {
             const auto box = filterBox(monitor);
 
             renderFilterBox(box);
-            renderTextInputLine("workspace-filter", state().filter.promptInput, box, "Filter: ", "Filter workspaces", colors::textPrimary(), 20, 700);
+            renderTextInputLine("workspace-filter", state().filter.promptInput, box, "Filter: ", colors::textPrimary(), 20, 700);
         }
 
         void renderAppliedFilterBox(const PHLMONITOR& monitor, const std::string& text) {

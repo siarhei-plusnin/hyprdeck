@@ -59,7 +59,7 @@ namespace hyprdeck {
             const CBox inputBox{box.x + 18.0, box.y + 64.0, box.w - 36.0, 42.0};
             addRect(inputBox, colors::componentSurface());
 
-            renderTextInputLine("naming", naming.promptInput, inputBox, "", "", colors::textPrimary(), 20, naming.promptInput.text.empty() ? 500 : 700);
+            renderTextInputLine("naming", naming.promptInput, inputBox, "", colors::textPrimary(), 20, 500);
         }
 
         if (names.empty())

@@ -50,7 +50,7 @@ namespace hyprdeck {
 
     std::string shortcutSearchLabel() {
         const auto& input = state().shortcuts.searchInput;
-        return input.text.empty() ? std::string{"Search shortcuts"} : "Search: " + input.text;
+        return "Search: " + input.text;
     }
 
     void measureShortcutMenu(const PHLMONITOR& monitor) {
@@ -62,7 +62,7 @@ namespace hyprdeck {
         const auto   viewSize = monitor->m_transformedSize;
         const double rowH     = 52.0;
         const auto   title    = labelTexture("Keybindings", 30, 750);
-        const auto   search   = labelTexture(shortcutSearchLabel(), 23, shortcuts.searchInput.text.empty() ? 500 : 700, ETextCacheMode::NONE);
+        const auto   search   = labelTexture(shortcutSearchLabel(), 23, 500, ETextCacheMode::NONE);
 
         double keyW         = 0.0;
         double labelW       = 0.0;
