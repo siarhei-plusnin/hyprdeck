@@ -12,6 +12,9 @@ namespace hyprdeck {
         std::vector<PHLWORKSPACE> specialWorkspaces;
     };
 
-    SWorkspaceFilterRows applyWorkspaceFilter(const PHLMONITOR& monitor, std::vector<WORKSPACEID> normalWorkspaceIDs, std::vector<PHLWORKSPACE> specialWorkspaces);
+    class CWorkspaceFilterMatcher {
+      public:
+        SWorkspaceFilterRows apply(const PHLMONITOR& monitor, std::vector<WORKSPACEID> normalWorkspaceIDs, std::vector<PHLWORKSPACE> specialWorkspaces) const;
+    };
 
 } // namespace hyprdeck

@@ -2,8 +2,9 @@
 
 #include "keyboard.hpp"
 #include "layout.hpp"
+#include "plugin.hpp"
 #include "shortcut_catalog.hpp"
-#include "state.hpp"
+#include "runtime_types.hpp"
 #include "textinput.hpp"
 #include "textinput_repeat.hpp"
 #include "workspaces.hpp"
@@ -19,55 +20,51 @@ namespace hyprdeck {
     namespace {
 
         void damageFilter(const PHLMONITOR& monitor) {
-            invalidateLayout();
-            g_pHyprRenderer->damageMonitor(monitor);
+            activePlugin()->layout().invalidate();
+            activePlugin()->hyprland().damageMonitor(monitor);
         }
 
         void focusActiveWorkspace(const PHLMONITOR& monitor) {
-            auto& current   = state();
-            auto& layout    = current.layout;
-            auto& selection = current.selection;
+            const auto& workspaces = activePlugin()->workspaces();
 
-            const auto activeSpecialID = activeSpecialWorkspaceID(monitor);
-            const auto activeNormalID  = activeNormalWorkspaceID(monitor);
+            const auto activeSpecialID = workspaces.activeSpecialWorkspaceID(monitor);
+            const auto activeNormalID  = workspaces.activeNormalWorkspaceID(monitor);
 
-            layout.resetCamera          = true;
-            selection.selectedNormalID  = activeNormalID;
-            selection.selectedSpecialID = activeSpecialID;
-            selection.selectedRow       = activeSpecialID != WORKSPACE_INVALID ? ESelectedRow::SPECIAL : ESelectedRow::NORMAL;
+            activePlugin()->layout().setResetCamera(true);
+            activePlugin()->selection().setActiveSelection(activeNormalID, activeSpecialID);
 
-            invalidateLayout();
-            recalculateCards(monitor);
+            activePlugin()->layout().invalidate();
+            activePlugin()->layout().recalculateCards(monitor);
 
-            const int specialIndex = cardIndexByID(layout.specialCards, activeSpecialID);
+            const int specialIndex = workspaces.cardIndexByID(activePlugin()->layout().specialCards(), activeSpecialID);
             if (specialIndex >= 0) {
-                selection.selectedRow       = ESelectedRow::SPECIAL;
-                selection.selectedSpecialID = activeSpecialID;
-                centerSpecialCard(specialIndex);
+                activePlugin()->selection().setSelectedRow(ESelectedRow::SPECIAL);
+                activePlugin()->selection().setSelectedSpecialID(activeSpecialID);
+                activePlugin()->layout().centerSpecialCard(specialIndex);
                 return;
             }
 
-            const int normalIndex = cardIndexByID(layout.cards, activeNormalID);
+            const int normalIndex = workspaces.cardIndexByID(activePlugin()->layout().cards(), activeNormalID);
             if (normalIndex >= 0) {
-                selection.selectedRow      = ESelectedRow::NORMAL;
-                selection.selectedNormalID = activeNormalID;
-                centerNormalCard(normalIndex);
+                activePlugin()->selection().setSelectedRow(ESelectedRow::NORMAL);
+                activePlugin()->selection().setSelectedNormalID(activeNormalID);
+                activePlugin()->layout().centerNormalCard(normalIndex);
                 return;
             }
 
-            ensureSelection(monitor);
+            activePlugin()->selection().ensureSelection(monitor);
         }
 
         STextInputState* workspaceFilterInput() {
-            return &state().filter.promptInput;
+            return activePlugin()->workspaceFilter().promptInput();
         }
 
         bool workspaceFilterRepeatActive() {
-            return workspaceFilterPromptOpen();
+            return activePlugin()->workspaceFilter().promptOpen();
         }
 
         void workspaceFilterTextChanged(const PHLMONITOR& monitor) {
-            damageFilter(monitor);
+            activePlugin()->workspaceFilter().handleTextChanged(monitor);
         }
 
         STextInputRepeatTarget workspaceFilterRepeatTarget() {
@@ -81,49 +78,56 @@ namespace hyprdeck {
             if (event.keycode == KEY_ENTER || event.keycode == KEY_KPENTER)
                 return EShortcutCommand::CONFIRM_TEXT;
 
-            const auto command = shortcutCommandForTextInputAction(textInputActionForKey(event, modifiers.ctrl));
+            const auto command = activePlugin()->shortcutCatalog().commandForTextInputAction(textInputActionForKey(event, modifiers.ctrl));
             return command == EShortcutCommand::NONE ? EShortcutCommand::TYPE_TEXT : command;
-        }
-
-        void confirmWorkspaceFilterPrompt(const PHLMONITOR& monitor) {
-            auto& filter = state().filter;
-            if (!filter.promptOpen)
-                return;
-
-            filter.text       = filter.promptInput.text;
-            filter.promptOpen = false;
-            filter.previousText.clear();
-            filter.promptInput.reset();
-            stopTextInputRepeat();
-            damageFilter(monitor);
         }
 
     } // namespace
 
-    bool workspaceFilterPromptOpen() {
-        return state().filter.promptOpen;
+    bool CWorkspaceFilterController::promptOpen() const {
+        return m_state.promptOpen;
     }
 
-    std::string_view workspaceFilterText() {
-        const auto& filter = state().filter;
-        return filter.promptOpen ? std::string_view{filter.promptInput.text} : std::string_view{filter.text};
+    std::string_view CWorkspaceFilterController::text() const {
+        return m_state.promptOpen ? std::string_view{m_state.promptInput.text} : std::string_view{m_state.text};
     }
 
-    bool workspaceFilterApplied() {
-        return !state().filter.text.empty();
+    STextInputState* CWorkspaceFilterController::promptInput() {
+        return &m_state.promptInput;
     }
 
-    void openWorkspaceFilterPrompt(const PHLMONITOR& monitor) {
-        auto& filter = state().filter;
-        stopTextInputRepeat();
+    void CWorkspaceFilterController::handleTextChanged(const PHLMONITOR& monitor) {
+        damageFilter(monitor);
+    }
+
+    void CWorkspaceFilterController::confirmPrompt(const PHLMONITOR& monitor) {
+        auto& filter = m_state;
+        if (!filter.promptOpen)
+            return;
+
+        filter.text       = filter.promptInput.text;
+        filter.promptOpen = false;
+        filter.previousText.clear();
+        filter.promptInput.reset();
+        activePlugin()->textInputRepeater().stop();
+        damageFilter(monitor);
+    }
+
+    bool CWorkspaceFilterController::applied() const {
+        return !m_state.text.empty();
+    }
+
+    void CWorkspaceFilterController::openPrompt(const PHLMONITOR& monitor) {
+        auto& filter = m_state;
+        activePlugin()->textInputRepeater().stop();
         filter.promptOpen   = true;
         filter.previousText = filter.text;
         filter.promptInput.setText(filter.text);
         damageFilter(monitor);
     }
 
-    void closeWorkspaceFilterPrompt(const PHLMONITOR& monitor) {
-        auto& filter = state().filter;
+    void CWorkspaceFilterController::closePrompt(const PHLMONITOR& monitor) {
+        auto& filter = m_state;
         if (!filter.promptOpen)
             return;
 
@@ -131,14 +135,14 @@ namespace hyprdeck {
         filter.promptOpen = false;
         filter.previousText.clear();
         filter.promptInput.reset();
-        stopTextInputRepeat();
+        activePlugin()->textInputRepeater().stop();
 
         focusActiveWorkspace(monitor);
-        g_pHyprRenderer->damageMonitor(monitor);
+        activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    void clearWorkspaceFilter(const PHLMONITOR& monitor) {
-        auto& filter = state().filter;
+    void CWorkspaceFilterController::clear(const PHLMONITOR& monitor) {
+        auto& filter = m_state;
         if (!filter.promptOpen && filter.text.empty())
             return;
 
@@ -146,48 +150,48 @@ namespace hyprdeck {
         filter.text.clear();
         filter.previousText.clear();
         filter.promptInput.reset();
-        stopTextInputRepeat();
+        activePlugin()->textInputRepeater().stop();
         focusActiveWorkspace(monitor);
         damageFilter(monitor);
     }
 
-    void resetWorkspaceFilterPromptState() {
-        auto& filter = state().filter;
+    void CWorkspaceFilterController::resetPromptState() {
+        auto& filter = m_state;
         if (filter.promptOpen)
             filter.text = filter.previousText;
 
         filter.promptOpen = false;
         filter.previousText.clear();
         filter.promptInput.reset();
-        stopTextInputRepeat();
+        activePlugin()->textInputRepeater().stop();
     }
 
-    void resetWorkspaceFilterState() {
-        auto& filter = state().filter;
+    void CWorkspaceFilterController::resetState() {
+        auto& filter = m_state;
         filter.promptOpen = false;
         filter.text.clear();
         filter.previousText.clear();
         filter.promptInput.reset();
-        stopTextInputRepeat();
+        activePlugin()->textInputRepeater().stop();
     }
 
-    void handleWorkspaceFilterKey(const IKeyboard::SKeyEvent event, const PHLMONITOR& monitor) {
-        if (!state().filter.promptOpen)
+    void CWorkspaceFilterController::handleKey(const IKeyboard::SKeyEvent event, const PHLMONITOR& monitor) {
+        if (!m_state.promptOpen)
             return;
 
         if (event.state == WL_KEYBOARD_KEY_STATE_RELEASED) {
-            stopTextInputRepeatFor(event.keycode);
+            activePlugin()->textInputRepeater().stopFor(event.keycode);
             return;
         }
 
-        const auto modifiers = keyboardModifiers();
+        const auto modifiers = activePlugin()->hyprland().keyboardModifiers();
         const auto command   = workspaceFilterCommandForKey(event, modifiers);
         const auto action    = textInputActionForKey(event, modifiers.ctrl);
         bool       dirty     = false;
 
         switch (command) {
-            case EShortcutCommand::CANCEL_TEXT: closeWorkspaceFilterPrompt(monitor); return;
-            case EShortcutCommand::CONFIRM_TEXT: confirmWorkspaceFilterPrompt(monitor); return;
+            case EShortcutCommand::CANCEL_TEXT: closePrompt(monitor); return;
+            case EShortcutCommand::CONFIRM_TEXT: confirmPrompt(monitor); return;
             case EShortcutCommand::DELETE_TEXT_BACKWARD:
             case EShortcutCommand::DELETE_TEXT_FORWARD:
             case EShortcutCommand::DELETE_TEXT_WORD_BACKWARD:
@@ -197,11 +201,11 @@ namespace hyprdeck {
             case EShortcutCommand::MOVE_TEXT_LINE_ENDS:
             case EShortcutCommand::CLEAR_TEXT:
             case EShortcutCommand::TYPE_TEXT: {
-                auto& filter = state().filter;
+                auto& filter = m_state;
                 dirty        = filter.promptInput.handleKey(event, modifiers.ctrl, modifiers.shift);
 
-                if (textInputActionRepeats(action))
-                    startTextInputRepeat(action, event.keycode, workspaceFilterRepeatTarget());
+                if (activePlugin()->textInputRepeater().actionRepeats(action))
+                    activePlugin()->textInputRepeater().start(action, event.keycode, workspaceFilterRepeatTarget());
                 break;
             }
             default: return;

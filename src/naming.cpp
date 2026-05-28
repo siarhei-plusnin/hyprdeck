@@ -4,9 +4,10 @@
 #include "keyboard.hpp"
 #include "layout.hpp"
 #include "navigation.hpp"
+#include "plugin.hpp"
 #include "selection.hpp"
 #include "shortcut_catalog.hpp"
-#include "state.hpp"
+#include "runtime_types.hpp"
 #include "textinput.hpp"
 #include "textinput_repeat.hpp"
 
@@ -21,52 +22,7 @@ namespace hyprdeck {
     namespace {
 
         void damagePrompt(const PHLMONITOR& monitor) {
-            g_pHyprRenderer->damageMonitor(monitor);
-        }
-
-        void syncCustomSelectionAfterEdit() {
-            auto& naming = state().naming;
-            if (naming.promptMode == EPromptMode::CREATE_SPECIAL)
-                naming.promptCustomSelected = !naming.promptInput.text.empty();
-        }
-
-        bool movePresetSelection(const int direction) {
-            auto& naming = state().naming;
-            if (naming.promptMode != EPromptMode::CREATE_SPECIAL)
-                return false;
-
-            const auto names         = configuredSpecialWorkspaceNames();
-            const bool hasCustomName = !naming.promptInput.text.empty();
-            if (names.empty()) {
-                if (hasCustomName && !naming.promptCustomSelected) {
-                    naming.promptCustomSelected = true;
-                    return true;
-                }
-
-                return false;
-            }
-
-            if (hasCustomName && naming.promptCustomSelected) {
-                if (direction <= 0)
-                    return false;
-
-                naming.promptCustomSelected    = false;
-                naming.namedSpecialPromptIndex = 0;
-                return true;
-            }
-
-            if (hasCustomName && direction < 0 && naming.namedSpecialPromptIndex == 0) {
-                naming.promptCustomSelected = true;
-                return true;
-            }
-
-            const int index = std::clamp(static_cast<int>(naming.namedSpecialPromptIndex) + direction, 0, static_cast<int>(names.size()) - 1);
-            if (index == static_cast<int>(naming.namedSpecialPromptIndex))
-                return false;
-
-            naming.promptCustomSelected    = false;
-            naming.namedSpecialPromptIndex = static_cast<size_t>(index);
-            return true;
+            activePlugin()->hyprland().damageMonitor(monitor);
         }
 
         int presetSelectionDirection(const IKeyboard::SKeyEvent event, const SKeyboardModifiers& modifiers) {
@@ -76,110 +32,165 @@ namespace hyprdeck {
             return 1;
         }
 
-        EShortcutCommand namingCommandForKey(const IKeyboard::SKeyEvent event, const SKeyboardModifiers& modifiers) {
-            auto& naming = state().naming;
-
+        EShortcutCommand namingCommandForKey(const IKeyboard::SKeyEvent event, const SKeyboardModifiers& modifiers, const EPromptMode promptMode, const bool promptEmpty) {
             if (event.keycode == KEY_ESC)
                 return EShortcutCommand::CANCEL_TEXT;
 
             if (event.keycode == KEY_ENTER || event.keycode == KEY_KPENTER)
                 return EShortcutCommand::CONFIRM_TEXT;
 
-            if (naming.promptMode == EPromptMode::CREATE_SPECIAL && (event.keycode == KEY_UP || event.keycode == KEY_DOWN || (modifiers.ctrl && event.keycode == KEY_P) ||
-                                                                        (modifiers.ctrl && event.keycode == KEY_N)))
+            if (promptMode == EPromptMode::CREATE_SPECIAL && (event.keycode == KEY_UP || event.keycode == KEY_DOWN || (modifiers.ctrl && event.keycode == KEY_P) ||
+                                                               (modifiers.ctrl && event.keycode == KEY_N)))
                 return EShortcutCommand::SELECT_NAMED_PRESET;
 
-            if (event.keycode == KEY_SPACE && naming.promptMode == EPromptMode::CREATE_SPECIAL && naming.promptInput.text.empty())
+            if (event.keycode == KEY_SPACE && promptMode == EPromptMode::CREATE_SPECIAL && promptEmpty)
                 return EShortcutCommand::USE_NAMED_PRESET;
 
-            const auto command = shortcutCommandForTextInputAction(textInputActionForKey(event, modifiers.ctrl));
+            const auto command = activePlugin()->shortcutCatalog().commandForTextInputAction(textInputActionForKey(event, modifiers.ctrl));
             return command == EShortcutCommand::NONE ? EShortcutCommand::TYPE_TEXT : command;
         }
 
-        bool useSelectedPreset(const PHLMONITOR& monitor) {
-            const auto names = configuredSpecialWorkspaceNames();
-            if (names.empty())
-                return false;
-
-            auto& naming                   = state().naming;
-            naming.namedSpecialPromptIndex = std::min(naming.namedSpecialPromptIndex, names.size() - 1);
-            if (!createNamedSpecialWorkspace(names[naming.namedSpecialPromptIndex], monitor))
-                return false;
-
-            resetNamingPromptState();
-            return true;
-        }
-
         STextInputState* namingPromptInput() {
-            return &state().naming.promptInput;
+            return activePlugin()->naming().promptInput();
         }
 
         bool namingRepeatActive() {
-            return namingPromptOpen();
+            return activePlugin()->naming().promptOpen();
         }
 
         void namingTextChanged(const PHLMONITOR& monitor) {
-            syncCustomSelectionAfterEdit();
-            damagePrompt(monitor);
+            activePlugin()->naming().handleTextChanged(monitor);
         }
 
         STextInputRepeatTarget namingRepeatTarget() {
             return STextInputRepeatTarget{.input = namingPromptInput, .active = namingRepeatActive, .changed = namingTextChanged};
         }
 
-        void confirmNamingPrompt(const PHLMONITOR& monitor) {
-            auto& naming = state().naming;
-            if (naming.promptMode == EPromptMode::RENAME_SPECIAL) {
-                if (renameSelectedSpecialWorkspace(naming.promptInput.text, monitor))
-                    resetNamingPromptState();
-                return;
-            }
-
-            if (naming.promptMode == EPromptMode::CREATE_SPECIAL && !naming.promptCustomSelected && useSelectedPreset(monitor))
-                return;
-
-            if (!naming.promptInput.text.empty()) {
-                if (createNamedSpecialWorkspace(naming.promptInput.text, monitor))
-                    resetNamingPromptState();
-                return;
-            }
-
-            if (!useSelectedPreset(monitor))
-                closeNamingPrompt(monitor);
-        }
-
     } // namespace
 
-    bool namingPromptOpen() {
-        return state().naming.promptMode != EPromptMode::NONE;
+    bool CNamingController::promptOpen() const {
+        return m_state.promptMode != EPromptMode::NONE;
     }
 
-    void openNamedSpecialPrompt(const PHLMONITOR& monitor) {
-        const auto names = configuredSpecialWorkspaceNames();
+    EPromptMode CNamingController::promptMode() const {
+        return m_state.promptMode;
+    }
 
-        auto&      naming = state().naming;
-        stopTextInputRepeat();
+    STextInputState* CNamingController::promptInput() {
+        return &m_state.promptInput;
+    }
+
+    void CNamingController::syncCustomSelectionAfterEdit() {
+        auto& naming = m_state;
+        if (naming.promptMode == EPromptMode::CREATE_SPECIAL)
+            naming.promptCustomSelected = !naming.promptInput.text.empty();
+    }
+
+    void CNamingController::handleTextChanged(const PHLMONITOR& monitor) {
+        syncCustomSelectionAfterEdit();
+        damagePrompt(monitor);
+    }
+
+    bool CNamingController::movePresetSelection(const int direction) {
+        auto& naming = m_state;
+        if (naming.promptMode != EPromptMode::CREATE_SPECIAL)
+            return false;
+
+        const auto names         = activePlugin()->config().specialWorkspaceNames();
+        const bool hasCustomName = !naming.promptInput.text.empty();
+        if (names.empty()) {
+            if (hasCustomName && !naming.promptCustomSelected) {
+                naming.promptCustomSelected = true;
+                return true;
+            }
+
+            return false;
+        }
+
+        if (hasCustomName && naming.promptCustomSelected) {
+            if (direction <= 0)
+                return false;
+
+            naming.promptCustomSelected    = false;
+            naming.namedSpecialPromptIndex = 0;
+            return true;
+        }
+
+        if (hasCustomName && direction < 0 && naming.namedSpecialPromptIndex == 0) {
+            naming.promptCustomSelected = true;
+            return true;
+        }
+
+        const int index = std::clamp(static_cast<int>(naming.namedSpecialPromptIndex) + direction, 0, static_cast<int>(names.size()) - 1);
+        if (index == static_cast<int>(naming.namedSpecialPromptIndex))
+            return false;
+
+        naming.promptCustomSelected    = false;
+        naming.namedSpecialPromptIndex = static_cast<size_t>(index);
+        return true;
+    }
+
+    bool CNamingController::useSelectedPreset(const PHLMONITOR& monitor) {
+        const auto names = activePlugin()->config().specialWorkspaceNames();
+        if (names.empty())
+            return false;
+
+        auto& naming                   = m_state;
+        naming.namedSpecialPromptIndex = std::min(naming.namedSpecialPromptIndex, names.size() - 1);
+        if (!activePlugin()->navigator().createNamedSpecialWorkspace(names[naming.namedSpecialPromptIndex], monitor))
+            return false;
+
+        resetPromptState();
+        return true;
+    }
+
+    void CNamingController::confirmPrompt(const PHLMONITOR& monitor) {
+        auto& naming = m_state;
+        if (naming.promptMode == EPromptMode::RENAME_SPECIAL) {
+            if (activePlugin()->navigator().renameSelectedSpecialWorkspace(naming.promptInput.text, monitor))
+                resetPromptState();
+            return;
+        }
+
+        if (naming.promptMode == EPromptMode::CREATE_SPECIAL && !naming.promptCustomSelected && useSelectedPreset(monitor))
+            return;
+
+        if (!naming.promptInput.text.empty()) {
+            if (activePlugin()->navigator().createNamedSpecialWorkspace(naming.promptInput.text, monitor))
+                resetPromptState();
+            return;
+        }
+
+        if (!useSelectedPreset(monitor))
+            closePrompt(monitor);
+    }
+
+    void CNamingController::openNamedSpecialPrompt(const PHLMONITOR& monitor) {
+        const auto names = activePlugin()->config().specialWorkspaceNames();
+
+        auto&      naming = m_state;
+        activePlugin()->textInputRepeater().stop();
         naming.promptMode           = EPromptMode::CREATE_SPECIAL;
         naming.promptCustomSelected = false;
         naming.promptInput.reset();
         naming.namedSpecialPromptIndex = names.empty() ? 0 : std::min(naming.namedSpecialPromptIndex, names.size() - 1);
 
-        recalculateCards(monitor);
+        activePlugin()->layout().recalculateCards(monitor);
         damagePrompt(monitor);
     }
 
-    void openRenameSpecialPrompt(const PHLMONITOR& monitor) {
-        if (state().selection.selectedRow != ESelectedRow::SPECIAL)
+    void CNamingController::openRenameSpecialPrompt(const PHLMONITOR& monitor) {
+        if (activePlugin()->selection().selectedRow() != ESelectedRow::SPECIAL)
             return;
 
-        recalculateCards(monitor);
+        activePlugin()->layout().recalculateCards(monitor);
 
-        const auto label = selectedSpecialWorkspaceLabel();
+        const auto label = activePlugin()->selection().selectedSpecialWorkspaceLabel();
         if (label.empty())
             return;
 
-        auto& naming = state().naming;
-        stopTextInputRepeat();
+        auto& naming = m_state;
+        activePlugin()->textInputRepeater().stop();
         naming.promptMode           = EPromptMode::RENAME_SPECIAL;
         naming.promptCustomSelected = true;
         naming.promptInput.setText(label);
@@ -187,46 +198,46 @@ namespace hyprdeck {
         damagePrompt(monitor);
     }
 
-    void closeNamingPrompt(const PHLMONITOR& monitor) {
-        if (!namingPromptOpen())
+    void CNamingController::closePrompt(const PHLMONITOR& monitor) {
+        if (!promptOpen())
             return;
 
-        resetNamingPromptState();
+        resetPromptState();
         damagePrompt(monitor);
     }
 
-    void resetNamingPromptState() {
-        auto& naming                = state().naming;
+    void CNamingController::resetPromptState() {
+        auto& naming                = m_state;
         naming.promptMode           = EPromptMode::NONE;
         naming.promptCustomSelected = false;
         naming.promptInput.reset();
-        stopTextInputRepeat();
+        activePlugin()->textInputRepeater().stop();
     }
 
-    void resetNamingComponent() {
-        resetNamingPromptState();
+    void CNamingController::resetComponent() {
+        resetPromptState();
     }
 
-    void handleNamingPromptKey(const IKeyboard::SKeyEvent event, const PHLMONITOR& monitor) {
-        if (!namingPromptOpen())
+    void CNamingController::handleKey(const IKeyboard::SKeyEvent event, const PHLMONITOR& monitor) {
+        if (!promptOpen())
             return;
 
         if (event.state == WL_KEYBOARD_KEY_STATE_RELEASED) {
-            stopTextInputRepeatFor(event.keycode);
+            activePlugin()->textInputRepeater().stopFor(event.keycode);
             return;
         }
 
-        const auto modifiers = keyboardModifiers();
+        const auto modifiers = activePlugin()->hyprland().keyboardModifiers();
         const bool ctrl      = modifiers.ctrl;
         const bool shift     = modifiers.shift;
         bool       dirty     = false;
-        const auto command   = namingCommandForKey(event, modifiers);
+        auto&      naming    = m_state;
+        const auto command   = namingCommandForKey(event, modifiers, naming.promptMode, naming.promptInput.text.empty());
         const auto action    = textInputActionForKey(event, ctrl);
 
-        auto& naming = state().naming;
         switch (command) {
-            case EShortcutCommand::CANCEL_TEXT: closeNamingPrompt(monitor); return;
-            case EShortcutCommand::CONFIRM_TEXT: confirmNamingPrompt(monitor); return;
+            case EShortcutCommand::CANCEL_TEXT: closePrompt(monitor); return;
+            case EShortcutCommand::CONFIRM_TEXT: confirmPrompt(monitor); return;
             case EShortcutCommand::SELECT_NAMED_PRESET: dirty = movePresetSelection(presetSelectionDirection(event, modifiers)); break;
             case EShortcutCommand::USE_NAMED_PRESET: useSelectedPreset(monitor); return;
             case EShortcutCommand::DELETE_TEXT_BACKWARD:
@@ -240,8 +251,8 @@ namespace hyprdeck {
             case EShortcutCommand::TYPE_TEXT:
                 dirty = naming.promptInput.handleKey(event, ctrl, shift);
 
-                if (textInputActionRepeats(action))
-                    startTextInputRepeat(action, event.keycode, namingRepeatTarget());
+                if (activePlugin()->textInputRepeater().actionRepeats(action))
+                    activePlugin()->textInputRepeater().start(action, event.keycode, namingRepeatTarget());
                 break;
             default: return;
         }

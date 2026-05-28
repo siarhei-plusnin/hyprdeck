@@ -6,6 +6,8 @@
 
 #include <cstdint>
 
+class CEventLoopTimer;
+
 namespace hyprdeck {
 
     using FTextInputProvider = STextInputState* (*)();
@@ -18,10 +20,22 @@ namespace hyprdeck {
         FTextInputChanged  changed = nullptr;
     };
 
-    bool textInputActionRepeats(ETextInputAction action);
-    void startTextInputRepeat(ETextInputAction action, uint32_t keycode, STextInputRepeatTarget target);
-    void stopTextInputRepeat();
-    void stopTextInputRepeatFor(uint32_t keycode);
-    void resetTextInputRepeatComponent();
+    class CTextInputRepeater {
+      public:
+        bool actionRepeats(ETextInputAction action) const;
+        void start(ETextInputAction action, uint32_t keycode, STextInputRepeatTarget target);
+        void stop();
+        void stopFor(uint32_t keycode);
+        void reset();
+
+      private:
+        void ensureTimer();
+        void handleTimer(SP<CEventLoopTimer> self);
+
+        SP<CEventLoopTimer>    m_timer;
+        STextInputRepeatTarget m_target;
+        ETextInputAction       m_action  = ETextInputAction::NONE;
+        uint32_t               m_keycode = 0;
+    };
 
 } // namespace hyprdeck

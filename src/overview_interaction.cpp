@@ -2,12 +2,11 @@
 
 #include "constants.hpp"
 #include "layout.hpp"
-#include "monitors.hpp"
 #include "overview.hpp"
 #include "overlays.hpp"
-#include "rendering.hpp"
+#include "plugin.hpp"
 #include "selection.hpp"
-#include "state.hpp"
+#include "runtime_types.hpp"
 
 #include <helpers/Monitor.hpp>
 #include <managers/PointerManager.hpp>
@@ -18,37 +17,38 @@
 
 namespace hyprdeck {
 
-    void handleOverviewMouseMove(Vector2D position, Event::SCallbackInfo& info, const PHLMONITOR& monitor) {
-        auto& current = state();
-        if (!current.interaction.dragging && pointerOverNotificationOverlay(monitor))
+    void COverviewPointerController::handleMouseMove(Vector2D position, Event::SCallbackInfo& info, const PHLMONITOR& monitor) {
+        auto& interaction = m_state;
+        if (!interaction.dragging && activePlugin()->overlays().pointerOverNotificationOverlay(monitor))
             return;
 
         info.cancelled = true;
 
         const auto renderPos = (position - monitor->m_position) * monitor->m_scale;
 
-        g_pPointerManager->damageCursor(monitor);
+        activePlugin()->hyprland().damageCursor(monitor);
 
-        if (!current.interaction.dragging)
+        if (!interaction.dragging)
             return;
 
-        if (current.interaction.dragRow == EDragRow::SPECIAL)
-            current.layout.specialCameraX = clampSpecialCamera(current.interaction.dragStartSpecialCameraX - (renderPos.x - current.interaction.dragStart.x), current.layout.specialCards.size());
+        if (interaction.dragRow == EDragRow::SPECIAL)
+            activePlugin()->layout().setSpecialCameraX(
+                activePlugin()->layout().clampSpecialCamera(interaction.dragStartSpecialCameraX - (renderPos.x - interaction.dragStart.x), activePlugin()->layout().specialCardCount()));
         else
-            current.layout.cameraX = clampCamera(current.interaction.dragStartCameraX - (renderPos.x - current.interaction.dragStart.x));
+            activePlugin()->layout().setCameraX(activePlugin()->layout().clampCamera(interaction.dragStartCameraX - (renderPos.x - interaction.dragStart.x)));
 
-        invalidateLayout();
+        activePlugin()->layout().invalidate();
 
-        g_pHyprRenderer->damageMonitor(monitor);
+        activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    void handleOverviewMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info, const PHLMONITOR& monitor) {
-        auto& current = state();
-        if (!current.interaction.dragging && pointerOverNotificationOverlay(monitor))
+    void COverviewPointerController::handleMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info, const PHLMONITOR& monitor) {
+        auto& interaction = m_state;
+        if (!interaction.dragging && activePlugin()->overlays().pointerOverNotificationOverlay(monitor))
             return;
 
         if (event.button == BTN_RIGHT) {
-            closeOverview();
+            activePlugin()->overview().close();
             return;
         }
 
@@ -57,75 +57,53 @@ namespace hyprdeck {
 
         info.cancelled = true;
 
-        recalculateCards(monitor);
+        activePlugin()->layout().recalculateCards(monitor);
 
-        const auto pos = cursorRenderPos(monitor);
+        const auto pos = activePlugin()->layout().cursorRenderPos(monitor);
 
         if (event.state == WL_POINTER_BUTTON_STATE_PRESSED) {
-            auto& interaction                   = current.interaction;
             interaction.dragging                = true;
-            interaction.dragRow                 = dragRowAt(pos);
+            interaction.dragRow                 = activePlugin()->layout().dragRowAt(pos);
             interaction.dragStart               = pos;
-            interaction.dragStartCameraX        = current.layout.cameraX;
-            interaction.dragStartSpecialCameraX = current.layout.specialCameraX;
+            interaction.dragStartCameraX        = activePlugin()->layout().cameraX();
+            interaction.dragStartSpecialCameraX = activePlugin()->layout().specialCameraX();
             return;
         }
 
-        if (event.state == WL_POINTER_BUTTON_STATE_RELEASED && current.interaction.dragging) {
-            current.interaction.dragging = false;
-            current.interaction.dragRow  = EDragRow::NONE;
+        if (event.state == WL_POINTER_BUTTON_STATE_RELEASED && interaction.dragging) {
+            interaction.dragging = false;
+            interaction.dragRow  = EDragRow::NONE;
 
-            if (current.interaction.dragStart.distance(pos) < CLICK_DRAG_THRESHOLD)
-                selectWorkspaceAt(pos, monitor);
+            if (interaction.dragStart.distance(pos) < CLICK_DRAG_THRESHOLD)
+                activePlugin()->selection().selectWorkspaceAt(pos, monitor);
 
-            g_pHyprRenderer->damageMonitor(monitor);
+            activePlugin()->hyprland().damageMonitor(monitor);
         }
     }
 
-    void handleOverviewMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info, const PHLMONITOR& monitor) {
-        if (pointerOverNotificationOverlay(monitor))
+    void COverviewPointerController::handleMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info, const PHLMONITOR& monitor) {
+        if (activePlugin()->overlays().pointerOverNotificationOverlay(monitor))
             return;
 
         info.cancelled = true;
 
-        recalculateCards(monitor);
+        activePlugin()->layout().recalculateCards(monitor);
 
-        auto&      current = state();
-        const auto pos     = cursorRenderPos(monitor);
-        if (dragRowAt(pos) == EDragRow::SPECIAL)
-            current.layout.specialCameraX = clampSpecialCamera(current.layout.specialCameraX + (event.delta * ROW_SCROLL_SCALE), current.layout.specialCards.size());
+        const auto pos = activePlugin()->layout().cursorRenderPos(monitor);
+        if (activePlugin()->layout().dragRowAt(pos) == EDragRow::SPECIAL)
+            activePlugin()->layout().setSpecialCameraX(
+                activePlugin()->layout().clampSpecialCamera(activePlugin()->layout().specialCameraX() + (event.delta * ROW_SCROLL_SCALE), activePlugin()->layout().specialCardCount()));
         else
-            current.layout.cameraX = clampCamera(current.layout.cameraX + (event.delta * ROW_SCROLL_SCALE));
+            activePlugin()->layout().setCameraX(activePlugin()->layout().clampCamera(activePlugin()->layout().cameraX() + (event.delta * ROW_SCROLL_SCALE)));
 
-        invalidateLayout();
+        activePlugin()->layout().invalidate();
 
-        g_pHyprRenderer->damageMonitor(monitor);
+        activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    void handleOverviewRenderStage(eRenderStage stage) {
-        const auto& current = state();
-        if (!current.session.active || stage != RENDER_LAST_MOMENT)
-            return;
-
-        const auto renderMonitor = g_pHyprRenderer->m_renderData.pMonitor.lock();
-        if (!renderMonitor || renderMonitor->m_id != current.session.monitorID)
-            return;
-
-        const bool externalInputActive = externalOverlayActive(renderMonitor) || pointerOverNotificationOverlay(renderMonitor);
-        if (externalInputActive) {
-            if (g_pPointerManager->softwareLockedFor(renderMonitor))
-                g_pPointerManager->unlockSoftwareForMonitor(renderMonitor);
-            g_pHyprRenderer->setCursorHidden(false);
-        } else if (!g_pPointerManager->softwareLockedFor(renderMonitor))
-            g_pPointerManager->lockSoftwareForMonitor(renderMonitor);
-
-        renderOverview(renderMonitor);
-        if (!externalInputActive)
-            renderCursorOverlay(renderMonitor);
-
-        const auto mode = currentInputMode();
-        if (mode == EInputMode::NAMING || mode == EInputMode::FILTER || mode == EInputMode::SHORTCUTS)
-            g_pHyprRenderer->damageMonitor(renderMonitor);
+    void COverviewPointerController::resetState() {
+        m_state.dragging = false;
+        m_state.dragRow  = EDragRow::NONE;
     }
 
 } // namespace hyprdeck

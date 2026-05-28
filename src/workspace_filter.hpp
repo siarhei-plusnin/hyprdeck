@@ -4,18 +4,32 @@
 #include <devices/IKeyboard.hpp>
 #include <desktop/DesktopTypes.hpp>
 
+#include "runtime_types.hpp"
+
 #include <string_view>
 
 namespace hyprdeck {
 
-    bool             workspaceFilterPromptOpen();
-    bool             workspaceFilterApplied();
-    std::string_view workspaceFilterText();
-    void             openWorkspaceFilterPrompt(const PHLMONITOR& monitor);
-    void             closeWorkspaceFilterPrompt(const PHLMONITOR& monitor);
-    void             clearWorkspaceFilter(const PHLMONITOR& monitor);
-    void             resetWorkspaceFilterPromptState();
-    void             resetWorkspaceFilterState();
-    void             handleWorkspaceFilterKey(IKeyboard::SKeyEvent event, const PHLMONITOR& monitor);
+    class CWorkspaceFilterController {
+      public:
+        bool             promptOpen() const;
+        bool             applied() const;
+        std::string_view text() const;
+        STextInputState* promptInput();
+        void             handleTextChanged(const PHLMONITOR& monitor);
+
+        void openPrompt(const PHLMONITOR& monitor);
+        void closePrompt(const PHLMONITOR& monitor);
+        void clear(const PHLMONITOR& monitor);
+        void resetPromptState();
+        void resetState();
+        void handleKey(IKeyboard::SKeyEvent event, const PHLMONITOR& monitor);
+        void render(const PHLMONITOR& monitor) const;
+
+      private:
+        void confirmPrompt(const PHLMONITOR& monitor);
+
+        SWorkspaceFilterState m_state;
+    };
 
 } // namespace hyprdeck

@@ -1,114 +1,136 @@
 #include "input.hpp"
 
 #include "confirmation.hpp"
-#include "monitors.hpp"
 #include "naming.hpp"
 #include "overview.hpp"
 #include "overview_controller.hpp"
 #include "overview_interaction.hpp"
 #include "overlays.hpp"
+#include "plugin.hpp"
 #include "shortcuts.hpp"
-#include "state.hpp"
+#include "runtime_types.hpp"
 #include "workspace_filter.hpp"
 
 namespace hyprdeck {
-    namespace {
+    PHLMONITOR CInputRouter::activeInputMonitor() const {
+        if (!activePlugin()->overview().active())
+            return nullptr;
 
-        PHLMONITOR activeInputMonitor() {
-            if (!state().session.active)
-                return nullptr;
+        const auto monitor = activePlugin()->overview().monitor();
+        if (!monitor)
+            activePlugin()->overview().close();
 
-            const auto monitor = overviewMonitor();
-            if (!monitor)
-                closeOverview();
-
-            return monitor;
-        }
-
-        bool inputBlockedByExternalOverlay(const PHLMONITOR& monitor) {
-            return externalOverlayActive(monitor);
-        }
-
-    } // namespace
-
-    void onMouseMove(Vector2D position, Event::SCallbackInfo& info) {
-        const auto monitor = activeInputMonitor();
-        if (!monitor || inputBlockedByExternalOverlay(monitor))
-            return;
-
-        handleOverviewMouseMove(position, info, monitor);
+        return monitor;
     }
 
-    void onMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
-        const auto monitor = activeInputMonitor();
-        if (!monitor || inputBlockedByExternalOverlay(monitor))
-            return;
-
-        handleOverviewMouseButton(event, info, monitor);
+    bool CInputRouter::inputBlockedByExternalOverlay(const PHLMONITOR& monitor) const {
+        return activePlugin()->overlays().externalOverlayActive(monitor);
     }
 
-    void onMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info) {
-        const auto monitor = activeInputMonitor();
-        if (!monitor || inputBlockedByExternalOverlay(monitor))
-            return;
+    EInputMode CInputRouter::activeInputMode() const {
+        if (!activePlugin()->overview().active())
+            return EInputMode::INACTIVE;
 
-        handleOverviewMouseAxis(event, info, monitor);
+        if (activePlugin()->shortcuts().menuOpen())
+            return EInputMode::SHORTCUTS;
+
+        if (activePlugin()->naming().promptOpen())
+            return EInputMode::NAMING;
+
+        if (activePlugin()->workspaceFilter().promptOpen())
+            return EInputMode::FILTER;
+
+        if (activePlugin()->confirmation().promptOpen())
+            return EInputMode::CONFIRMATION;
+
+        return EInputMode::OVERVIEW;
     }
 
-    void onKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info) {
+    void CInputRouter::onMouseMove(Vector2D position, Event::SCallbackInfo& info) {
         const auto monitor = activeInputMonitor();
         if (!monitor || inputBlockedByExternalOverlay(monitor))
             return;
 
-        const auto mode = currentInputMode();
+        activePlugin()->overviewPointer().handleMouseMove(position, info, monitor);
+    }
+
+    void CInputRouter::onMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
+        const auto monitor = activeInputMonitor();
+        if (!monitor || inputBlockedByExternalOverlay(monitor))
+            return;
+
+        activePlugin()->overviewPointer().handleMouseButton(event, info, monitor);
+    }
+
+    void CInputRouter::onMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info) {
+        const auto monitor = activeInputMonitor();
+        if (!monitor || inputBlockedByExternalOverlay(monitor))
+            return;
+
+        activePlugin()->overviewPointer().handleMouseAxis(event, info, monitor);
+    }
+
+    void CInputRouter::onKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info) {
+        const auto monitor = activeInputMonitor();
+        if (!monitor || inputBlockedByExternalOverlay(monitor))
+            return;
+
+        const auto mode = activeInputMode();
         if (mode == EInputMode::INACTIVE)
             return;
 
         if (mode == EInputMode::SHORTCUTS) {
             info.cancelled = true;
-            handleShortcutMenuKey(event, monitor);
+            activePlugin()->shortcuts().handleKey(event, monitor);
             return;
         }
 
-        if (isShortcutMenuKey(event)) {
+        if (activePlugin()->shortcuts().isMenuKey(event)) {
             info.cancelled = true;
-            openShortcutMenu(monitor);
+            activePlugin()->shortcuts().openMenu(monitor);
             return;
         }
 
         if (mode == EInputMode::NAMING) {
             info.cancelled = true;
-            handleNamingPromptKey(event, monitor);
+            activePlugin()->naming().handleKey(event, monitor);
             return;
         }
 
         if (mode == EInputMode::FILTER) {
             info.cancelled = true;
-            handleWorkspaceFilterKey(event, monitor);
+            activePlugin()->workspaceFilter().handleKey(event, monitor);
             return;
         }
 
         if (mode == EInputMode::CONFIRMATION) {
             info.cancelled = true;
-            handleConfirmationKey(event, monitor);
+            activePlugin()->confirmation().handleKey(event, monitor);
             return;
         }
 
-        if (handleOverviewKeyboardKey(event, monitor))
+        if (activePlugin()->overviewKeyboard().handleKey(event, monitor))
             info.cancelled = true;
     }
 
-    void onRenderStage(eRenderStage stage) {
-        handleOverviewRenderStage(stage);
+    void onMouseMove(Vector2D position, Event::SCallbackInfo& info) {
+        activePlugin()->inputRouter().onMouseMove(position, info);
     }
 
-    void resetHooks() {
-        auto& current = state();
-        current.hooks.renderHook.reset();
-        current.hooks.mouseMoveHook.reset();
-        current.hooks.mouseButtonHook.reset();
-        current.hooks.mouseAxisHook.reset();
-        current.hooks.keyboardHook.reset();
+    void onMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
+        activePlugin()->inputRouter().onMouseButton(event, info);
+    }
+
+    void onMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info) {
+        activePlugin()->inputRouter().onMouseAxis(event, info);
+    }
+
+    void onKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info) {
+        activePlugin()->inputRouter().onKeyboard(event, info);
+    }
+
+    void onRenderStage(eRenderStage stage) {
+        activePlugin()->overview().onRenderStage(stage);
     }
 
 } // namespace hyprdeck

@@ -4,12 +4,9 @@
 #include "textinput.hpp"
 #include <SharedDefs.hpp>
 #include <desktop/DesktopTypes.hpp>
-#include <event/EventBus.hpp>
 #include <helpers/math/Math.hpp>
-#include <render/Texture.hpp>
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace hyprdeck {
@@ -133,36 +130,5 @@ namespace hyprdeck {
         double          descWidth  = 0.0;
         STextInputState searchInput;
     };
-
-    struct SRenderCache {
-        std::unordered_map<std::string, SP<Render::ITexture>> labelTextures;
-        SP<Render::ITexture>                                  cursorTexture;
-        Vector2D                                              cursorHotspot = {};
-        Vector2D                                              cursorSize    = {18, 24};
-    };
-
-    struct SHookState {
-        CHyprSignalListener renderHook;
-        CHyprSignalListener mouseMoveHook;
-        CHyprSignalListener mouseButtonHook;
-        CHyprSignalListener mouseAxisHook;
-        CHyprSignalListener keyboardHook;
-    };
-
-    struct SOverviewState {
-        SSessionState         session;
-        SInteractionState     interaction;
-        SLayoutState          layout;
-        SSelectionState       selection;
-        SNamingState          naming;
-        SWorkspaceFilterState filter;
-        SConfirmationState    confirmation;
-        SShortcutMenuState    shortcuts;
-        SRenderCache          renderCache;
-        SHookState            hooks;
-    };
-
-    SOverviewState& state();
-    EInputMode      currentInputMode();
 
 } // namespace hyprdeck

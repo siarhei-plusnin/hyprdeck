@@ -5,6 +5,7 @@
 #include "naming.hpp"
 #include "navigation.hpp"
 #include "overview.hpp"
+#include "plugin.hpp"
 #include "workspaces.hpp"
 
 #include <Compositor.hpp>
@@ -14,125 +15,209 @@
 
 namespace hyprdeck {
 
-    const SWorkspaceCard* selectedSpecialCard() {
-        const auto& current   = state();
-        const auto& layout    = current.layout;
-        const auto& selection = current.selection;
-        const int   index     = cardIndexByID(layout.specialCards, selection.selectedSpecialID);
+    SSelectionState CSelectionController::snapshot() const {
+        return m_state;
+    }
+
+    ESelectedRow CSelectionController::selectedRow() const {
+        return m_state.selectedRow;
+    }
+
+    WORKSPACEID CSelectionController::selectedNormalID() const {
+        return m_state.selectedNormalID;
+    }
+
+    WORKSPACEID CSelectionController::selectedSpecialID() const {
+        return m_state.selectedSpecialID;
+    }
+
+    WORKSPACEID CSelectionController::lastActiveNormalID() const {
+        return m_state.lastActiveNormalID;
+    }
+
+    WORKSPACEID CSelectionController::lastActiveSpecialID() const {
+        return m_state.lastActiveSpecialID;
+    }
+
+    void CSelectionController::resetState() {
+        m_state.selectedRow         = ESelectedRow::NORMAL;
+        m_state.selectedNormalID    = 1;
+        m_state.selectedSpecialID   = WORKSPACE_INVALID;
+        m_state.lastActiveNormalID  = WORKSPACE_INVALID;
+        m_state.lastActiveSpecialID = WORKSPACE_INVALID;
+    }
+
+    void CSelectionController::setSelectedRow(const ESelectedRow row) {
+        m_state.selectedRow = row;
+    }
+
+    void CSelectionController::setSelectedNormalID(const WORKSPACEID id) {
+        m_state.selectedNormalID = id;
+    }
+
+    void CSelectionController::setSelectedSpecialID(const WORKSPACEID id) {
+        m_state.selectedSpecialID = id;
+    }
+
+    void CSelectionController::setLastActiveNormalID(const WORKSPACEID id) {
+        m_state.lastActiveNormalID = id;
+    }
+
+    void CSelectionController::setLastActiveSpecialID(const WORKSPACEID id) {
+        m_state.lastActiveSpecialID = id;
+    }
+
+    void CSelectionController::setActiveSelection(const WORKSPACEID activeNormalID, const WORKSPACEID activeSpecialID) {
+        m_state.selectedNormalID    = activeNormalID;
+        m_state.selectedSpecialID   = activeSpecialID;
+        m_state.selectedRow         = activeSpecialID != WORKSPACE_INVALID ? ESelectedRow::SPECIAL : ESelectedRow::NORMAL;
+        m_state.lastActiveNormalID  = activeNormalID;
+        m_state.lastActiveSpecialID = activeSpecialID;
+    }
+
+    void CSelectionController::ensureSelection(const PHLMONITOR& monitor) {
+        const auto& cards        = activePlugin()->layout().cards();
+        const auto& specialCards = activePlugin()->layout().specialCards();
+        auto&       selection    = m_state;
+
+        if (cards.empty()) {
+            selection.selectedNormalID = WORKSPACE_INVALID;
+            if (selection.selectedRow == ESelectedRow::NORMAL && !specialCards.empty())
+                selection.selectedRow = ESelectedRow::SPECIAL;
+        } else if (activePlugin()->workspaces().cardIndexByID(cards, selection.selectedNormalID) < 0) {
+            const auto activeID = activePlugin()->workspaces().activeNormalWorkspaceID(monitor);
+            selection.selectedNormalID = activePlugin()->workspaces().cardIndexByID(cards, activeID) >= 0 ? activeID : cards.front().id;
+        }
+
+        if (!specialCards.empty()) {
+            if (activePlugin()->workspaces().cardIndexByID(specialCards, selection.selectedSpecialID) >= 0)
+                return;
+
+            const auto activeSpecial = monitor->m_activeSpecialWorkspace;
+            if (activeSpecial && activePlugin()->workspaces().cardIndexByID(specialCards, activeSpecial->m_id) >= 0)
+                selection.selectedSpecialID = activeSpecial->m_id;
+            else
+                selection.selectedSpecialID = specialCards.front().id;
+
+            return;
+        }
+
+        selection.selectedSpecialID = WORKSPACE_INVALID;
+        if (selection.selectedRow == ESelectedRow::SPECIAL)
+            selection.selectedRow = ESelectedRow::NORMAL;
+    }
+
+    const SWorkspaceCard* CSelectionController::selectedSpecialCard() const {
+        const auto& specialCards = activePlugin()->layout().specialCards();
+        const auto& selection = m_state;
+        const int   index     = activePlugin()->workspaces().cardIndexByID(specialCards, selection.selectedSpecialID);
         if (index < 0)
             return nullptr;
 
-        return &layout.specialCards[index];
+        return &specialCards[index];
     }
 
-    const SWorkspaceCard* selectedNormalCard() {
-        const auto& current   = state();
-        const auto& layout    = current.layout;
-        const auto& selection = current.selection;
-        const int   index     = cardIndexByID(layout.cards, selection.selectedNormalID);
+    const SWorkspaceCard* CSelectionController::selectedNormalCard() const {
+        const auto& cards     = activePlugin()->layout().cards();
+        const auto& selection = m_state;
+        const int   index     = activePlugin()->workspaces().cardIndexByID(cards, selection.selectedNormalID);
         if (index < 0)
             return nullptr;
 
-        return &layout.cards[index];
+        return &cards[index];
     }
 
-    std::string selectedSpecialWorkspaceLabel() {
+    std::string CSelectionController::selectedSpecialWorkspaceLabel() const {
         const auto* card = selectedSpecialCard();
         if (!card || !card->workspace)
             return "";
 
-        return specialWorkspaceLabel(card->workspace);
+        return activePlugin()->workspaces().specialWorkspaceLabel(card->workspace);
     }
 
-    void selectWorkspaceAt(const Vector2D& position, const PHLMONITOR& monitor) {
-        const auto card = cardAt(position);
+    void CSelectionController::selectWorkspaceAt(const Vector2D& position, const PHLMONITOR& monitor) {
+        const auto card = activePlugin()->layout().cardAt(position);
         if (!card) {
-            closeOverview();
+            activePlugin()->overview().close();
             return;
         }
 
-        if (!card->special && (cardIsActive(*card, monitor) || cardIsSelected(*card))) {
+        if (!card->special && (activePlugin()->workspaces().cardIsActive(*card, monitor) || activePlugin()->workspaces().cardIsSelected(*card))) {
             monitor->setSpecialWorkspace(nullptr);
-            closeOverview();
+            activePlugin()->overview().close();
             return;
         }
 
-        switchWorkspaceCard(*card, monitor);
+        activePlugin()->navigator().switchWorkspaceCard(*card, monitor);
     }
 
-    void selectRow(const ESelectedRow row, const PHLMONITOR& monitor) {
-        auto& current   = state();
-        auto& layout    = current.layout;
-        auto& selection = current.selection;
-        resetNamingPromptState();
+    void CSelectionController::selectRow(const ESelectedRow row, const PHLMONITOR& monitor) {
+        auto& selection = m_state;
+        activePlugin()->naming().resetPromptState();
 
-        recalculateCards(monitor);
+        activePlugin()->layout().recalculateCards(monitor);
 
-        if (row == ESelectedRow::SPECIAL && layout.specialCards.empty()) {
-            createSimpleSpecialWorkspace(monitor);
+        if (row == ESelectedRow::SPECIAL && activePlugin()->layout().specialCardsEmpty()) {
+            activePlugin()->navigator().createSimpleSpecialWorkspace(monitor);
             return;
         }
 
         selection.selectedRow = row;
-        invalidateLayout();
+        activePlugin()->layout().invalidate();
         ensureSelection(monitor);
 
         if (selection.selectedRow == ESelectedRow::SPECIAL)
-            centerSpecialCard(cardIndexByID(layout.specialCards, selection.selectedSpecialID));
+            activePlugin()->layout().centerSpecialCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), selection.selectedSpecialID));
         else
-            centerNormalCard(cardIndexByID(layout.cards, selection.selectedNormalID));
+            activePlugin()->layout().centerNormalCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().cards(), selection.selectedNormalID));
 
-        g_pHyprRenderer->damageMonitor(monitor);
+        activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    void toggleSelection(const PHLMONITOR& monitor) {
-        recalculateCards(monitor);
+    void CSelectionController::toggleSelection(const PHLMONITOR& monitor) {
+        activePlugin()->layout().recalculateCards(monitor);
         ensureSelection(monitor);
 
-        auto& current = state();
-
-        auto& selection = current.selection;
+        auto& selection = m_state;
         if (selection.selectedRow == ESelectedRow::NORMAL) {
             if (monitor->m_activeSpecialWorkspace)
                 monitor->setSpecialWorkspace(nullptr);
 
             if (const auto* card = selectedNormalCard())
-                switchWorkspaceCard(*card, monitor);
+                activePlugin()->navigator().switchWorkspaceCard(*card, monitor);
             else {
-                invalidateLayout();
-                g_pHyprRenderer->damageMonitor(monitor);
+                activePlugin()->layout().invalidate();
+                activePlugin()->hyprland().damageMonitor(monitor);
             }
             return;
         }
 
         if (const auto* card = selectedSpecialCard())
-            switchWorkspaceCard(*card, monitor);
+            activePlugin()->navigator().switchWorkspaceCard(*card, monitor);
         else {
-            invalidateLayout();
-            g_pHyprRenderer->damageMonitor(monitor);
+            activePlugin()->layout().invalidate();
+            activePlugin()->hyprland().damageMonitor(monitor);
         }
     }
 
-    void openSelection(const PHLMONITOR& monitor) {
-        recalculateCards(monitor);
+    void CSelectionController::openSelection(const PHLMONITOR& monitor) {
+        activePlugin()->layout().recalculateCards(monitor);
         ensureSelection(monitor);
 
-        auto& current   = state();
-        auto& layout    = current.layout;
-        auto& selection = current.selection;
+        auto& selection = m_state;
         if (selection.selectedRow == ESelectedRow::NORMAL) {
             if (monitor->m_activeSpecialWorkspace)
                 monitor->setSpecialWorkspace(nullptr);
 
             if (const auto* card = selectedNormalCard()) {
-                if (switchWorkspaceCard(*card, monitor))
-                    closeOverview();
+                if (activePlugin()->navigator().switchWorkspaceCard(*card, monitor))
+                    activePlugin()->overview().close();
             } else
-                closeOverview();
+                activePlugin()->overview().close();
             return;
         }
 
-        if (layout.specialCards.empty())
+        if (activePlugin()->layout().specialCardsEmpty())
             return;
 
         if (const auto* card = selectedSpecialCard()) {
@@ -140,48 +225,46 @@ namespace hyprdeck {
                 monitor->setSpecialWorkspace(card->workspace);
         }
 
-        closeOverview();
+        activePlugin()->overview().close();
     }
 
-    void switchNormalWorkspaceByID(const WORKSPACEID id, const PHLMONITOR& monitor) {
+    void CSelectionController::switchNormalWorkspaceByID(const WORKSPACEID id, const PHLMONITOR& monitor) {
         if (id < 1)
             return;
 
-        if (id == activeNormalWorkspaceID(monitor)) {
+        if (id == activePlugin()->workspaces().activeNormalWorkspaceID(monitor)) {
             if (monitor->m_activeSpecialWorkspace)
                 monitor->setSpecialWorkspace(nullptr);
 
-            closeOverview();
+            activePlugin()->overview().close();
             return;
         }
 
-        const auto workspace = g_pCompositor->getWorkspaceByID(id);
-        switchWorkspaceCard(
+        const auto workspace = activePlugin()->hyprland().workspaceByID(id);
+        activePlugin()->navigator().switchWorkspaceCard(
             SWorkspaceCard{
                 .id        = id,
-                .workspace = isNormalWorkspace(workspace) ? workspace : nullptr,
+                .workspace = activePlugin()->workspaces().isNormalWorkspace(workspace) ? workspace : nullptr,
                 .label     = std::to_string(id),
                 .special   = false,
             },
             monitor);
 
-        recalculateCards(monitor);
-        centerNormalCard(cardIndexByID(state().layout.cards, id));
-        g_pHyprRenderer->damageMonitor(monitor);
+        activePlugin()->layout().recalculateCards(monitor);
+        activePlugin()->layout().centerNormalCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().cards(), id));
+        activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    void closeSelectedWorkspaceWindows(const PHLMONITOR& monitor) {
-        recalculateCards(monitor);
+    void CSelectionController::closeSelectedWorkspaceWindows(const PHLMONITOR& monitor) {
+        activePlugin()->layout().recalculateCards(monitor);
 
-        auto& current   = state();
-        auto& layout    = current.layout;
-        auto& selection = current.selection;
+        auto& selection = m_state;
         if (selection.selectedRow == ESelectedRow::NORMAL) {
             const auto* card = selectedNormalCard();
-            if (!card || !isNormalWorkspace(card->workspace))
+            if (!card || !activePlugin()->workspaces().isNormalWorkspace(card->workspace))
                 return;
 
-            openCloseNormalWorkspaceConfirmation(card->workspace->m_id, monitor);
+            activePlugin()->confirmation().openCloseNormalWorkspaceConfirmation(card->workspace->m_id, monitor);
             return;
         }
 
@@ -189,9 +272,9 @@ namespace hyprdeck {
         if (!card || !card->workspace)
             return;
 
-        const int oldIndex = cardIndexByID(layout.specialCards, selection.selectedSpecialID);
+        const int oldIndex = activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), selection.selectedSpecialID);
 
-        closeWorkspaceWindows(card->workspace);
+        activePlugin()->navigator().closeWorkspaceWindows(card->workspace);
 
         if (monitor->m_activeSpecialWorkspace == card->workspace)
             monitor->setSpecialWorkspace(nullptr);
@@ -199,43 +282,41 @@ namespace hyprdeck {
         selection.selectedRow       = ESelectedRow::SPECIAL;
         selection.selectedSpecialID = WORKSPACE_INVALID;
 
-        invalidateLayout();
+        activePlugin()->layout().invalidate();
 
-        recalculateCards(monitor);
+        activePlugin()->layout().recalculateCards(monitor);
 
-        if (layout.specialCards.empty()) {
+        if (activePlugin()->layout().specialCardsEmpty()) {
             selection.selectedRow = ESelectedRow::NORMAL;
         } else {
             const int nextIndex = oldIndex <= 0 ? 0 : oldIndex - 1;
 
-            selection.selectedSpecialID = layout.specialCards[nextIndex].id;
-            centerSpecialCard(nextIndex);
+            selection.selectedSpecialID = activePlugin()->layout().specialCards()[nextIndex].id;
+            activePlugin()->layout().centerSpecialCard(nextIndex);
         }
 
-        g_pHyprRenderer->damageMonitor(monitor);
+        activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    void moveSelection(const int direction, const PHLMONITOR& monitor) {
-        recalculateCards(monitor);
+    void CSelectionController::moveSelection(const int direction, const PHLMONITOR& monitor) {
+        activePlugin()->layout().recalculateCards(monitor);
 
-        auto& current   = state();
-        auto& layout    = current.layout;
-        auto& selection = current.selection;
-        if (selection.selectedRow == ESelectedRow::SPECIAL && layout.specialCards.empty()) {
+        auto& selection = m_state;
+        if (selection.selectedRow == ESelectedRow::SPECIAL && activePlugin()->layout().specialCardsEmpty()) {
             selection.selectedRow = ESelectedRow::NORMAL;
-            invalidateLayout();
+            activePlugin()->layout().invalidate();
             return;
         }
 
         const bool special = selection.selectedRow == ESelectedRow::SPECIAL;
-        auto&      cards   = special ? layout.specialCards : layout.cards;
+        const auto& cards  = special ? activePlugin()->layout().specialCards() : activePlugin()->layout().cards();
 
         if (cards.empty())
             return;
 
-        int index = cardIndexByID(cards, special ? selection.selectedSpecialID : selection.selectedNormalID);
+        int index = activePlugin()->workspaces().cardIndexByID(cards, special ? selection.selectedSpecialID : selection.selectedNormalID);
         if (!special) {
-            const int activeIndex = cardIndexByID(cards, activeNormalWorkspaceID(monitor));
+            const int activeIndex = activePlugin()->workspaces().cardIndexByID(cards, activePlugin()->workspaces().activeNormalWorkspaceID(monitor));
             if (activeIndex >= 0 && index != activeIndex)
                 index = activeIndex;
         }
@@ -249,14 +330,14 @@ namespace hyprdeck {
                 return;
 
             selection.selectedSpecialID = cards[nextIndex].id;
-            invalidateLayout();
-            centerSpecialCard(nextIndex);
-            g_pHyprRenderer->damageMonitor(monitor);
+            activePlugin()->layout().invalidate();
+            activePlugin()->layout().centerSpecialCard(nextIndex);
+            activePlugin()->hyprland().damageMonitor(monitor);
             return;
         }
 
         const auto* target = &cards[index];
-        if (cardIsActive(*target, monitor)) {
+        if (activePlugin()->workspaces().cardIsActive(*target, monitor)) {
             const int nextIndex = std::clamp(index + direction, 0, static_cast<int>(cards.size()) - 1);
             if (nextIndex == index)
                 return;
@@ -266,26 +347,24 @@ namespace hyprdeck {
         }
 
         selection.selectedNormalID = target->id;
-        invalidateLayout();
-        centerNormalCard(index);
+        activePlugin()->layout().invalidate();
+        activePlugin()->layout().centerNormalCard(index);
 
-        switchWorkspaceCard(*target, monitor);
+        activePlugin()->navigator().switchWorkspaceCard(*target, monitor);
     }
 
-    void jumpSelection(const int direction, const PHLMONITOR& monitor) {
-        recalculateCards(monitor);
+    void CSelectionController::jumpSelection(const int direction, const PHLMONITOR& monitor) {
+        activePlugin()->layout().recalculateCards(monitor);
 
-        auto& current   = state();
-        auto& layout    = current.layout;
-        auto& selection = current.selection;
-        if (selection.selectedRow == ESelectedRow::SPECIAL && layout.specialCards.empty()) {
+        auto& selection = m_state;
+        if (selection.selectedRow == ESelectedRow::SPECIAL && activePlugin()->layout().specialCardsEmpty()) {
             selection.selectedRow = ESelectedRow::NORMAL;
-            invalidateLayout();
+            activePlugin()->layout().invalidate();
             return;
         }
 
         const bool special = selection.selectedRow == ESelectedRow::SPECIAL;
-        auto&      cards   = special ? layout.specialCards : layout.cards;
+        const auto& cards  = special ? activePlugin()->layout().specialCards() : activePlugin()->layout().cards();
 
         if (cards.empty())
             return;
@@ -294,21 +373,21 @@ namespace hyprdeck {
 
         if (special) {
             selection.selectedSpecialID = cards[index].id;
-            invalidateLayout();
-            centerSpecialCard(index);
-            g_pHyprRenderer->damageMonitor(monitor);
+            activePlugin()->layout().invalidate();
+            activePlugin()->layout().centerSpecialCard(index);
+            activePlugin()->hyprland().damageMonitor(monitor);
             return;
         }
 
         const auto& target         = cards[index];
         selection.selectedNormalID = target.id;
-        invalidateLayout();
-        centerNormalCard(index);
+        activePlugin()->layout().invalidate();
+        activePlugin()->layout().centerNormalCard(index);
 
-        if (cardIsActive(target, monitor))
-            g_pHyprRenderer->damageMonitor(monitor);
+        if (activePlugin()->workspaces().cardIsActive(target, monitor))
+            activePlugin()->hyprland().damageMonitor(monitor);
         else
-            switchWorkspaceCard(target, monitor);
+            activePlugin()->navigator().switchWorkspaceCard(target, monitor);
     }
 
 } // namespace hyprdeck

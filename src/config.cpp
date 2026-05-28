@@ -5,17 +5,16 @@
 #include "strings.hpp"
 
 #include <algorithm>
-#include <config/ConfigValue.hpp>
-
+#include <optional>
 #include <string_view>
 
 namespace hyprdeck {
     namespace {
 
-        const std::vector<std::string>& configuredCommaSeparatedNames(const std::string& rawConfig, std::string& cachedRaw, std::vector<std::string>& cachedNames,
-                                                                      const bool stripSpecialPrefix, const bool normalizeLower, const bool expandEnv) {
-            if (rawConfig == cachedRaw)
-                return cachedNames;
+        const std::vector<std::string>& configuredCommaSeparatedNames(const std::string& rawConfig, CConfigStore::SNameCache& cache,
+                                                                       const bool stripSpecialPrefix, const bool normalizeLower, const bool expandEnv) {
+            if (rawConfig == cache.raw)
+                return cache.names;
 
             std::vector<std::string> names;
             const auto               expandedConfig = expandEnv ? env::expandVariables(rawConfig) : rawConfig;
@@ -41,39 +40,44 @@ namespace hyprdeck {
                 raw.remove_prefix(comma + 1);
             }
 
-            cachedRaw   = rawConfig;
-            cachedNames = std::move(names);
-            return cachedNames;
+            cache.raw   = rawConfig;
+            cache.names = std::move(names);
+            return cache.names;
+        }
+
+        template <typename T>
+        CConfigValue<T>& configValue(std::optional<CConfigValue<T>>& slot, const char* key) {
+            if (!slot)
+                slot.emplace(key);
+
+            return *slot;
         }
 
     } // namespace
 
-    std::vector<std::string> configuredSpecialWorkspaceNames() {
-        static const auto               PNAMES = CConfigValue<std::string>("plugin:hyprdeck:named_special_workspaces");
-        static std::string              cachedRaw;
-        static std::vector<std::string> cachedNames;
-
-        return configuredCommaSeparatedNames(*PNAMES, cachedRaw, cachedNames, true, false, false);
+    std::vector<std::string> CConfigStore::specialWorkspaceNames() {
+        auto& value = configValue(m_namedSpecialWorkspaces, "plugin:hyprdeck:named_special_workspaces");
+        return configuredCommaSeparatedNames(*value, m_namedSpecialWorkspaceCache, true, false, false);
     }
 
-    double configuredDefaultZoom() {
-        static const auto PDEFAULTZOOM = CConfigValue<Config::FLOAT>("plugin:hyprdeck:default_zoom");
-        return std::clamp(static_cast<double>(*PDEFAULTZOOM), MIN_ZOOM, MAX_ZOOM);
+    double CConfigStore::defaultZoom() {
+        auto& value = configValue(m_defaultZoom, "plugin:hyprdeck:default_zoom");
+        return std::clamp(static_cast<double>(*value), MIN_ZOOM, MAX_ZOOM);
     }
 
-    bool activeWorkspaceBackground() {
-        static const auto PACTIVEBACKGROUND = CConfigValue<Config::BOOL>("plugin:hyprdeck:active_workspace_background");
-        return *PACTIVEBACKGROUND;
+    bool CConfigStore::activeWorkspaceBackground() {
+        auto& value = configValue(m_activeWorkspaceBackground, "plugin:hyprdeck:active_workspace_background");
+        return *value;
     }
 
-    std::string configuredFontFamily() {
-        static const auto PFONT = CConfigValue<std::string>("plugin:hyprdeck:font_family");
-        return *PFONT;
+    std::string CConfigStore::fontFamily() {
+        auto& value = configValue(m_fontFamily, "plugin:hyprdeck:font_family");
+        return *value;
     }
 
-    EShortcutsFooterMode configuredShortcutsFooterMode() {
-        static const auto PMODE = CConfigValue<std::string>("plugin:hyprdeck:shortcuts_footer");
-        const auto        mode  = strings::lower(*PMODE);
+    EShortcutsFooterMode CConfigStore::shortcutsFooterMode() {
+        auto&      value = configValue(m_shortcutsFooterMode, "plugin:hyprdeck:shortcuts_footer");
+        const auto mode  = strings::lower(*value);
 
         if (mode == "hint")
             return EShortcutsFooterMode::HINT;
@@ -83,25 +87,19 @@ namespace hyprdeck {
         return EShortcutsFooterMode::FULL;
     }
 
-    const std::vector<std::string>& configuredBlockingOverlayNames() {
-        static const auto               PNAMES = CConfigValue<std::string>("plugin:hyprdeck:blocking_overlays");
-        static std::string              cachedRaw;
-        static std::vector<std::string> cachedNames;
-        return configuredCommaSeparatedNames(*PNAMES, cachedRaw, cachedNames, false, true, true);
+    const std::vector<std::string>& CConfigStore::blockingOverlayNames() {
+        auto& value = configValue(m_blockingOverlays, "plugin:hyprdeck:blocking_overlays");
+        return configuredCommaSeparatedNames(*value, m_blockingOverlayCache, false, true, true);
     }
 
-    const std::vector<std::string>& configuredNonBlockingOverlayNames() {
-        static const auto               PNAMES = CConfigValue<std::string>("plugin:hyprdeck:non_blocking_overlays");
-        static std::string              cachedRaw;
-        static std::vector<std::string> cachedNames;
-        return configuredCommaSeparatedNames(*PNAMES, cachedRaw, cachedNames, false, true, true);
+    const std::vector<std::string>& CConfigStore::nonBlockingOverlayNames() {
+        auto& value = configValue(m_nonBlockingOverlays, "plugin:hyprdeck:non_blocking_overlays");
+        return configuredCommaSeparatedNames(*value, m_nonBlockingOverlayCache, false, true, true);
     }
 
-    const std::vector<std::string>& configuredDisplayCaptureOverlayNames() {
-        static const auto               PNAMES = CConfigValue<std::string>("plugin:hyprdeck:display_capture_overlays");
-        static std::string              cachedRaw;
-        static std::vector<std::string> cachedNames;
-        return configuredCommaSeparatedNames(*PNAMES, cachedRaw, cachedNames, false, true, true);
+    const std::vector<std::string>& CConfigStore::displayCaptureOverlayNames() {
+        auto& value = configValue(m_displayCaptureOverlays, "plugin:hyprdeck:display_capture_overlays");
+        return configuredCommaSeparatedNames(*value, m_displayCaptureOverlayCache, false, true, true);
     }
 
 } // namespace hyprdeck

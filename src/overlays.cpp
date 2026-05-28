@@ -1,6 +1,7 @@
 #include "overlays.hpp"
 
 #include "config.hpp"
+#include "plugin.hpp"
 #include "strings.hpp"
 
 #include <Compositor.hpp>
@@ -48,17 +49,17 @@ namespace hyprdeck {
 
         bool namespaceMatchesInputOverlay(std::string_view value) {
             static constexpr std::array<std::string_view, 10> BUILT_IN_NAMES = {"rofi", "slurp", "selection", "wofi", "fuzzel", "bemenu", "tofi", "walker", "anyrun", "sherlock"};
-            return namespaceMatches(value, BUILT_IN_NAMES, configuredBlockingOverlayNames());
+            return namespaceMatches(value, BUILT_IN_NAMES, activePlugin()->config().blockingOverlayNames());
         }
 
         bool namespaceMatchesNotificationOverlay(std::string_view value) {
             static constexpr std::array<std::string_view, 8> BUILT_IN_NAMES = {"dunst", "mako", "swaync", "fnott", "notification", "notify", "toast", "wired"};
-            return namespaceMatches(value, BUILT_IN_NAMES, configuredNonBlockingOverlayNames());
+            return namespaceMatches(value, BUILT_IN_NAMES, activePlugin()->config().nonBlockingOverlayNames());
         }
 
         bool namespaceMatchesHiddenCaptureOverlay(std::string_view value) {
             static constexpr std::array<std::string_view, 2> BUILT_IN_NAMES = {"still", "grim"};
-            return namespaceMatches(value, BUILT_IN_NAMES, configuredDisplayCaptureOverlayNames());
+            return namespaceMatches(value, BUILT_IN_NAMES, activePlugin()->config().displayCaptureOverlayNames());
         }
 
         bool layerIsNotificationOverlay(const PHLLS& layer) {
@@ -93,10 +94,7 @@ namespace hyprdeck {
         }
 
         bool boxContainsPointer(const CBox& box) {
-            if (!g_pInputManager)
-                return false;
-
-            return box.containsPoint(g_pInputManager->getMouseCoordsInternal());
+            return box.containsPoint(activePlugin()->hyprland().mouseCoords());
         }
 
         bool pointerOverLayer(const PHLLS& layer, const PHLMONITOR& monitor) {
@@ -115,28 +113,28 @@ namespace hyprdeck {
 
     } // namespace
 
-    bool layerIsExternalOverlay(const PHLLS& layer) {
+    bool COverlayPolicy::layerIsExternalOverlay(const PHLLS& layer) const {
         return layer && (layer->m_interactivity != 0 || namespaceMatchesInputOverlay(layer->m_namespace) || namespaceMatchesNotificationOverlay(layer->m_namespace) ||
                          namespaceMatchesHiddenCaptureOverlay(layer->m_namespace));
     }
 
-    bool layerShouldRenderOverOverview(const PHLLS& layer) {
+    bool COverlayPolicy::layerShouldRenderOverOverview(const PHLLS& layer) const {
         if (!layer || !layerIsExternalOverlay(layer))
             return false;
 
         return !namespaceMatchesHiddenCaptureOverlay(layer->m_namespace);
     }
 
-    bool windowIsExternalOverlay(const PHLWINDOW& window) {
+    bool COverlayPolicy::windowIsExternalOverlay(const PHLWINDOW& window) const {
         return window && (namespaceMatchesInputOverlay(window->m_class) || namespaceMatchesInputOverlay(window->m_initialClass) ||
                           namespaceMatchesNotificationOverlay(window->m_class) || namespaceMatchesNotificationOverlay(window->m_initialClass));
     }
 
-    bool externalOverlayActive(const PHLMONITOR& monitor) {
+    bool COverlayPolicy::externalOverlayActive(const PHLMONITOR& monitor) const {
         if (externalOverlayLayerActive(monitor))
             return true;
 
-        for (const auto& window : g_pCompositor->m_windows) {
+        for (const auto& window : activePlugin()->hyprland().windows()) {
             if (windowVisibleOnMonitor(window, monitor) && windowBlocksOverviewInput(window))
                 return true;
         }
@@ -144,7 +142,7 @@ namespace hyprdeck {
         return false;
     }
 
-    bool pointerOverNotificationOverlay(const PHLMONITOR& monitor) {
+    bool COverlayPolicy::pointerOverNotificationOverlay(const PHLMONITOR& monitor) const {
         for (const auto& layerRefs : monitor->m_layerSurfaceLayers) {
             for (const auto& layerRef : layerRefs) {
                 const auto layer = layerRef.lock();
@@ -153,7 +151,7 @@ namespace hyprdeck {
             }
         }
 
-        for (const auto& window : g_pCompositor->m_windows) {
+        for (const auto& window : activePlugin()->hyprland().windows()) {
             if (windowIsNotificationOverlay(window) && pointerOverWindow(window, monitor))
                 return true;
         }

@@ -1,6 +1,7 @@
 #include "workspaces.hpp"
 #include "SharedDefs.hpp"
 #include "macros.hpp"
+#include "plugin.hpp"
 #include "strings.hpp"
 
 #include <Compositor.hpp>
@@ -18,16 +19,16 @@ namespace hyprdeck {
             if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden())
                 return false;
 
-            return windowBelongsToMonitor(window, monitor) && isNormalWorkspace(window->m_workspace);
+            return activePlugin()->workspaces().windowBelongsToMonitor(window, monitor) && activePlugin()->workspaces().isNormalWorkspace(window->m_workspace);
         }
 
     } // namespace
 
-    bool isNormalWorkspace(const PHLWORKSPACE& workspace) {
+    bool CWorkspaceRepository::isNormalWorkspace(const PHLWORKSPACE& workspace) const {
         return workspace && !workspace->m_isSpecialWorkspace && workspace->m_id > 0;
     }
 
-    bool windowBelongsToMonitor(const PHLWINDOW& window, const PHLMONITOR& monitor) {
+    bool CWorkspaceRepository::windowBelongsToMonitor(const PHLWINDOW& window, const PHLMONITOR& monitor) const {
         if (!window)
             return false;
 
@@ -35,15 +36,15 @@ namespace hyprdeck {
         return windowMonitor && windowMonitor->m_id == monitor->m_id;
     }
 
-    bool windowBelongsToWorkspace(const PHLWINDOW& window, const PHLWORKSPACE& workspace) {
+    bool CWorkspaceRepository::windowBelongsToWorkspace(const PHLWINDOW& window, const PHLWORKSPACE& workspace) const {
         return window && workspace && window->m_workspace == workspace;
     }
 
-    bool workspaceHasAnyWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) {
+    bool CWorkspaceRepository::workspaceHasAnyWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const {
         if (!workspace)
             return false;
 
-        for (const auto& window : g_pCompositor->m_windows) {
+        for (const auto& window : activePlugin()->hyprland().windows()) {
             if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden())
                 continue;
 
@@ -54,14 +55,14 @@ namespace hyprdeck {
         return false;
     }
 
-    WORKSPACEID specialWorkspaceId(const PHLWORKSPACE& workspace) {
+    WORKSPACEID CWorkspaceRepository::specialWorkspaceId(const PHLWORKSPACE& workspace) const {
         if (!workspace)
             return WORKSPACE_INVALID;
 
         return workspace->m_id;
     }
 
-    std::string specialWorkspaceLabel(const PHLWORKSPACE& workspace) {
+    std::string CWorkspaceRepository::specialWorkspaceLabel(const PHLWORKSPACE& workspace) const {
         if (!workspace)
             return "special";
 
@@ -70,9 +71,9 @@ namespace hyprdeck {
         return label.empty() ? "special" : label;
     }
 
-    std::vector<PHLWORKSPACE> specialWorkspacesToShow(const PHLMONITOR& monitor) {
+    std::vector<PHLWORKSPACE> CWorkspaceRepository::specialWorkspacesToShow(const PHLMONITOR& monitor) const {
         std::vector<PHLWORKSPACE> workspaces;
-        for (const auto& workspace : g_pCompositor->getWorkspacesCopy()) {
+        for (const auto& workspace : activePlugin()->hyprland().workspacesCopy()) {
             if (!workspace || !workspace->m_isSpecialWorkspace)
                 continue;
 
@@ -86,14 +87,14 @@ namespace hyprdeck {
             workspaces.push_back(workspace);
         }
 
-        std::ranges::sort(workspaces, [](const auto& lhs, const auto& rhs) { return specialWorkspaceId(lhs) < specialWorkspaceId(rhs); });
+        std::ranges::sort(workspaces, [this](const auto& lhs, const auto& rhs) { return specialWorkspaceId(lhs) < specialWorkspaceId(rhs); });
         return workspaces;
     }
 
-    WORKSPACEID lastWorkspaceToShow(const PHLMONITOR& monitor) {
+    WORKSPACEID CWorkspaceRepository::lastWorkspaceToShow(const PHLMONITOR& monitor) const {
         WORKSPACEID highestOccupied = 0;
 
-        for (const auto& window : g_pCompositor->m_windows) {
+        for (const auto& window : activePlugin()->hyprland().windows()) {
             if (!shouldCountWindow(window, monitor))
                 continue;
 
@@ -103,21 +104,21 @@ namespace hyprdeck {
         return std::max<WORKSPACEID>({static_cast<long>(3), highestOccupied + 1, activeNormalWorkspaceID(monitor) + 1});
     }
 
-    WORKSPACEID activeNormalWorkspaceID(const PHLMONITOR& monitor) {
+    WORKSPACEID CWorkspaceRepository::activeNormalWorkspaceID(const PHLMONITOR& monitor) const {
         if (isNormalWorkspace(monitor->m_activeWorkspace))
             return monitor->m_activeWorkspace->m_id;
 
         return 1;
     }
 
-    WORKSPACEID activeSpecialWorkspaceID(const PHLMONITOR& monitor) {
+    WORKSPACEID CWorkspaceRepository::activeSpecialWorkspaceID(const PHLMONITOR& monitor) const {
         if (monitor->m_activeSpecialWorkspace)
             return monitor->m_activeSpecialWorkspace->m_id;
 
         return WORKSPACE_INVALID;
     }
 
-    int cardIndexByID(const std::vector<SWorkspaceCard>& cards, const WORKSPACEID id) {
+    int CWorkspaceRepository::cardIndexByID(const std::vector<SWorkspaceCard>& cards, const WORKSPACEID id) const {
         for (size_t i = 0; i < cards.size(); ++i) {
             if (cards[i].id == id)
                 return static_cast<int>(i);
@@ -126,51 +127,18 @@ namespace hyprdeck {
         return -1;
     }
 
-    bool cardIsActive(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
+    bool CWorkspaceRepository::cardIsActive(const SWorkspaceCard& card, const PHLMONITOR& monitor) const {
         if (card.special)
             return card.workspace && monitor->m_activeSpecialWorkspace == card.workspace;
 
         return card.id == activeNormalWorkspaceID(monitor);
     }
 
-    bool cardIsSelected(const SWorkspaceCard& card) {
-        const auto& selection = state().selection;
+    bool CWorkspaceRepository::cardIsSelected(const SWorkspaceCard& card) const {
         if (card.special)
-            return selection.selectedRow == ESelectedRow::SPECIAL && card.id == selection.selectedSpecialID;
+            return activePlugin()->selection().selectedRow() == ESelectedRow::SPECIAL && card.id == activePlugin()->selection().selectedSpecialID();
 
-        return selection.selectedRow == ESelectedRow::NORMAL && card.id == selection.selectedNormalID;
-    }
-
-    void ensureSelection(const PHLMONITOR& monitor) {
-        auto& current   = state();
-        auto& layout    = current.layout;
-        auto& selection = current.selection;
-
-        if (layout.cards.empty()) {
-            selection.selectedNormalID = WORKSPACE_INVALID;
-            if (selection.selectedRow == ESelectedRow::NORMAL && !layout.specialCards.empty())
-                selection.selectedRow = ESelectedRow::SPECIAL;
-        } else if (cardIndexByID(layout.cards, selection.selectedNormalID) < 0) {
-            const auto activeID = activeNormalWorkspaceID(monitor);
-            selection.selectedNormalID = cardIndexByID(layout.cards, activeID) >= 0 ? activeID : layout.cards.front().id;
-        }
-
-        if (!layout.specialCards.empty()) {
-            if (cardIndexByID(layout.specialCards, selection.selectedSpecialID) >= 0)
-                return;
-
-            const auto activeSpecial = monitor->m_activeSpecialWorkspace;
-            if (activeSpecial && cardIndexByID(layout.specialCards, activeSpecial->m_id) >= 0)
-                selection.selectedSpecialID = activeSpecial->m_id;
-            else
-                selection.selectedSpecialID = layout.specialCards.front().id;
-
-            return;
-        }
-
-        selection.selectedSpecialID = WORKSPACE_INVALID;
-        if (selection.selectedRow == ESelectedRow::SPECIAL)
-            selection.selectedRow = ESelectedRow::NORMAL;
+        return activePlugin()->selection().selectedRow() == ESelectedRow::NORMAL && card.id == activePlugin()->selection().selectedNormalID();
     }
 
 } // namespace hyprdeck

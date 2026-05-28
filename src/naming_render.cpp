@@ -2,11 +2,10 @@
 
 #include "colors.hpp"
 #include "config.hpp"
-#include "layout.hpp"
-#include "state.hpp"
+#include "plugin.hpp"
+#include "runtime_types.hpp"
 #include "textinput.hpp"
 #include "textinput_render.hpp"
-#include "ui.hpp"
 
 #include <helpers/Monitor.hpp>
 #include <render/Texture.hpp>
@@ -19,23 +18,23 @@ namespace hyprdeck {
     namespace {
 
         SP<Render::ITexture> labelTexture(const std::string& label, const int fontSize = 26, const int weight = 700, const ETextCacheMode cacheMode = ETextCacheMode::PERSISTENT) {
-            return textTexture("naming", label, colors::textPrimary(), fontSize, weight, cacheMode);
+            return activePlugin()->renderServices().textTexture("naming", label, colors::textPrimary(), fontSize, weight, cacheMode);
         }
 
         void renderComponentBox(const CBox& box) {
-            addRect(expanded(box, 2.0), colors::componentBorder());
-            addRect(box, colors::componentBackground());
+            activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(box, 2.0), colors::componentBorder());
+            activePlugin()->renderServices().addRect(box, colors::componentBackground());
         }
 
     } // namespace
 
-    void renderNamingPrompt(const PHLMONITOR& monitor) {
-        const auto& naming = state().naming;
+    void CNamingController::render(const PHLMONITOR& monitor) const {
+        const auto& naming = m_state;
         if (naming.promptMode == EPromptMode::NONE)
             return;
 
         const bool createPrompt = naming.promptMode == EPromptMode::CREATE_SPECIAL;
-        const auto names        = createPrompt ? configuredSpecialWorkspaceNames() : std::vector<std::string>{};
+        const auto names        = createPrompt ? activePlugin()->config().specialWorkspaceNames() : std::vector<std::string>{};
 
         const auto   viewSize       = monitor->m_transformedSize;
         const double boxW           = std::min(620.0, viewSize.x * 0.70);
@@ -53,11 +52,11 @@ namespace hyprdeck {
 
         const auto title = labelTexture(createPrompt ? "Create special workspace" : "Rename special workspace", 22, 750);
         if (title && title->ok())
-            addTexture(title, CBox{box.x + 24.0, box.y + 22.0, title->m_size.x, title->m_size.y});
+            activePlugin()->renderServices().addTexture(title, CBox{box.x + 24.0, box.y + 22.0, title->m_size.x, title->m_size.y});
 
         if (showInput) {
             const CBox inputBox{box.x + 18.0, box.y + 64.0, box.w - 36.0, 42.0};
-            addRect(inputBox, colors::componentSurface());
+            activePlugin()->renderServices().addRect(inputBox, colors::componentSurface());
 
             renderTextInputLine("naming", naming.promptInput, inputBox, "", colors::textPrimary(), 20, 500);
         }
@@ -77,11 +76,11 @@ namespace hyprdeck {
             const size_t i   = first + rowIndex;
             const CBox   row{box.x + 18.0, box.y + 64.0 + inputH + (static_cast<double>(rowIndex) * rowH), box.w - 36.0, rowH - 8.0};
             if (!naming.promptCustomSelected && i == selected)
-                addRect(row, colors::componentSelected());
+                activePlugin()->renderServices().addRect(row, colors::componentSelected());
 
             const auto texture = labelTexture(names[i], 20, !naming.promptCustomSelected && i == selected ? 700 : 500);
             if (texture && texture->ok())
-                addTexture(texture, CBox{row.x + 14.0, row.y + ((row.h - texture->m_size.y) / 2.0), texture->m_size.x, texture->m_size.y});
+                activePlugin()->renderServices().addTexture(texture, CBox{row.x + 14.0, row.y + ((row.h - texture->m_size.y) / 2.0), texture->m_size.x, texture->m_size.y});
         }
     }
 

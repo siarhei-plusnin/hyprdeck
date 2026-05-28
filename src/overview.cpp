@@ -3,10 +3,12 @@
 #include "confirmation.hpp"
 #include "config.hpp"
 #include "layout.hpp"
-#include "monitors.hpp"
 #include "naming.hpp"
+#include "overlays.hpp"
+#include "plugin.hpp"
+#include "rendering.hpp"
 #include "shortcuts.hpp"
-#include "state.hpp"
+#include "runtime_types.hpp"
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
@@ -14,93 +16,127 @@
 #include <managers/PointerManager.hpp>
 #include <render/Renderer.hpp>
 
+#include <algorithm>
+#include <utility>
+
 namespace hyprdeck {
     namespace {
 
-        void resetInteractionState(SOverviewState& current) {
-            auto& interaction                = current.interaction;
-            interaction.dragging             = false;
-            interaction.dragRow              = EDragRow::NONE;
-            resetNamingPromptState();
-            resetWorkspaceFilterPromptState();
-            resetConfirmationState();
-            resetShortcutState();
+        void resetInteractionState() {
+            activePlugin()->overviewPointer().resetState();
+            activePlugin()->naming().resetPromptState();
+            activePlugin()->workspaceFilter().resetPromptState();
+            activePlugin()->confirmation().resetState();
+            activePlugin()->shortcuts().resetState();
         }
 
-        void resetSelectionState(SOverviewState& current) {
-            auto& selection                = current.selection;
-            selection.selectedRow          = ESelectedRow::NORMAL;
-            selection.selectedNormalID     = 1;
-            selection.selectedSpecialID    = WORKSPACE_INVALID;
-            selection.lastActiveNormalID   = WORKSPACE_INVALID;
-            selection.lastActiveSpecialID  = WORKSPACE_INVALID;
+        void resetSelectionState() {
+            activePlugin()->selection().resetState();
         }
 
     } // namespace
 
-    void closeOverview() {
-        auto& current = state();
-        if (!current.session.active)
+    bool COverviewController::active() const {
+        return m_session.active;
+    }
+
+    MONITORID COverviewController::monitorID() const {
+        return m_session.monitorID;
+    }
+
+    PHLMONITOR COverviewController::monitor() const {
+        if (m_session.monitorID == MONITOR_INVALID)
+            return nullptr;
+
+        return activePlugin()->hyprland().monitorFromID(m_session.monitorID);
+    }
+
+    double COverviewController::zoom() const {
+        return m_session.zoom;
+    }
+
+    void COverviewController::setZoom(const double value) {
+        m_session.zoom = std::clamp(value, MIN_ZOOM, MAX_ZOOM);
+    }
+
+    void COverviewController::close() {
+        if (!m_session.active)
             return;
 
-        const auto monitor = overviewMonitor();
+        const auto monitor = this->monitor();
 
-        current.session.active    = false;
-        current.session.monitorID = MONITOR_INVALID;
-        current.layout.cards.clear();
-        current.layout.specialCards.clear();
-        invalidateLayout();
-        resetInteractionState(current);
-        resetSelectionState(current);
+        m_session.active    = false;
+        m_session.monitorID = MONITOR_INVALID;
+        activePlugin()->layout().clearCards();
+        activePlugin()->layout().invalidate();
+        resetInteractionState();
+        resetSelectionState();
 
         if (monitor) {
-            g_pPointerManager->unlockSoftwareForMonitor(monitor);
-            g_pHyprRenderer->damageMonitor(monitor);
+            activePlugin()->hyprland().unlockSoftwarePointer(monitor);
+            activePlugin()->hyprland().damageMonitor(monitor);
         }
     }
 
-    void openOverview() {
-        const auto monitor = activeMonitor();
+    void COverviewController::open() {
+        const auto monitor = activePlugin()->hyprland().activeMonitor();
         if (!monitor)
             return;
 
-        auto& current = state();
-        if (!current.session.zoomInitialized) {
-            current.session.zoom            = configuredDefaultZoom();
-            current.session.zoomInitialized = true;
+        if (!m_session.zoomInitialized) {
+            m_session.zoom            = activePlugin()->config().defaultZoom();
+            m_session.zoomInitialized = true;
         }
 
-        auto& session                  = current.session;
-        auto& layout                   = current.layout;
-        auto& selection                = current.selection;
-        session.active                 = true;
-        layout.resetCamera             = true;
-        session.monitorID              = monitor->m_id;
-        selection.selectedNormalID     = activeNormalWorkspaceID(monitor);
-        selection.selectedSpecialID    = activeSpecialWorkspaceID(monitor);
-        selection.selectedRow          = selection.selectedSpecialID != WORKSPACE_INVALID ? ESelectedRow::SPECIAL : ESelectedRow::NORMAL;
-        selection.lastActiveNormalID   = selection.selectedNormalID;
-        selection.lastActiveSpecialID  = selection.selectedSpecialID;
-        resetInteractionState(current);
-        invalidateLayout();
+        m_session.active               = true;
+        activePlugin()->layout().setResetCamera(true);
+        m_session.monitorID            = monitor->m_id;
+        activePlugin()->selection().setActiveSelection(activePlugin()->workspaces().activeNormalWorkspaceID(monitor), activePlugin()->workspaces().activeSpecialWorkspaceID(monitor));
+        resetInteractionState();
+        activePlugin()->layout().invalidate();
 
-        g_pPointerManager->lockSoftwareForMonitor(monitor);
+        activePlugin()->hyprland().lockSoftwarePointer(monitor);
 
-        recalculateCards(monitor);
-        g_pHyprRenderer->damageMonitor(monitor);
+        activePlugin()->layout().recalculateCards(monitor);
+        activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    SDispatchResult toggleOverview(std::string) {
-        if (state().session.active)
-            closeOverview();
+    void COverviewController::onRenderStage(const eRenderStage stage) {
+        if (!m_session.active || stage != RENDER_LAST_MOMENT)
+            return;
+
+        const auto renderMonitor = activePlugin()->hyprland().renderMonitor();
+        if (!renderMonitor || renderMonitor->m_id != m_session.monitorID)
+            return;
+
+        const bool externalInputActive = activePlugin()->overlays().externalOverlayActive(renderMonitor) || activePlugin()->overlays().pointerOverNotificationOverlay(renderMonitor);
+        if (externalInputActive) {
+            if (activePlugin()->hyprland().softwarePointerLockedFor(renderMonitor))
+                activePlugin()->hyprland().unlockSoftwarePointer(renderMonitor);
+            activePlugin()->hyprland().setCursorHidden(false);
+        } else if (!activePlugin()->hyprland().softwarePointerLockedFor(renderMonitor))
+            activePlugin()->hyprland().lockSoftwarePointer(renderMonitor);
+
+        activePlugin()->renderer().renderOverview(renderMonitor);
+        if (!externalInputActive)
+            activePlugin()->renderer().renderCursorOverlay(renderMonitor);
+
+        const auto mode = activePlugin()->inputRouter().activeInputMode();
+        if (mode == EInputMode::NAMING || mode == EInputMode::FILTER || mode == EInputMode::SHORTCUTS)
+            activePlugin()->hyprland().damageMonitor(renderMonitor);
+    }
+
+    SDispatchResult COverviewController::toggle(std::string) {
+        if (m_session.active)
+            close();
         else
-            openOverview();
+            open();
 
         return SDispatchResult{.passEvent = false, .success = true};
     }
 
-    int luaToggleOverview(lua_State*) {
-        toggleOverview("");
+    int COverviewController::luaToggle(lua_State*) {
+        toggle("");
         return 0;
     }
 

@@ -6,9 +6,10 @@
 #include "naming.hpp"
 #include "navigation.hpp"
 #include "overview.hpp"
+#include "plugin.hpp"
 #include "selection.hpp"
 #include "shortcut_catalog.hpp"
-#include "state.hpp"
+#include "runtime_types.hpp"
 #include "workspace_filter.hpp"
 
 #include <algorithm>
@@ -55,28 +56,28 @@ namespace hyprdeck {
         }
 
         void setPresetZoom(const int direction, const PHLMONITOR& monitor) {
-            auto& session = state().session;
-            recalculateCards(monitor);
+            auto& overview = activePlugin()->overview();
+            activePlugin()->layout().recalculateCards(monitor);
 
             double target = ZOOM_PRESETS[0];
             if (direction > 0) {
                 target = ZOOM_PRESETS[std::size(ZOOM_PRESETS) - 1];
                 for (const double preset : ZOOM_PRESETS) {
-                    if (preset > session.zoom + 0.001) {
+                    if (preset > overview.zoom() + 0.001) {
                         target = preset;
                         break;
                     }
                 }
             } else {
                 for (int i = static_cast<int>(std::size(ZOOM_PRESETS)) - 1; i >= 0; --i) {
-                    if (ZOOM_PRESETS[i] < session.zoom - 0.001) {
+                    if (ZOOM_PRESETS[i] < overview.zoom() - 0.001) {
                         target = ZOOM_PRESETS[i];
                         break;
                     }
                 }
             }
 
-            adjustZoom(target / std::max(0.001, session.zoom), monitor);
+            activePlugin()->layout().adjustZoom(target / std::max(0.001, overview.zoom()), monitor);
         }
 
         EShortcutCommand commandForKey(const IKeyboard::SKeyEvent event, const SKeyboardModifiers& modifiers) {
@@ -86,7 +87,7 @@ namespace hyprdeck {
                 return EShortcutCommand::ZOOM_PRESET;
             if (modifiers.ctrl && event.keycode == KEY_F)
                 return EShortcutCommand::OPEN_WORKSPACE_FILTER;
-            if ((event.keycode == KEY_DELETE || (modifiers.ctrl && event.keycode == KEY_C)) && workspaceFilterApplied())
+            if ((event.keycode == KEY_DELETE || (modifiers.ctrl && event.keycode == KEY_C)) && activePlugin()->workspaceFilter().applied())
                 return EShortcutCommand::CLEAR_WORKSPACE_FILTER;
             if (normalWorkspaceKey(event.keycode) != WORKSPACE_INVALID)
                 return EShortcutCommand::SWITCH_NORMAL_WORKSPACE;
@@ -98,7 +99,7 @@ namespace hyprdeck {
                 return EShortcutCommand::OPEN_SELECTION;
             if (event.keycode == KEY_Q)
                 return EShortcutCommand::CLOSE_WORKSPACE_WINDOWS;
-            if (workspaceFilterApplied() && (event.keycode == KEY_A || event.keycode == KEY_N))
+            if (activePlugin()->workspaceFilter().applied() && (event.keycode == KEY_A || event.keycode == KEY_N))
                 return EShortcutCommand::NONE;
             if (event.keycode == KEY_A)
                 return EShortcutCommand::CREATE_SIMPLE_SPECIAL;
@@ -123,11 +124,11 @@ namespace hyprdeck {
 
     } // namespace
 
-    bool handleOverviewKeyboardKey(const IKeyboard::SKeyEvent event, const PHLMONITOR& monitor) {
+    bool COverviewKeyboardController::handleKey(const IKeyboard::SKeyEvent event, const PHLMONITOR& monitor) {
         if (event.state != WL_KEYBOARD_KEY_STATE_PRESSED)
             return false;
 
-        const auto modifiers = keyboardModifiers();
+        const auto modifiers = activePlugin()->hyprland().keyboardModifiers();
 
         if (modifiers.super) {
             return false;
@@ -135,29 +136,29 @@ namespace hyprdeck {
 
         const auto command = commandForKey(event, modifiers);
         switch (command) {
-            case EShortcutCommand::CLOSE_OVERLAY: closeOverview(); break;
+            case EShortcutCommand::CLOSE_OVERLAY: activePlugin()->overview().close(); break;
 
             case EShortcutCommand::ZOOM_PRESET: setPresetZoom(directionForKey(event.keycode), monitor); break;
 
-            case EShortcutCommand::OPEN_WORKSPACE_FILTER: openWorkspaceFilterPrompt(monitor); break;
-            case EShortcutCommand::CLEAR_WORKSPACE_FILTER: clearWorkspaceFilter(monitor); break;
+            case EShortcutCommand::OPEN_WORKSPACE_FILTER: activePlugin()->workspaceFilter().openPrompt(monitor); break;
+            case EShortcutCommand::CLEAR_WORKSPACE_FILTER: activePlugin()->workspaceFilter().clear(monitor); break;
 
-            case EShortcutCommand::SWITCH_NORMAL_WORKSPACE: switchNormalWorkspaceByID(normalWorkspaceKey(event.keycode), monitor); break;
+            case EShortcutCommand::SWITCH_NORMAL_WORKSPACE: activePlugin()->selection().switchNormalWorkspaceByID(normalWorkspaceKey(event.keycode), monitor); break;
 
-            case EShortcutCommand::MOVE_SELECTION: moveSelection(directionForKey(event.keycode), monitor); break;
-            case EShortcutCommand::JUMP_SELECTION: jumpSelection(directionForKey(event.keycode), monitor); break;
-            case EShortcutCommand::TOGGLE_SELECTION: toggleSelection(monitor); break;
-            case EShortcutCommand::OPEN_SELECTION: openSelection(monitor); break;
+            case EShortcutCommand::MOVE_SELECTION: activePlugin()->selection().moveSelection(directionForKey(event.keycode), monitor); break;
+            case EShortcutCommand::JUMP_SELECTION: activePlugin()->selection().jumpSelection(directionForKey(event.keycode), monitor); break;
+            case EShortcutCommand::TOGGLE_SELECTION: activePlugin()->selection().toggleSelection(monitor); break;
+            case EShortcutCommand::OPEN_SELECTION: activePlugin()->selection().openSelection(monitor); break;
 
-            case EShortcutCommand::CLOSE_WORKSPACE_WINDOWS: closeSelectedWorkspaceWindows(monitor); break;
+            case EShortcutCommand::CLOSE_WORKSPACE_WINDOWS: activePlugin()->selection().closeSelectedWorkspaceWindows(monitor); break;
 
-            case EShortcutCommand::CREATE_SIMPLE_SPECIAL: createSimpleSpecialWorkspace(monitor); break;
-            case EShortcutCommand::CREATE_NAMED_SPECIAL: openNamedSpecialPrompt(monitor); break;
+            case EShortcutCommand::CREATE_SIMPLE_SPECIAL: activePlugin()->navigator().createSimpleSpecialWorkspace(monitor); break;
+            case EShortcutCommand::CREATE_NAMED_SPECIAL: activePlugin()->naming().openNamedSpecialPrompt(monitor); break;
 
-            case EShortcutCommand::RENAME_SPECIAL: openRenameSpecialPrompt(monitor); break;
+            case EShortcutCommand::RENAME_SPECIAL: activePlugin()->naming().openRenameSpecialPrompt(monitor); break;
 
-            case EShortcutCommand::SELECT_SPECIAL_ROW: selectRow(ESelectedRow::SPECIAL, monitor); break;
-            case EShortcutCommand::SELECT_NORMAL_ROW: selectRow(ESelectedRow::NORMAL, monitor); break;
+            case EShortcutCommand::SELECT_SPECIAL_ROW: activePlugin()->selection().selectRow(ESelectedRow::SPECIAL, monitor); break;
+            case EShortcutCommand::SELECT_NORMAL_ROW: activePlugin()->selection().selectRow(ESelectedRow::NORMAL, monitor); break;
             default: break;
         }
 

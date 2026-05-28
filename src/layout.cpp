@@ -1,6 +1,7 @@
 #include "layout.hpp"
 
 #include "constants.hpp"
+#include "plugin.hpp"
 #include "workspace_filter.hpp"
 #include "workspace_filter_match.hpp"
 #include "workspaces.hpp"
@@ -68,17 +69,16 @@ namespace hyprdeck {
             return keys;
         }
 
-        SLayoutInputs layoutInputs(const PHLMONITOR& monitor) {
-            const auto& current           = state();
-            const auto& session           = current.session;
-            const auto& layout            = current.layout;
-            const auto& selection         = current.selection;
-            const auto lastWorkspace     = lastWorkspaceToShow(monitor);
-            auto       rows              = applyWorkspaceFilter(monitor, defaultNormalWorkspaceIDs(lastWorkspace), specialWorkspacesToShow(monitor));
+        SLayoutInputs layoutInputs(const PHLMONITOR& monitor, const SLayoutState& layout) {
+            const auto  selection         = activePlugin()->selection().snapshot();
+            const auto& overview          = activePlugin()->overview();
+            const auto& workspaces        = activePlugin()->workspaces();
+            const auto  lastWorkspace     = workspaces.lastWorkspaceToShow(monitor);
+            auto        rows              = activePlugin()->workspaceFilterMatcher().apply(monitor, defaultNormalWorkspaceIDs(lastWorkspace), workspaces.specialWorkspacesToShow(monitor));
             auto       normalIDs         = std::move(rows.normalWorkspaceIDs);
             auto       specialWorkspaces = std::move(rows.specialWorkspaces);
-            const auto activeNormalID    = activeNormalWorkspaceID(monitor);
-            const auto activeSpecialID   = activeSpecialWorkspaceID(monitor);
+            const auto activeNormalID    = workspaces.activeNormalWorkspaceID(monitor);
+            const auto activeSpecialID   = workspaces.activeSpecialWorkspaceID(monitor);
 
             SLayoutInputs inputs{
                 .signature =
@@ -88,7 +88,7 @@ namespace hyprdeck {
                         .transformedH             = monitor->m_transformedSize.y,
                         .pixelW                   = monitor->m_pixelSize.x,
                         .pixelH                   = monitor->m_pixelSize.y,
-                        .zoom                     = session.zoom,
+                        .zoom                     = overview.zoom(),
                         .cameraX                  = layout.cameraX,
                         .specialCameraX           = layout.specialCameraX,
                         .resetCamera              = layout.resetCamera,
@@ -100,7 +100,7 @@ namespace hyprdeck {
                         .lastWorkspace            = lastWorkspace,
                         .normalWorkspaceIDs       = normalIDs,
                         .specialWorkspaceKeys     = specialWorkspaceKeys(specialWorkspaces),
-                        .workspaceFilter          = std::string{workspaceFilterText()},
+                        .workspaceFilter          = std::string{activePlugin()->workspaceFilter().text()},
                     },
                 .normalWorkspaceIDs = std::move(normalIDs),
                 .specialWorkspaces  = std::move(specialWorkspaces),
@@ -112,14 +112,12 @@ namespace hyprdeck {
             return inputs;
         }
 
-        void storeCleanLayoutSignature(const SLayoutInputs& inputs) {
-            auto& current     = state();
-            auto& session     = current.session;
-            auto& layout      = current.layout;
-            auto& selection   = current.selection;
+        void storeCleanLayoutSignature(const SLayoutInputs& inputs, SLayoutState& layout) {
+            const auto selection   = activePlugin()->selection().snapshot();
+            const auto& overview = activePlugin()->overview();
             auto  signature   = inputs.signature;
 
-            signature.zoom                     = session.zoom;
+            signature.zoom                     = overview.zoom();
             signature.cameraX                  = layout.cameraX;
             signature.specialCameraX           = layout.specialCameraX;
             signature.resetCamera              = layout.resetCamera;
@@ -137,7 +135,7 @@ namespace hyprdeck {
         }
 
         SLayoutMetrics layoutMetrics(const PHLMONITOR& monitor, const bool hasNormals, const bool hasSpecials) {
-            const auto&  session = state().session;
+            const double zoom = activePlugin()->overview().zoom();
 
             const auto   viewSize  = monitor->m_transformedSize;
             const double aspect    = monitorAspect(monitor);
@@ -150,7 +148,7 @@ namespace hyprdeck {
                 baseCardW = baseCardH * aspect;
             }
 
-            double cardW = baseCardW * session.zoom;
+            double cardW = baseCardW * zoom;
             double cardH = cardW / aspect;
 
             if (cardH > maxCardH) {
@@ -158,9 +156,9 @@ namespace hyprdeck {
                 cardW = cardH * aspect;
             }
 
-            const double gap          = std::max(MIN_CARD_GAP, viewSize.x * CARD_GAP_RATIO * session.zoom);
+            const double gap          = std::max(MIN_CARD_GAP, viewSize.x * CARD_GAP_RATIO * zoom);
             const double baseGap      = std::max(MIN_CARD_GAP, viewSize.x * CARD_GAP_RATIO);
-            const double specialScale = session.zoom < SPECIAL_CARD_SCALE_THRESHOLD ? session.zoom / SPECIAL_CARD_SCALE_THRESHOLD : 1.0;
+            const double specialScale = zoom < SPECIAL_CARD_SCALE_THRESHOLD ? zoom / SPECIAL_CARD_SCALE_THRESHOLD : 1.0;
             const double specialH     = hasSpecials ? baseCardH * SPECIAL_CARD_HEIGHT_RATIO * specialScale : 0.0;
             const double specialW     = specialH * aspect;
             const double rowGap       = hasNormals && hasSpecials ? std::max(MIN_ROW_GAP, viewSize.y * ROW_GAP_RATIO) : 0.0;
@@ -199,16 +197,12 @@ namespace hyprdeck {
             return std::nullopt;
         }
 
-        void updateNormalCamera(const std::vector<WORKSPACEID>& ids, const WORKSPACEID activeID, const bool activeChanged, const bool centerActiveChange) {
-            auto& current   = state();
-            auto& layout    = current.layout;
-            auto& selection = current.selection;
-
+        void updateNormalCamera(SLayoutState& layout, const std::vector<WORKSPACEID>& ids, const WORKSPACEID activeID, const bool activeChanged, const bool centerActiveChange) {
             if (ids.empty()) {
-                layout.cameraX               = 0.0;
-                layout.resetCamera           = false;
-                selection.selectedNormalID   = WORKSPACE_INVALID;
-                selection.lastActiveNormalID = activeID;
+                layout.cameraX     = 0.0;
+                layout.resetCamera = false;
+                activePlugin()->selection().setSelectedNormalID(WORKSPACE_INVALID);
+                activePlugin()->selection().setLastActiveNormalID(activeID);
                 return;
             }
 
@@ -221,40 +215,34 @@ namespace hyprdeck {
                 layout.resetCamera = false;
 
                 if (activeChanged)
-                    selection.selectedNormalID = targetID;
+                    activePlugin()->selection().setSelectedNormalID(targetID);
             } else if (activeChanged) {
-                selection.selectedNormalID = targetID;
+                activePlugin()->selection().setSelectedNormalID(targetID);
             }
 
-            selection.lastActiveNormalID = activeID;
-            layout.cameraX               = clampCameraForCount(layout.cameraX, ids.size());
+            activePlugin()->selection().setLastActiveNormalID(activeID);
+            layout.cameraX               = activePlugin()->layout().clampCameraForCount(layout.cameraX, ids.size());
         }
 
-        void appendNormalCards(const PHLMONITOR& monitor, const SLayoutMetrics& metrics, const std::vector<WORKSPACEID>& ids) {
-            auto& layout = state().layout;
-
+        void appendNormalCards(SLayoutState& layout, const PHLMONITOR& monitor, const SLayoutMetrics& metrics, const std::vector<WORKSPACEID>& ids) {
             for (size_t i = 0; i < ids.size(); ++i) {
                 const auto   id        = ids[i];
                 const double worldX    = static_cast<double>(i) * layout.stepX;
                 const double x         = (metrics.viewSize.x / 2.0) - (metrics.cardW / 2.0) + worldX - layout.cameraX;
-                auto         workspace = g_pCompositor->getWorkspaceByID(id);
+                auto         workspace = activePlugin()->hyprland().workspaceByID(id);
 
                 layout.cards.push_back(SWorkspaceCard{
                     .id        = id,
                     .box       = CBox{x, metrics.y, metrics.cardW, metrics.cardH},
-                    .workspace = isNormalWorkspace(workspace) ? workspace : nullptr,
+                    .workspace = activePlugin()->workspaces().isNormalWorkspace(workspace) ? workspace : nullptr,
                     .label     = std::to_string(id),
                     .special   = false,
                 });
             }
         }
 
-        void updateSpecialCards(const std::vector<PHLWORKSPACE>& workspaces, const SLayoutMetrics& metrics, const WORKSPACEID activeID, const bool resetCamera,
+        void updateSpecialCards(SLayoutState& layout, const std::vector<PHLWORKSPACE>& workspaces, const SLayoutMetrics& metrics, const WORKSPACEID activeID, const bool resetCamera,
                                 const bool activeChanged, const bool centerActiveChange) {
-            auto& current   = state();
-            auto& layout    = current.layout;
-            auto& selection = current.selection;
-
             layout.specialStepX = metrics.specialW + metrics.specialGap;
 
             const size_t totalCards = workspaces.size();
@@ -267,13 +255,13 @@ namespace hyprdeck {
                 if (activeID != WORKSPACE_INVALID || resetCamera) {
                     layout.specialCameraX = static_cast<double>(activeIndex) * layout.specialStepX;
                     if (activeChanged)
-                        selection.selectedSpecialID = activeID;
+                        activePlugin()->selection().setSelectedSpecialID(activeID);
                 }
             } else if (activeChanged) {
-                selection.selectedSpecialID = activeID;
+                activePlugin()->selection().setSelectedSpecialID(activeID);
             }
 
-            layout.specialCameraX = clampSpecialCamera(layout.specialCameraX, totalCards);
+            layout.specialCameraX = activePlugin()->layout().clampSpecialCamera(layout.specialCameraX, totalCards);
 
             for (size_t i = 0; i < workspaces.size(); ++i) {
                 const auto&  workspace = workspaces[i];
@@ -283,7 +271,7 @@ namespace hyprdeck {
                     .id        = workspace->m_id,
                     .box       = CBox{x, metrics.specialY, metrics.specialW, metrics.specialH},
                     .workspace = workspace,
-                    .label     = specialWorkspaceLabel(workspace),
+                    .label     = activePlugin()->workspaces().specialWorkspaceLabel(workspace),
                     .special   = true,
                 });
             }
@@ -291,84 +279,121 @@ namespace hyprdeck {
 
     } // namespace
 
-    CBox expanded(CBox box, const double amount) {
-        box.x -= amount;
-        box.y -= amount;
-        box.w += amount * 2.0;
-        box.h += amount * 2.0;
-        return box;
+    const std::vector<SWorkspaceCard>& CWorkspaceLayoutController::cards() const {
+        return m_state.cards;
     }
 
-    double clampCameraForCount(const double value, const size_t count) {
+    const std::vector<SWorkspaceCard>& CWorkspaceLayoutController::specialCards() const {
+        return m_state.specialCards;
+    }
+
+    bool CWorkspaceLayoutController::cardsEmpty() const {
+        return m_state.cards.empty();
+    }
+
+    bool CWorkspaceLayoutController::specialCardsEmpty() const {
+        return m_state.specialCards.empty();
+    }
+
+    size_t CWorkspaceLayoutController::cardCount() const {
+        return m_state.cards.size();
+    }
+
+    size_t CWorkspaceLayoutController::specialCardCount() const {
+        return m_state.specialCards.size();
+    }
+
+    double CWorkspaceLayoutController::cameraX() const {
+        return m_state.cameraX;
+    }
+
+    double CWorkspaceLayoutController::specialCameraX() const {
+        return m_state.specialCameraX;
+    }
+
+    void CWorkspaceLayoutController::setCameraX(const double value) {
+        m_state.cameraX = value;
+    }
+
+    void CWorkspaceLayoutController::setSpecialCameraX(const double value) {
+        m_state.specialCameraX = value;
+    }
+
+    void CWorkspaceLayoutController::setResetCamera(const bool resetCamera) {
+        m_state.resetCamera = resetCamera;
+    }
+
+    void CWorkspaceLayoutController::clearCards() {
+        m_state.cards.clear();
+        m_state.specialCards.clear();
+    }
+
+    double CWorkspaceLayoutController::clampCameraForCount(const double value, const size_t count) const {
         if (count == 0)
             return 0.0;
 
-        const double maxCamera = static_cast<double>(count - 1) * state().layout.stepX;
+        const double maxCamera = static_cast<double>(count - 1) * m_state.stepX;
         return std::clamp(value, 0.0, maxCamera);
     }
 
-    double clampCamera(const double value) {
-        return clampCameraForCount(value, state().layout.cards.size());
+    double CWorkspaceLayoutController::clampCamera(const double value) const {
+        return clampCameraForCount(value, m_state.cards.size());
     }
 
-    double clampSpecialCamera(const double value, const size_t count) {
+    double CWorkspaceLayoutController::clampSpecialCamera(const double value, const size_t count) const {
         if (count == 0)
             return 0.0;
 
-        const double maxCamera = static_cast<double>(count - 1) * state().layout.specialStepX;
+        const double maxCamera = static_cast<double>(count - 1) * m_state.specialStepX;
         return std::clamp(value, 0.0, maxCamera);
     }
 
-    void invalidateLayout() {
-        state().layout.dirty = true;
+    void CWorkspaceLayoutController::invalidate() {
+        m_state.dirty = true;
     }
 
-    void adjustZoom(const double factor, const PHLMONITOR& monitor) {
-        auto& current = state();
-        auto& session = current.session;
-        auto& layout  = current.layout;
+    void CWorkspaceLayoutController::adjustZoom(const double factor, const PHLMONITOR& monitor) {
+        auto& overview = activePlugin()->overview();
         recalculateCards(monitor);
 
-        const double normalRatio  = layout.stepX > 0.0 ? layout.cameraX / layout.stepX : 0.0;
-        const double specialRatio = layout.specialStepX > 0.0 ? layout.specialCameraX / layout.specialStepX : 0.0;
+        const double normalRatio  = m_state.stepX > 0.0 ? m_state.cameraX / m_state.stepX : 0.0;
+        const double specialRatio = m_state.specialStepX > 0.0 ? m_state.specialCameraX / m_state.specialStepX : 0.0;
 
-        session.zoom = std::clamp(session.zoom * factor, MIN_ZOOM, MAX_ZOOM);
-        invalidateLayout();
+        overview.setZoom(overview.zoom() * factor);
+        invalidate();
 
         recalculateCards(monitor);
-        layout.cameraX        = normalRatio * layout.stepX;
-        layout.specialCameraX = specialRatio * layout.specialStepX;
-        invalidateLayout();
+        m_state.cameraX        = normalRatio * m_state.stepX;
+        m_state.specialCameraX = specialRatio * m_state.specialStepX;
+        invalidate();
         recalculateCards(monitor);
 
-        g_pHyprRenderer->damageMonitor(monitor);
+        activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    void recalculateCards(const PHLMONITOR& monitor) {
-        auto& current     = state();
-        auto& session     = current.session;
-        auto& layout      = current.layout;
-        auto& selection   = current.selection;
+    void CWorkspaceLayoutController::recalculateCards(const PHLMONITOR& monitor) {
+        const auto selection = activePlugin()->selection().snapshot();
+        auto& overview    = activePlugin()->overview();
 
         const auto viewSize = monitor->m_transformedSize;
         if (viewSize.x <= 1 || viewSize.y <= 1) {
-            layout.cards.clear();
-            layout.specialCards.clear();
-            layout.signatureValid = false;
-            layout.dirty          = false;
+            m_state.cards.clear();
+            m_state.specialCards.clear();
+            m_state.signatureValid = false;
+            m_state.dirty          = false;
             return;
         }
 
-        session.zoom = std::clamp(session.zoom, MIN_ZOOM, MAX_ZOOM);
+        overview.setZoom(overview.zoom());
 
-        const auto inputs = layoutInputs(monitor);
-        if (!layout.dirty && layout.signatureValid && sameLayoutSignature(inputs.signature, layout.signature))
+        const auto inputs = layoutInputs(monitor, m_state);
+        if (!m_state.dirty && m_state.signatureValid && sameLayoutSignature(inputs.signature, m_state.signature))
             return;
 
-        layout.cards.clear();
-        layout.specialCards.clear();
+        m_state.cards.clear();
+        m_state.specialCards.clear();
 
-        const bool  resetCamera          = layout.resetCamera;
+        const bool  resetCamera          = m_state.resetCamera;
         const auto& normalWorkspaceIDs   = inputs.normalWorkspaceIDs;
         const auto& specialWorkspaces    = inputs.specialWorkspaces;
         const bool  showNormalRow        = !normalWorkspaceIDs.empty();
@@ -381,35 +406,33 @@ namespace hyprdeck {
         const bool  centerActiveNormal   = selection.selectedNormalID != activeNormalID;
         const bool  centerActiveSpecial  = selection.selectedSpecialID != activeSpecialID;
 
-        layout.stepX = metrics.cardW + metrics.gap;
+        m_state.stepX = metrics.cardW + metrics.gap;
 
-        updateNormalCamera(normalWorkspaceIDs, activeNormalID, normalChanged, centerActiveNormal);
-        appendNormalCards(monitor, metrics, normalWorkspaceIDs);
+        updateNormalCamera(m_state, normalWorkspaceIDs, activeNormalID, normalChanged, centerActiveNormal);
+        appendNormalCards(m_state, monitor, metrics, normalWorkspaceIDs);
 
         if (metrics.hasSpecials)
-            updateSpecialCards(specialWorkspaces, metrics, activeSpecialID, resetCamera, specialChanged, centerActiveSpecial);
+            updateSpecialCards(m_state, specialWorkspaces, metrics, activeSpecialID, resetCamera, specialChanged, centerActiveSpecial);
         else
-            layout.specialCameraX = 0.0;
+            m_state.specialCameraX = 0.0;
 
-        selection.lastActiveSpecialID = activeSpecialID;
+        activePlugin()->selection().setLastActiveSpecialID(activeSpecialID);
 
-        ensureSelection(monitor);
-        storeCleanLayoutSignature(inputs);
+        activePlugin()->selection().ensureSelection(monitor);
+        storeCleanLayoutSignature(inputs, m_state);
     }
 
-    Vector2D cursorRenderPos(const PHLMONITOR& monitor) {
-        return (g_pInputManager->getMouseCoordsInternal() - monitor->m_position) * monitor->m_scale;
+    Vector2D CWorkspaceLayoutController::cursorRenderPos(const PHLMONITOR& monitor) const {
+        return (activePlugin()->hyprland().mouseCoords() - monitor->m_position) * monitor->m_scale;
     }
 
-    const SWorkspaceCard* cardAt(const Vector2D& position) {
-        const auto& layout = state().layout;
-
-        for (const auto& card : layout.cards) {
+    const SWorkspaceCard* CWorkspaceLayoutController::cardAt(const Vector2D& position) const {
+        for (const auto& card : m_state.cards) {
             if (card.box.containsPoint(position))
                 return &card;
         }
 
-        for (const auto& card : layout.specialCards) {
+        for (const auto& card : m_state.specialCards) {
             if (card.box.containsPoint(position))
                 return &card;
         }
@@ -417,49 +440,45 @@ namespace hyprdeck {
         return nullptr;
     }
 
-    EDragRow dragRowAt(const Vector2D& position) {
-        const auto& layout = state().layout;
-
-        for (const auto& card : layout.cards) {
+    EDragRow CWorkspaceLayoutController::dragRowAt(const Vector2D& position) const {
+        for (const auto& card : m_state.cards) {
             if (card.box.containsPoint(position))
                 return EDragRow::NORMAL;
         }
 
-        for (const auto& card : layout.specialCards) {
+        for (const auto& card : m_state.specialCards) {
             if (card.box.containsPoint(position))
                 return EDragRow::SPECIAL;
         }
 
-        if (!layout.specialCards.empty() && !layout.cards.empty() && position.y >= layout.cards.front().box.y + layout.cards.front().box.h)
+        if (!m_state.specialCards.empty() && !m_state.cards.empty() && position.y >= m_state.cards.front().box.y + m_state.cards.front().box.h)
             return EDragRow::SPECIAL;
 
         return EDragRow::NORMAL;
     }
 
-    void centerNormalCard(const int index) {
+    void CWorkspaceLayoutController::centerNormalCard(const int index) {
         if (index < 0)
             return;
 
-        auto&      layout = state().layout;
-        const auto next   = clampCameraForCount(static_cast<double>(index) * layout.stepX, layout.cards.size());
-        if (layout.cameraX == next)
+        const auto next = clampCameraForCount(static_cast<double>(index) * m_state.stepX, m_state.cards.size());
+        if (m_state.cameraX == next)
             return;
 
-        layout.cameraX = next;
-        invalidateLayout();
+        m_state.cameraX = next;
+        invalidate();
     }
 
-    void centerSpecialCard(const int index) {
+    void CWorkspaceLayoutController::centerSpecialCard(const int index) {
         if (index < 0)
             return;
 
-        auto&      layout = state().layout;
-        const auto next   = clampSpecialCamera(static_cast<double>(index) * layout.specialStepX, layout.specialCards.size());
-        if (layout.specialCameraX == next)
+        const auto next = clampSpecialCamera(static_cast<double>(index) * m_state.specialStepX, m_state.specialCards.size());
+        if (m_state.specialCameraX == next)
             return;
 
-        layout.specialCameraX = next;
-        invalidateLayout();
+        m_state.specialCameraX = next;
+        invalidate();
     }
 
 } // namespace hyprdeck

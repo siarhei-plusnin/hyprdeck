@@ -15,10 +15,10 @@ set(HYPRDECK_SOURCES
     src/confirmation.cpp
     src/config.cpp
     src/env.cpp
+    src/hyprland_facade.cpp
+    src/hook_registry.cpp
     src/input.cpp
-    src/keyboard.cpp
     src/layout.cpp
-    src/monitors.cpp
     src/naming.cpp
     src/naming_render.cpp
     src/navigation.cpp
@@ -26,21 +26,22 @@ set(HYPRDECK_SOURCES
     src/overview_controller.cpp
     src/overview_interaction.cpp
     src/overlays.cpp
+    src/plugin.cpp
+    src/render_services.cpp
     src/rendering.cpp
     src/selection.cpp
     src/shortcut_catalog.cpp
     src/shortcuts.cpp
     src/shortcuts_menu.cpp
     src/shortcuts_render.cpp
-    src/state.cpp
     src/strings.cpp
     src/textinput.cpp
     src/textinput_render.cpp
     src/textinput_repeat.cpp
-    src/ui.cpp
     src/workspace_filter.cpp
     src/workspace_filter_match.cpp
     src/workspace_filter_render.cpp
+    src/workspace_preview_renderer.cpp
     src/workspaces.cpp
 )
 

@@ -5,6 +5,9 @@
 
 namespace hyprdeck {
 
-    bool handleOverviewKeyboardKey(IKeyboard::SKeyEvent event, const PHLMONITOR& monitor);
+    class COverviewKeyboardController {
+      public:
+        bool handleKey(IKeyboard::SKeyEvent event, const PHLMONITOR& monitor);
+    };
 
 } // namespace hyprdeck

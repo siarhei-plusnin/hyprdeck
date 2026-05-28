@@ -1,6 +1,6 @@
 #pragma once
 
-#include "state.hpp"
+#include "runtime_types.hpp"
 
 #include <SharedDefs.hpp>
 #include <desktop/DesktopTypes.hpp>
@@ -10,22 +10,21 @@
 
 namespace hyprdeck {
 
-    bool                      isNormalWorkspace(const PHLWORKSPACE& workspace);
-    bool                      windowBelongsToMonitor(const PHLWINDOW& window, const PHLMONITOR& monitor);
-    bool                      windowBelongsToWorkspace(const PHLWINDOW& window, const PHLWORKSPACE& workspace);
-    bool                      workspaceHasAnyWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor);
-
-    WORKSPACEID               specialWorkspaceId(const PHLWORKSPACE& workspace);
-    std::string               specialWorkspaceLabel(const PHLWORKSPACE& workspace);
-    std::vector<PHLWORKSPACE> specialWorkspacesToShow(const PHLMONITOR& monitor);
-
-    WORKSPACEID               lastWorkspaceToShow(const PHLMONITOR& monitor);
-    WORKSPACEID               activeNormalWorkspaceID(const PHLMONITOR& monitor);
-    WORKSPACEID               activeSpecialWorkspaceID(const PHLMONITOR& monitor);
-
-    int                       cardIndexByID(const std::vector<SWorkspaceCard>& cards, WORKSPACEID id);
-    bool                      cardIsActive(const SWorkspaceCard& card, const PHLMONITOR& monitor);
-    bool                      cardIsSelected(const SWorkspaceCard& card);
-    void                      ensureSelection(const PHLMONITOR& monitor);
+    class CWorkspaceRepository {
+      public:
+        bool                      isNormalWorkspace(const PHLWORKSPACE& workspace) const;
+        bool                      windowBelongsToMonitor(const PHLWINDOW& window, const PHLMONITOR& monitor) const;
+        bool                      windowBelongsToWorkspace(const PHLWINDOW& window, const PHLWORKSPACE& workspace) const;
+        bool                      workspaceHasAnyWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const;
+        WORKSPACEID               specialWorkspaceId(const PHLWORKSPACE& workspace) const;
+        std::string               specialWorkspaceLabel(const PHLWORKSPACE& workspace) const;
+        std::vector<PHLWORKSPACE> specialWorkspacesToShow(const PHLMONITOR& monitor) const;
+        WORKSPACEID               lastWorkspaceToShow(const PHLMONITOR& monitor) const;
+        WORKSPACEID               activeNormalWorkspaceID(const PHLMONITOR& monitor) const;
+        WORKSPACEID               activeSpecialWorkspaceID(const PHLMONITOR& monitor) const;
+        int                       cardIndexByID(const std::vector<SWorkspaceCard>& cards, WORKSPACEID id) const;
+        bool                      cardIsActive(const SWorkspaceCard& card, const PHLMONITOR& monitor) const;
+        bool                      cardIsSelected(const SWorkspaceCard& card) const;
+    };
 
 } // namespace hyprdeck

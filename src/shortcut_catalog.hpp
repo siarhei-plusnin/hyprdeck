@@ -50,8 +50,11 @@ namespace hyprdeck {
         bool        footer = false;
     };
 
-    std::vector<SShortcutAction> currentShortcutActions();
-    std::vector<SShortcutAction> footerShortcutActions();
-    EShortcutCommand             shortcutCommandForTextInputAction(ETextInputAction action);
+    class CShortcutCatalog {
+      public:
+        std::vector<SShortcutAction> currentActions() const;
+        std::vector<SShortcutAction> footerActions() const;
+        EShortcutCommand             commandForTextInputAction(ETextInputAction action) const;
+    };
 
 } // namespace hyprdeck

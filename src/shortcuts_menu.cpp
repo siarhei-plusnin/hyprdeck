@@ -1,11 +1,11 @@
-#include "shortcuts_menu.hpp"
+#include "shortcuts.hpp"
 
 #include "colors.hpp"
+#include "plugin.hpp"
 #include "shortcut_catalog.hpp"
-#include "state.hpp"
+#include "runtime_types.hpp"
 #include "strings.hpp"
 #include "textinput.hpp"
-#include "ui.hpp"
 
 #include <helpers/Monitor.hpp>
 #include <render/Texture.hpp>
@@ -17,14 +17,14 @@ namespace hyprdeck {
     namespace {
 
         SP<Render::ITexture> labelTexture(const std::string& label, const int fontSize = 20, const int weight = 600, const ETextCacheMode cacheMode = ETextCacheMode::PERSISTENT) {
-            return textTexture("shortcuts", label, colors::textSecondary(), fontSize, weight, cacheMode);
+            return activePlugin()->renderServices().textTexture("shortcuts", label, colors::textSecondary(), fontSize, weight, cacheMode);
         }
 
     } // namespace
 
-    std::vector<SShortcutAction> filteredShortcutMenuActions() {
-        auto        actions = currentShortcutActions();
-        const auto& query   = state().shortcuts.searchInput.text;
+    std::vector<SShortcutAction> CShortcutMenuController::filteredActions() const {
+        auto        actions = activePlugin()->shortcutCatalog().currentActions();
+        const auto& query   = m_state.searchInput.text;
         if (query.empty())
             return actions;
 
@@ -36,9 +36,9 @@ namespace hyprdeck {
         return actions;
     }
 
-    std::string shortcutFooterText() {
+    std::string CShortcutMenuController::footerText() const {
         std::string text;
-        for (const auto& action : footerShortcutActions()) {
+        for (const auto& action : activePlugin()->shortcutCatalog().footerActions()) {
             if (!text.empty())
                 text += "  |  ";
 
@@ -48,18 +48,17 @@ namespace hyprdeck {
         return text;
     }
 
-    std::string shortcutSearchLabel() {
-        const auto& input = state().shortcuts.searchInput;
-        return "Search: " + input.text;
+    std::string CShortcutMenuController::searchLabel() const {
+        return "Search: " + m_state.searchInput.text;
     }
 
-    void measureShortcutMenu(const PHLMONITOR& monitor) {
-        const auto   actions  = currentShortcutActions();
-        auto&        shortcuts = state().shortcuts;
+    void CShortcutMenuController::measure(const PHLMONITOR& monitor) {
+        const auto   actions  = activePlugin()->shortcutCatalog().currentActions();
+        auto&        shortcuts = m_state;
         const auto   viewSize = monitor->m_transformedSize;
         const double rowH     = 52.0;
         const auto   title    = labelTexture("Keybindings", 30, 750);
-        const auto   search   = labelTexture(shortcutSearchLabel(), 23, 500, ETextCacheMode::NONE);
+        const auto   search   = labelTexture(searchLabel(), 23, 500, ETextCacheMode::NONE);
 
         double keyW         = 0.0;
         double labelW       = 0.0;

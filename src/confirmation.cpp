@@ -3,8 +3,8 @@
 #include "colors.hpp"
 #include "layout.hpp"
 #include "navigation.hpp"
-#include "state.hpp"
-#include "ui.hpp"
+#include "plugin.hpp"
+#include "runtime_types.hpp"
 #include "workspaces.hpp"
 
 #include <Compositor.hpp>
@@ -22,20 +22,20 @@ namespace hyprdeck {
     namespace {
 
         void damageConfirmation(const PHLMONITOR& monitor) {
-            g_pHyprRenderer->damageMonitor(monitor);
+            activePlugin()->hyprland().damageMonitor(monitor);
         }
 
         SP<Render::ITexture> confirmationTexture(const std::string& text, const int fontSize, const int weight, const CHyprColor& color = colors::textPrimary()) {
-            return textTexture("confirmation", text, color, fontSize, weight, ETextCacheMode::NONE);
+            return activePlugin()->renderServices().textTexture("confirmation", text, color, fontSize, weight, ETextCacheMode::NONE);
         }
 
         void renderBox(const CBox& box) {
-            addRect(expanded(box, 2.0), colors::componentBorder());
-            addRect(box, colors::componentBackground());
+            activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(box, 2.0), colors::componentBorder());
+            activePlugin()->renderServices().addRect(box, colors::componentBackground());
         }
 
         void renderButton(const CBox& box, const std::string& key, const std::string& label) {
-            addRect(box, colors::componentSurface());
+            activePlugin()->renderServices().addRect(box, colors::componentSurface());
 
             const auto keyTexture   = confirmationTexture(key, 17, 750);
             const auto labelTexture = confirmationTexture(label, 17, 600, colors::textSecondary());
@@ -45,64 +45,46 @@ namespace hyprdeck {
             const double gap      = 8.0;
             const double contentW = keyTexture->m_size.x + gap + labelTexture->m_size.x;
             const double x        = box.x + ((box.w - contentW) / 2.0);
-            addTexture(keyTexture, CBox{x, box.y + ((box.h - keyTexture->m_size.y) / 2.0), keyTexture->m_size.x, keyTexture->m_size.y});
-            addTexture(labelTexture, CBox{x + keyTexture->m_size.x + gap, box.y + ((box.h - labelTexture->m_size.y) / 2.0), labelTexture->m_size.x, labelTexture->m_size.y});
-        }
-
-        void confirmCloseNormalWorkspace(const PHLMONITOR& monitor) {
-            auto& confirmation = state().confirmation;
-            if (!confirmation.open)
-                return;
-
-            const auto workspace = g_pCompositor->getWorkspaceByID(confirmation.normalWorkspaceID);
-            resetConfirmationState();
-
-            if (!isNormalWorkspace(workspace)) {
-                damageConfirmation(monitor);
-                return;
-            }
-
-            closeWorkspaceWindows(workspace, monitor);
-            invalidateLayout();
-            damageConfirmation(monitor);
+            activePlugin()->renderServices().addTexture(keyTexture, CBox{x, box.y + ((box.h - keyTexture->m_size.y) / 2.0), keyTexture->m_size.x, keyTexture->m_size.y});
+            activePlugin()->renderServices().addTexture(labelTexture, CBox{x + keyTexture->m_size.x + gap, box.y + ((box.h - labelTexture->m_size.y) / 2.0), labelTexture->m_size.x, labelTexture->m_size.y});
         }
 
     } // namespace
 
-    bool confirmationPromptOpen() {
-        return state().confirmation.open;
+    bool CConfirmationController::promptOpen() const {
+        return m_state.open;
     }
 
-    void openCloseNormalWorkspaceConfirmation(const WORKSPACEID workspaceID, const PHLMONITOR& monitor) {
+    void CConfirmationController::openCloseNormalWorkspaceConfirmation(const WORKSPACEID workspaceID, const PHLMONITOR& monitor) {
         if (workspaceID == WORKSPACE_INVALID)
             return;
 
-        auto& confirmation              = state().confirmation;
+        auto& confirmation              = m_state;
         confirmation.open               = true;
         confirmation.normalWorkspaceID  = workspaceID;
         damageConfirmation(monitor);
     }
 
-    void closeConfirmationPrompt(const PHLMONITOR& monitor) {
-        if (!state().confirmation.open)
+    void CConfirmationController::closePrompt(const PHLMONITOR& monitor) {
+        if (!m_state.open)
             return;
 
-        resetConfirmationState();
+        resetState();
         damageConfirmation(monitor);
     }
 
-    void resetConfirmationState() {
-        auto& confirmation             = state().confirmation;
+    void CConfirmationController::resetState() {
+        auto& confirmation             = m_state;
         confirmation.open              = false;
         confirmation.normalWorkspaceID = WORKSPACE_INVALID;
     }
 
-    void handleConfirmationKey(const IKeyboard::SKeyEvent event, const PHLMONITOR& monitor) {
-        if (!state().confirmation.open || event.state != WL_KEYBOARD_KEY_STATE_PRESSED)
+    void CConfirmationController::handleKey(const IKeyboard::SKeyEvent event, const PHLMONITOR& monitor) {
+        if (!m_state.open || event.state != WL_KEYBOARD_KEY_STATE_PRESSED)
             return;
 
         if (event.keycode == KEY_ESC) {
-            closeConfirmationPrompt(monitor);
+            closePrompt(monitor);
             return;
         }
 
@@ -110,8 +92,26 @@ namespace hyprdeck {
             confirmCloseNormalWorkspace(monitor);
     }
 
-    void renderConfirmationPrompt(const PHLMONITOR& monitor) {
-        const auto& confirmation = state().confirmation;
+    void CConfirmationController::confirmCloseNormalWorkspace(const PHLMONITOR& monitor) {
+        auto& confirmation = m_state;
+        if (!confirmation.open)
+            return;
+
+        const auto workspace = activePlugin()->hyprland().workspaceByID(confirmation.normalWorkspaceID);
+        resetState();
+
+        if (!activePlugin()->workspaces().isNormalWorkspace(workspace)) {
+            damageConfirmation(monitor);
+            return;
+        }
+
+        activePlugin()->navigator().closeWorkspaceWindows(workspace, monitor);
+        activePlugin()->layout().invalidate();
+        damageConfirmation(monitor);
+    }
+
+    void CConfirmationController::render(const PHLMONITOR& monitor) {
+        const auto& confirmation = m_state;
         if (!confirmation.open)
             return;
 
@@ -126,8 +126,8 @@ namespace hyprdeck {
         const CBox   box{(viewSize.x - boxW) / 2.0, (viewSize.y - boxH) / 2.0, boxW, boxH};
         renderBox(box);
 
-        addTexture(title, CBox{box.x + 24.0, box.y + 22.0, title->m_size.x, title->m_size.y});
-        addTexture(subtitle, CBox{box.x + 24.0, box.y + 56.0, subtitle->m_size.x, subtitle->m_size.y});
+        activePlugin()->renderServices().addTexture(title, CBox{box.x + 24.0, box.y + 22.0, title->m_size.x, title->m_size.y});
+        activePlugin()->renderServices().addTexture(subtitle, CBox{box.x + 24.0, box.y + 56.0, subtitle->m_size.x, subtitle->m_size.y});
 
         const double buttonW = (box.w - 58.0) / 2.0;
         const double buttonH = 36.0;

@@ -1,15 +1,30 @@
 #pragma once
 
+#include "runtime_types.hpp"
+
 #include <plugins/PluginAPI.hpp>
 
 #include <string>
 
 namespace hyprdeck {
 
-    void            closeOverview();
-    void            openOverview();
+    class COverviewController {
+      public:
+        bool      active() const;
+        MONITORID monitorID() const;
+        PHLMONITOR monitor() const;
+        double    zoom() const;
 
-    SDispatchResult toggleOverview(std::string args);
-    int             luaToggleOverview(lua_State* state);
+        void setZoom(double value);
+        void open();
+        void close();
+        void onRenderStage(eRenderStage stage);
+
+        SDispatchResult toggle(std::string args);
+        int             luaToggle(lua_State* state);
+
+      private:
+        SSessionState m_session;
+    };
 
 } // namespace hyprdeck

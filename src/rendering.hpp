@@ -4,8 +4,11 @@
 
 namespace hyprdeck {
 
-    void renderOverview(const PHLMONITOR& monitor);
-    void renderCursorOverlay(const PHLMONITOR& monitor);
-    void clearRenderCache();
+    class COverviewRenderer {
+      public:
+        void renderOverview(const PHLMONITOR& monitor);
+        void renderCursorOverlay(const PHLMONITOR& monitor);
+        void clearCache();
+    };
 
 } // namespace hyprdeck

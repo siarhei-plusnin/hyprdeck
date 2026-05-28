@@ -4,10 +4,13 @@
 
 namespace hyprdeck {
 
-    bool layerIsExternalOverlay(const PHLLS& layer);
-    bool layerShouldRenderOverOverview(const PHLLS& layer);
-    bool windowIsExternalOverlay(const PHLWINDOW& window);
-    bool externalOverlayActive(const PHLMONITOR& monitor);
-    bool pointerOverNotificationOverlay(const PHLMONITOR& monitor);
+    class COverlayPolicy {
+      public:
+        bool layerIsExternalOverlay(const PHLLS& layer) const;
+        bool layerShouldRenderOverOverview(const PHLLS& layer) const;
+        bool windowIsExternalOverlay(const PHLWINDOW& window) const;
+        bool externalOverlayActive(const PHLMONITOR& monitor) const;
+        bool pointerOverNotificationOverlay(const PHLMONITOR& monitor) const;
+    };
 
 } // namespace hyprdeck

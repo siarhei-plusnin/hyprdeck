@@ -1,6 +1,7 @@
 #include "textinput_render.hpp"
 
 #include "colors.hpp"
+#include "plugin.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -20,7 +21,7 @@ namespace hyprdeck {
             if (text.empty())
                 return 0.0;
 
-            const auto texture = textTexture(scope, text, color, fontSize, weight, cacheMode);
+            const auto texture = activePlugin()->renderServices().textTexture(scope, text, color, fontSize, weight, cacheMode);
             return texture && texture->ok() ? texture->m_size.x : 0.0;
         }
 
@@ -44,7 +45,7 @@ namespace hyprdeck {
             const CBox   clipBox{box.x + INPUT_TEXT_PADDING, box.y, box.w - (INPUT_TEXT_PADDING * 2.0), box.h};
             const auto   clipped = cursorBox.intersection(clipBox);
             if (!clipped.empty())
-                addRect(clipped, colors::textCursor());
+                activePlugin()->renderServices().addRect(clipped, colors::textCursor());
         }
 
     } // namespace
@@ -56,9 +57,9 @@ namespace hyprdeck {
         const CBox clipBox{box.x + INPUT_TEXT_PADDING, box.y, box.w - (INPUT_TEXT_PADDING * 2.0), box.h};
         renderCursor(scope, input, box, std::string{prefix}, color, fontSize, weight, cacheMode);
 
-        const auto texture = textTexture(scope, text, color, fontSize, weight, cacheMode);
+        const auto texture = activePlugin()->renderServices().textTexture(scope, text, color, fontSize, weight, cacheMode);
         if (texture && texture->ok())
-            addTexture(texture, CBox{clipBox.x, box.y + ((box.h - texture->m_size.y) / 2.0), texture->m_size.x, texture->m_size.y}, 1.0F, 0, clipBox);
+            activePlugin()->renderServices().addTexture(texture, CBox{clipBox.x, box.y + ((box.h - texture->m_size.y) / 2.0), texture->m_size.x, texture->m_size.y}, 1.0F, 0, clipBox);
     }
 
 } // namespace hyprdeck

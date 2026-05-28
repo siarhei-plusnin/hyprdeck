@@ -2,19 +2,20 @@
 
 #include "confirmation.hpp"
 #include "config.hpp"
-#include "state.hpp"
+#include "plugin.hpp"
+#include "runtime_types.hpp"
 #include "workspace_filter.hpp"
 
 namespace hyprdeck {
     namespace {
 
         std::vector<SShortcutAction> overviewActions() {
-            const auto&                  selection = state().selection;
+            const auto                   selectedRow = activePlugin()->selection().selectedRow();
             std::vector<SShortcutAction> actions;
 
             actions.push_back({.command = EShortcutCommand::MOVE_SELECTION, .key = "h/l, left/right", .label = "Move", .description = "Move selection across the current row", .footer = true});
 
-            if (selection.selectedRow == ESelectedRow::NORMAL) {
+            if (selectedRow == ESelectedRow::NORMAL) {
                 actions.push_back({.command = EShortcutCommand::SELECT_SPECIAL_ROW, .key = "j, down", .label = "Special row", .description = "Move focus to the special workspace row", .footer = true});
                 actions.push_back({.command = EShortcutCommand::SWITCH_NORMAL_WORKSPACE, .key = "1-0", .label = "Switch", .description = "Switch to normal workspace 1-10", .footer = true});
                 actions.push_back({.command = EShortcutCommand::TOGGLE_SELECTION, .key = "space", .label = "Hide special", .description = "Close the active special workspace without leaving overview", .footer = false});
@@ -28,7 +29,7 @@ namespace hyprdeck {
                 actions.push_back({.command = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS, .key = "q", .label = "Close apps", .description = "Ask all windows on the selected special workspace to close", .footer = true});
             }
 
-            if (!workspaceFilterApplied()) {
+            if (!activePlugin()->workspaceFilter().applied()) {
                 actions.push_back({.command = EShortcutCommand::CREATE_SIMPLE_SPECIAL, .key = "a", .label = "New special", .description = "Create an unnamed special workspace", .footer = true});
                 actions.push_back({.command = EShortcutCommand::CREATE_NAMED_SPECIAL, .key = "n", .label = "Named special", .description = "Create a preset or dynamically named special workspace", .footer = true});
             }
@@ -41,7 +42,7 @@ namespace hyprdeck {
                                .key = "delete / ctrl+c",
                                .label = "Clear filter",
                                .description = "Show all workspaces again when a filter is active",
-                               .footer = workspaceFilterApplied()});
+                               .footer = activePlugin()->workspaceFilter().applied()});
 
             actions.push_back({.command = EShortcutCommand::PAN_ROW, .key = "scroll / drag", .label = "Pan", .description = "Move the row under the pointer", .footer = false});
             actions.push_back({.command = EShortcutCommand::CLOSE_OVERLAY, .key = "esc / right click", .label = "Close", .description = "Close the overview", .footer = false});
@@ -72,10 +73,10 @@ namespace hyprdeck {
         }
 
         std::vector<SShortcutAction> namingActions() {
-            const auto&                  naming = state().naming;
+            const auto                   promptMode = activePlugin()->naming().promptMode();
             std::vector<SShortcutAction> actions;
 
-            if (naming.promptMode == EPromptMode::RENAME_SPECIAL) {
+            if (promptMode == EPromptMode::RENAME_SPECIAL) {
                 actions.push_back({.command = EShortcutCommand::CONFIRM_TEXT, .key = "enter", .label = "Confirm", .description = "Rename the selected special workspace", .footer = true});
             } else {
                 actions.push_back({.command = EShortcutCommand::CONFIRM_TEXT, .key = "enter", .label = "Confirm", .description = "Create or open the selected special workspace name", .footer = true});
@@ -92,7 +93,7 @@ namespace hyprdeck {
             actions.push_back({.command = EShortcutCommand::CLEAR_TEXT, .key = "ctrl+u / ctrl+k", .label = "Clear", .description = "Clear all text or clear from cursor to end", .footer = false});
             actions.push_back({.command = EShortcutCommand::TYPE_TEXT, .key = "type", .label = "Type", .description = "Edit the workspace name", .footer = false});
 
-            if (naming.promptMode == EPromptMode::CREATE_SPECIAL && !configuredSpecialWorkspaceNames().empty()) {
+            if (promptMode == EPromptMode::CREATE_SPECIAL && !activePlugin()->config().specialWorkspaceNames().empty()) {
                 actions.push_back({.command = EShortcutCommand::SELECT_NAMED_PRESET, .key = "up/down", .label = "Select preset", .description = "Move through preset special workspace names", .footer = true});
                 actions.push_back({.command = EShortcutCommand::SELECT_NAMED_PRESET, .key = "ctrl+p / ctrl+n", .label = "Select preset", .description = "Move previous or next through preset names", .footer = true});
                 actions.push_back({.command = EShortcutCommand::USE_NAMED_PRESET, .key = "space", .label = "Use preset", .description = "When no custom text is typed, create/open the selected preset", .footer = false});
@@ -104,28 +105,28 @@ namespace hyprdeck {
 
     } // namespace
 
-    std::vector<SShortcutAction> currentShortcutActions() {
-        if (workspaceFilterPromptOpen())
+    std::vector<SShortcutAction> CShortcutCatalog::currentActions() const {
+        if (activePlugin()->workspaceFilter().promptOpen())
             return workspaceFilterActions();
 
-        if (confirmationPromptOpen())
+        if (activePlugin()->confirmation().promptOpen())
             return confirmationActions();
 
-        if (state().naming.promptMode != EPromptMode::NONE)
+        if (activePlugin()->naming().promptOpen())
             return namingActions();
 
         return overviewActions();
     }
 
-    std::vector<SShortcutAction> footerShortcutActions() {
-        switch (configuredShortcutsFooterMode()) {
+    std::vector<SShortcutAction> CShortcutCatalog::footerActions() const {
+        switch (activePlugin()->config().shortcutsFooterMode()) {
             case EShortcutsFooterMode::NONE: return {};
             case EShortcutsFooterMode::HINT:
                 return {{.command = EShortcutCommand::OPEN_KEYBINDINGS, .key = "?", .label = "Keybindings", .description = "Open searchable shortcuts menu", .footer = true}};
             case EShortcutsFooterMode::FULL: break;
         }
 
-        if (state().shortcuts.open)
+        if (activePlugin()->shortcuts().menuOpen())
             return {
                 {.command = EShortcutCommand::SEARCH_SHORTCUTS, .key = "type", .label = "Search", .description = "Filter keybindings", .footer = true},
                 {.command = EShortcutCommand::DELETE_TEXT_BACKWARD, .key = "backspace", .label = "Delete", .description = "Edit search text", .footer = true},
@@ -134,12 +135,12 @@ namespace hyprdeck {
                 {.command = EShortcutCommand::CLOSE_OVERLAY, .key = "esc / ?", .label = "Close", .description = "Close keybindings", .footer = true},
             };
 
-        auto actions = currentShortcutActions();
+        auto actions = currentActions();
         std::erase_if(actions, [](const auto& action) { return !action.footer || action.command == EShortcutCommand::PAN_ROW; });
         return actions;
     }
 
-    EShortcutCommand shortcutCommandForTextInputAction(const ETextInputAction action) {
+    EShortcutCommand CShortcutCatalog::commandForTextInputAction(const ETextInputAction action) const {
         switch (action) {
             case ETextInputAction::DELETE_BACKWARD: return EShortcutCommand::DELETE_TEXT_BACKWARD;
             case ETextInputAction::DELETE_FORWARD: return EShortcutCommand::DELETE_TEXT_FORWARD;

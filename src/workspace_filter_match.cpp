@@ -2,6 +2,7 @@
 
 #include "overlays.hpp"
 #include "strings.hpp"
+#include "plugin.hpp"
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
@@ -18,10 +19,10 @@ namespace hyprdeck {
     namespace {
 
         bool windowReadyForFilter(const PHLWINDOW& window, const PHLMONITOR& monitor) {
-            if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden() || window->m_pinned || windowIsExternalOverlay(window))
+            if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden() || window->m_pinned || activePlugin()->overlays().windowIsExternalOverlay(window))
                 return false;
 
-            return windowBelongsToMonitor(window, monitor);
+            return activePlugin()->workspaces().windowBelongsToMonitor(window, monitor);
         }
 
         bool windowTextMatchesFilter(const PHLWINDOW& window, std::string_view loweredQuery) {
@@ -48,8 +49,8 @@ namespace hyprdeck {
             if (workspaceNameMatchesFilter(workspace, loweredQuery))
                 return true;
 
-            for (const auto& window : g_pCompositor->m_windows) {
-                if (!windowReadyForFilter(window, monitor) || !windowBelongsToWorkspace(window, workspace))
+            for (const auto& window : activePlugin()->hyprland().windows()) {
+                if (!windowReadyForFilter(window, monitor) || !activePlugin()->workspaces().windowBelongsToWorkspace(window, workspace))
                     continue;
 
                 if (windowTextMatchesFilter(window, loweredQuery))
@@ -62,16 +63,16 @@ namespace hyprdeck {
         std::vector<WORKSPACEID> normalWorkspaceIDsMatchingFilter(const PHLMONITOR& monitor, std::string_view loweredQuery) {
             std::vector<WORKSPACEID> ids;
 
-            for (const auto& workspace : g_pCompositor->getWorkspacesCopy()) {
-                if (!isNormalWorkspace(workspace) || !workspaceBelongsToMonitorForFilter(workspace, monitor))
+            for (const auto& workspace : activePlugin()->hyprland().workspacesCopy()) {
+                if (!activePlugin()->workspaces().isNormalWorkspace(workspace) || !workspaceBelongsToMonitorForFilter(workspace, monitor))
                     continue;
 
                 if (workspaceNameMatchesFilter(workspace, loweredQuery))
                     ids.push_back(workspace->m_id);
             }
 
-            for (const auto& window : g_pCompositor->m_windows) {
-                if (!windowReadyForFilter(window, monitor) || !isNormalWorkspace(window->m_workspace))
+            for (const auto& window : activePlugin()->hyprland().windows()) {
+                if (!windowReadyForFilter(window, monitor) || !activePlugin()->workspaces().isNormalWorkspace(window->m_workspace))
                     continue;
 
                 if (windowTextMatchesFilter(window, loweredQuery))
@@ -86,10 +87,10 @@ namespace hyprdeck {
 
     } // namespace
 
-    SWorkspaceFilterRows applyWorkspaceFilter(const PHLMONITOR& monitor, std::vector<WORKSPACEID> normalWorkspaceIDs, std::vector<PHLWORKSPACE> specialWorkspaces) {
+    SWorkspaceFilterRows CWorkspaceFilterMatcher::apply(const PHLMONITOR& monitor, std::vector<WORKSPACEID> normalWorkspaceIDs, std::vector<PHLWORKSPACE> specialWorkspaces) const {
         SWorkspaceFilterRows rows{.normalWorkspaceIDs = std::move(normalWorkspaceIDs), .specialWorkspaces = std::move(specialWorkspaces)};
 
-        const auto loweredQuery = strings::lower(workspaceFilterText());
+        const auto loweredQuery = strings::lower(activePlugin()->workspaceFilter().text());
         if (loweredQuery.empty())
             return rows;
 

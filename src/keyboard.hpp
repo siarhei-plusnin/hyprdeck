@@ -8,10 +8,4 @@ namespace hyprdeck {
         bool super = false;
     };
 
-    SKeyboardModifiers keyboardModifiers();
-    bool               ctrlPressed();
-    bool               shiftPressed();
-    int                keyboardRepeatRate();
-    int                keyboardRepeatDelay();
-
 } // namespace hyprdeck
