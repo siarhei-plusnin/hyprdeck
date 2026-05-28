@@ -101,7 +101,7 @@ namespace hyprdeck {
         activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    void COverviewController::onRenderStage(const eRenderStage stage) {
+    void COverviewController::handleRenderStage(const eRenderStage stage) {
         if (!m_session.active || stage != RENDER_LAST_MOMENT)
             return;
 

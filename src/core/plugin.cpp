@@ -75,7 +75,13 @@ namespace hyprdeck {
 
         HyprlandAPI::addDispatcherV2(m_handle, "hyprdeck:toggle", dispatchToggle);
         HyprlandAPI::addLuaFunction(m_handle, "hyprdeck", "toggle", luaDispatchToggle);
-        m_hooks.registerHooks();
+        m_hooks.registerHooks(
+            m_overview.onRenderStage,
+            m_inputRouter.onMouseMove,
+            m_inputRouter.onMouseButton,
+            m_inputRouter.onMouseAxis,
+            m_inputRouter.onKeyboard
+        );
 
         HyprlandAPI::addNotification(m_handle, "hyprdeck loaded", colors::accentOpaque(), 2500);
 

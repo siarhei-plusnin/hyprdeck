@@ -1,7 +1,6 @@
 #include "shortcuts.hpp"
 
 #include "colors.hpp"
-#include "layout.hpp"
 #include "plugin.hpp"
 #include "runtime_types.hpp"
 #include "textinput_render.hpp"

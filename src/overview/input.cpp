@@ -46,7 +46,7 @@ namespace hyprdeck {
         return EInputMode::OVERVIEW;
     }
 
-    void CInputRouter::onMouseMove(Vector2D position, Event::SCallbackInfo& info) {
+    void CInputRouter::handleMouseMove(Vector2D position, Event::SCallbackInfo& info) {
         const auto monitor = activeInputMonitor();
         if (!monitor || inputBlockedByExternalOverlay(monitor))
             return;
@@ -54,7 +54,7 @@ namespace hyprdeck {
         activePlugin()->overviewPointer().handleMouseMove(position, info, monitor);
     }
 
-    void CInputRouter::onMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
+    void CInputRouter::handleMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
         const auto monitor = activeInputMonitor();
         if (!monitor || inputBlockedByExternalOverlay(monitor))
             return;
@@ -62,7 +62,7 @@ namespace hyprdeck {
         activePlugin()->overviewPointer().handleMouseButton(event, info, monitor);
     }
 
-    void CInputRouter::onMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info) {
+    void CInputRouter::handleMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info) {
         const auto monitor = activeInputMonitor();
         if (!monitor || inputBlockedByExternalOverlay(monitor))
             return;
@@ -70,7 +70,7 @@ namespace hyprdeck {
         activePlugin()->overviewPointer().handleMouseAxis(event, info, monitor);
     }
 
-    void CInputRouter::onKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info) {
+    void CInputRouter::handleKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info) {
         const auto monitor = activeInputMonitor();
         if (!monitor || inputBlockedByExternalOverlay(monitor))
             return;
@@ -111,26 +111,6 @@ namespace hyprdeck {
 
         if (activePlugin()->overviewKeyboard().handleKey(event, monitor))
             info.cancelled = true;
-    }
-
-    void onMouseMove(Vector2D position, Event::SCallbackInfo& info) {
-        activePlugin()->inputRouter().onMouseMove(position, info);
-    }
-
-    void onMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
-        activePlugin()->inputRouter().onMouseButton(event, info);
-    }
-
-    void onMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info) {
-        activePlugin()->inputRouter().onMouseAxis(event, info);
-    }
-
-    void onKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info) {
-        activePlugin()->inputRouter().onKeyboard(event, info);
-    }
-
-    void onRenderStage(eRenderStage stage) {
-        activePlugin()->overview().onRenderStage(stage);
     }
 
 } // namespace hyprdeck

@@ -1,17 +1,20 @@
 #include "hook_registry.hpp"
 
-#include "input.hpp"
+#include "SharedDefs.hpp"
 
 namespace hyprdeck {
 
-    void CHookRegistry::registerHooks() {
+    void CHookRegistry::registerHooks(const std::function<void(eRenderStage)> renderHook, const std::function<void(Vector2D, Event::SCallbackInfo&)> mouseMoveHook,
+                                      const std::function<void(IPointer::SButtonEvent, Event::SCallbackInfo&)> mouseButtonHook,
+                                      const std::function<void(IPointer::SAxisEvent, Event::SCallbackInfo&)>   mouseAxisHook,
+                                      const std::function<void(IKeyboard::SKeyEvent, Event::SCallbackInfo&)>   keyboardKeyHook) {
         reset();
 
-        m_renderHook      = Event::bus()->m_events.render.stage.listen(onRenderStage);
-        m_mouseMoveHook   = Event::bus()->m_events.input.mouse.move.listen(onMouseMove);
-        m_mouseButtonHook = Event::bus()->m_events.input.mouse.button.listen(onMouseButton);
-        m_mouseAxisHook   = Event::bus()->m_events.input.mouse.axis.listen(onMouseAxis);
-        m_keyboardHook    = Event::bus()->m_events.input.keyboard.key.listen(onKeyboard);
+        m_renderHook      = Event::bus()->m_events.render.stage.listen(renderHook);
+        m_mouseMoveHook   = Event::bus()->m_events.input.mouse.move.listen(mouseMoveHook);
+        m_mouseButtonHook = Event::bus()->m_events.input.mouse.button.listen(mouseButtonHook);
+        m_mouseAxisHook   = Event::bus()->m_events.input.mouse.axis.listen(mouseAxisHook);
+        m_keyboardHook    = Event::bus()->m_events.input.keyboard.key.listen(keyboardKeyHook);
     }
 
     void CHookRegistry::reset() {

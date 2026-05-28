@@ -7,25 +7,35 @@
 
 #include "runtime_types.hpp"
 
+#include <functional>
+
 namespace hyprdeck {
 
     class CInputRouter {
       public:
-        void       onMouseMove(Vector2D position, Event::SCallbackInfo& info);
-        void       onMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info);
-        void       onMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info);
-        void       onKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info);
+        std::function<void(Vector2D, Event::SCallbackInfo&)> onMouseMove = [this](Vector2D position, Event::SCallbackInfo& info) {
+            handleMouseMove(position, info);
+        };
+        std::function<void(IPointer::SButtonEvent, Event::SCallbackInfo&)> onMouseButton = [this](IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
+            handleMouseButton(event, info);
+        };
+        std::function<void(IPointer::SAxisEvent, Event::SCallbackInfo&)> onMouseAxis = [this](IPointer::SAxisEvent event, Event::SCallbackInfo& info) {
+            handleMouseAxis(event, info);
+        };
+        std::function<void(IKeyboard::SKeyEvent, Event::SCallbackInfo&)> onKeyboard = [this](IKeyboard::SKeyEvent event, Event::SCallbackInfo& info) {
+            handleKeyboard(event, info);
+        };
+
         EInputMode activeInputMode() const;
 
       private:
         PHLMONITOR activeInputMonitor() const;
         bool       inputBlockedByExternalOverlay(const PHLMONITOR& monitor) const;
-    };
 
-    void onMouseMove(Vector2D position, Event::SCallbackInfo& info);
-    void onMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info);
-    void onMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info);
-    void onKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info);
-    void onRenderStage(eRenderStage stage);
+        void handleMouseMove(Vector2D position, Event::SCallbackInfo& info);
+        void handleMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info);
+        void handleMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info);
+        void handleKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info);
+    };
 
 } // namespace hyprdeck
