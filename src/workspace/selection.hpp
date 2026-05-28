@@ -8,6 +8,8 @@
 
 namespace hyprdeck {
 
+    struct SWorkspaceNavigationResult;
+
     class CSelectionController {
       public:
         SSelectionState snapshot() const;
@@ -24,6 +26,7 @@ namespace hyprdeck {
         void            setLastActiveSpecialID(WORKSPACEID id);
         void            setActiveSelection(WORKSPACEID activeNormalID, WORKSPACEID activeSpecialID);
         void            ensureSelection(const PHLMONITOR& monitor);
+        bool            applyNavigationResult(const SWorkspaceNavigationResult& result);
 
         const SWorkspaceCard* selectedSpecialCard() const;
         const SWorkspaceCard* selectedNormalCard() const;

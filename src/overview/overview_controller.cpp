@@ -152,7 +152,16 @@ namespace hyprdeck {
 
             case EShortcutCommand::CLOSE_WORKSPACE_WINDOWS: activePlugin()->selection().closeSelectedWorkspaceWindows(monitor); break;
 
-            case EShortcutCommand::CREATE_SIMPLE_SPECIAL: activePlugin()->navigator().createSimpleSpecialWorkspace(monitor); break;
+            case EShortcutCommand::CREATE_SIMPLE_SPECIAL:
+                if (const auto result = activePlugin()->navigator().createSimpleSpecialWorkspace(monitor); activePlugin()->selection().applyNavigationResult(result)) {
+                    activePlugin()->naming().resetPromptState();
+                    activePlugin()->layout().invalidate();
+                    activePlugin()->layout().recalculateCards(monitor);
+                    if (result.selectedSpecialID)
+                        activePlugin()->layout().centerSpecialCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), *result.selectedSpecialID));
+                    activePlugin()->hyprland().damageMonitor(monitor);
+                }
+                break;
             case EShortcutCommand::CREATE_NAMED_SPECIAL: activePlugin()->naming().openNamedSpecialPrompt(monitor); break;
 
             case EShortcutCommand::RENAME_SPECIAL: activePlugin()->naming().openRenameSpecialPrompt(monitor); break;

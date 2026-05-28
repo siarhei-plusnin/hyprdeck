@@ -137,18 +137,30 @@ namespace hyprdeck {
 
         auto& naming                   = m_state;
         naming.namedSpecialPromptIndex = std::min(naming.namedSpecialPromptIndex, names.size() - 1);
-        if (!activePlugin()->navigator().createNamedSpecialWorkspace(names[naming.namedSpecialPromptIndex], monitor))
+        return applySpecialNavigationResult(activePlugin()->navigator().createNamedSpecialWorkspace(names[naming.namedSpecialPromptIndex], monitor), monitor, true);
+    }
+
+    bool CNamingController::applySpecialNavigationResult(const SWorkspaceNavigationResult& result, const PHLMONITOR& monitor, const bool centerSpecial) {
+        if (!activePlugin()->selection().applyNavigationResult(result))
             return false;
 
         resetPromptState();
+        activePlugin()->layout().invalidate();
+        activePlugin()->layout().recalculateCards(monitor);
+
+        if (centerSpecial && result.selectedSpecialID)
+            activePlugin()->layout().centerSpecialCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), *result.selectedSpecialID));
+
+        damagePrompt(monitor);
         return true;
     }
 
     void CNamingController::confirmPrompt(const PHLMONITOR& monitor) {
         auto& naming = m_state;
         if (naming.promptMode == EPromptMode::RENAME_SPECIAL) {
-            if (activePlugin()->navigator().renameSelectedSpecialWorkspace(naming.promptInput.text, monitor))
-                resetPromptState();
+            const auto* card = activePlugin()->selection().selectedSpecialCard();
+            if (card)
+                applySpecialNavigationResult(activePlugin()->navigator().renameSpecialWorkspace(card->workspace, naming.promptInput.text), monitor, false);
             return;
         }
 
@@ -156,8 +168,7 @@ namespace hyprdeck {
             return;
 
         if (!naming.promptInput.text.empty()) {
-            if (activePlugin()->navigator().createNamedSpecialWorkspace(naming.promptInput.text, monitor))
-                resetPromptState();
+            applySpecialNavigationResult(activePlugin()->navigator().createNamedSpecialWorkspace(naming.promptInput.text, monitor), monitor, true);
             return;
         }
 

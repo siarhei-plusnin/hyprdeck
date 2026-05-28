@@ -107,6 +107,20 @@ namespace hyprdeck {
             selection.selectedRow = ESelectedRow::NORMAL;
     }
 
+    bool CSelectionController::applyNavigationResult(const SWorkspaceNavigationResult& result) {
+        if (!result.success)
+            return false;
+
+        if (result.selectedRow)
+            setSelectedRow(*result.selectedRow);
+        if (result.selectedNormalID)
+            setSelectedNormalID(*result.selectedNormalID);
+        if (result.selectedSpecialID)
+            setSelectedSpecialID(*result.selectedSpecialID);
+
+        return true;
+    }
+
     const SWorkspaceCard* CSelectionController::selectedSpecialCard() const {
         const auto& specialCards = activePlugin()->layout().specialCards();
         const auto& selection = m_state;
@@ -148,7 +162,10 @@ namespace hyprdeck {
             return;
         }
 
-        activePlugin()->navigator().switchWorkspaceCard(*card, monitor);
+        if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor))) {
+            activePlugin()->layout().invalidate();
+            activePlugin()->hyprland().damageMonitor(monitor);
+        }
     }
 
     void CSelectionController::selectRow(const ESelectedRow row, const PHLMONITOR& monitor) {
@@ -158,7 +175,15 @@ namespace hyprdeck {
         activePlugin()->layout().recalculateCards(monitor);
 
         if (row == ESelectedRow::SPECIAL && activePlugin()->layout().specialCardsEmpty()) {
-            activePlugin()->navigator().createSimpleSpecialWorkspace(monitor);
+            const auto result = activePlugin()->navigator().createSimpleSpecialWorkspace(monitor);
+            if (applyNavigationResult(result)) {
+                activePlugin()->naming().resetPromptState();
+                activePlugin()->layout().invalidate();
+                activePlugin()->layout().recalculateCards(monitor);
+                if (result.selectedSpecialID)
+                    activePlugin()->layout().centerSpecialCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), *result.selectedSpecialID));
+                activePlugin()->hyprland().damageMonitor(monitor);
+            }
             return;
         }
 
@@ -183,18 +208,24 @@ namespace hyprdeck {
             if (monitor->m_activeSpecialWorkspace)
                 monitor->setSpecialWorkspace(nullptr);
 
-            if (const auto* card = selectedNormalCard())
-                activePlugin()->navigator().switchWorkspaceCard(*card, monitor);
-            else {
+            if (const auto* card = selectedNormalCard()) {
+                if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor))) {
+                    activePlugin()->layout().invalidate();
+                    activePlugin()->hyprland().damageMonitor(monitor);
+                }
+            } else {
                 activePlugin()->layout().invalidate();
                 activePlugin()->hyprland().damageMonitor(monitor);
             }
             return;
         }
 
-        if (const auto* card = selectedSpecialCard())
-            activePlugin()->navigator().switchWorkspaceCard(*card, monitor);
-        else {
+        if (const auto* card = selectedSpecialCard()) {
+            if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor))) {
+                activePlugin()->layout().invalidate();
+                activePlugin()->hyprland().damageMonitor(monitor);
+            }
+        } else {
             activePlugin()->layout().invalidate();
             activePlugin()->hyprland().damageMonitor(monitor);
         }
@@ -210,7 +241,7 @@ namespace hyprdeck {
                 monitor->setSpecialWorkspace(nullptr);
 
             if (const auto* card = selectedNormalCard()) {
-                if (activePlugin()->navigator().switchWorkspaceCard(*card, monitor))
+                if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor)))
                     activePlugin()->overview().close();
             } else
                 activePlugin()->overview().close();
@@ -241,15 +272,17 @@ namespace hyprdeck {
         }
 
         const auto workspace = activePlugin()->hyprland().workspaceByID(id);
-        activePlugin()->navigator().switchWorkspaceCard(
-            SWorkspaceCard{
-                .id        = id,
-                .workspace = activePlugin()->workspaces().isNormalWorkspace(workspace) ? workspace : nullptr,
-                .label     = std::to_string(id),
-                .special   = false,
-            },
-            monitor);
+        applyNavigationResult(
+            activePlugin()->navigator().switchWorkspaceCard(
+                SWorkspaceCard{
+                    .id        = id,
+                    .workspace = activePlugin()->workspaces().isNormalWorkspace(workspace) ? workspace : nullptr,
+                    .label     = std::to_string(id),
+                    .special   = false,
+                },
+                monitor));
 
+        activePlugin()->layout().invalidate();
         activePlugin()->layout().recalculateCards(monitor);
         activePlugin()->layout().centerNormalCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().cards(), id));
         activePlugin()->hyprland().damageMonitor(monitor);
@@ -350,7 +383,8 @@ namespace hyprdeck {
         activePlugin()->layout().invalidate();
         activePlugin()->layout().centerNormalCard(index);
 
-        activePlugin()->navigator().switchWorkspaceCard(*target, monitor);
+        if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*target, monitor)))
+            activePlugin()->hyprland().damageMonitor(monitor);
     }
 
     void CSelectionController::jumpSelection(const int direction, const PHLMONITOR& monitor) {
@@ -387,7 +421,8 @@ namespace hyprdeck {
         if (activePlugin()->workspaces().cardIsActive(target, monitor))
             activePlugin()->hyprland().damageMonitor(monitor);
         else
-            activePlugin()->navigator().switchWorkspaceCard(target, monitor);
+            if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(target, monitor)))
+                activePlugin()->hyprland().damageMonitor(monitor);
     }
 
 } // namespace hyprdeck

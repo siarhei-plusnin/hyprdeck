@@ -1,9 +1,6 @@
 #include "navigation.hpp"
 
-#include "layout.hpp"
-#include "naming.hpp"
 #include "plugin.hpp"
-#include "selection.hpp"
 #include "strings.hpp"
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
@@ -30,69 +27,63 @@ namespace hyprdeck {
             return activePlugin()->hyprland().createWorkspace(id, monitor->m_id, workspaceName, true);
         }
 
-        void openSpecialWorkspace(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor, const bool selectSpecial = true) {
+        SWorkspaceNavigationResult openSpecialWorkspace(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor, const bool selectSpecial = true) {
             if (!workspace)
-                return;
+                return {};
 
-            activePlugin()->selection().setSelectedSpecialID(workspace->m_id);
-            activePlugin()->naming().resetPromptState();
+            SWorkspaceNavigationResult result{
+                .success           = true,
+                .selectedSpecialID = workspace->m_id,
+            };
 
-            if (selectSpecial)
-                activePlugin()->selection().setSelectedRow(ESelectedRow::SPECIAL);
-            else {
-                activePlugin()->selection().setSelectedRow(ESelectedRow::NORMAL);
-                activePlugin()->selection().setSelectedNormalID(activePlugin()->workspaces().activeNormalWorkspaceID(monitor));
+            if (selectSpecial) {
+                result.selectedRow = ESelectedRow::SPECIAL;
+            } else {
+                result.selectedRow      = ESelectedRow::NORMAL;
+                result.selectedNormalID = activePlugin()->workspaces().activeNormalWorkspaceID(monitor);
             }
 
             monitor->setSpecialWorkspace(workspace);
-            activePlugin()->layout().invalidate();
-            activePlugin()->layout().recalculateCards(monitor);
-            activePlugin()->layout().centerSpecialCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), workspace->m_id));
-            activePlugin()->hyprland().damageMonitor(monitor);
+            return result;
         }
 
-        bool createNamedSpecialWorkspaceInternal(const std::string& name, const PHLMONITOR& monitor) {
+        SWorkspaceNavigationResult createNamedSpecialWorkspaceInternal(const std::string& name, const PHLMONITOR& monitor) {
             if (activePlugin()->workspaceFilter().applied())
-                return false;
+                return {};
 
             const auto normalizedName = strings::normalizeSpecialWorkspaceName(name);
             if (normalizedName.empty())
-                return false;
+                return {};
 
             auto workspace = activePlugin()->hyprland().workspaceByName("special:" + normalizedName);
             if (!workspace)
                 workspace = createSpecialWorkspace(monitor, normalizedName);
 
             if (!workspace)
-                return false;
+                return {};
 
-            openSpecialWorkspace(workspace, monitor);
-            return true;
+            return openSpecialWorkspace(workspace, monitor);
         }
 
-        bool renameSelectedSpecialWorkspaceInternal(const std::string& name, const PHLMONITOR& monitor) {
+        SWorkspaceNavigationResult renameSpecialWorkspaceInternal(const PHLWORKSPACE& workspace, const std::string& name) {
             const auto normalizedName = strings::normalizeSpecialWorkspaceName(name);
             if (normalizedName.empty())
-                return false;
+                return {};
 
-            const auto* card = activePlugin()->selection().selectedSpecialCard();
-            if (!card || !card->workspace)
-                return false;
+            if (!workspace)
+                return {};
 
-            const auto workspace = card->workspace;
             workspace->m_name    = "special:" + normalizedName;
 
             activePlugin()->hyprland().postWorkspaceRenameEvent(workspace);
 
             workspace->m_events.renamed.emit();
 
-            activePlugin()->selection().setSelectedRow(ESelectedRow::SPECIAL);
-            activePlugin()->selection().setSelectedSpecialID(workspace->m_id);
-            activePlugin()->naming().resetPromptState();
-            activePlugin()->layout().invalidate();
-            activePlugin()->layout().recalculateCards(monitor);
-            activePlugin()->hyprland().damageMonitor(monitor);
-            return true;
+            return SWorkspaceNavigationResult{
+                .success           = true,
+                .selectedRow       = ESelectedRow::SPECIAL,
+                .selectedSpecialID = workspace->m_id,
+            };
         }
 
         std::vector<PHLWINDOW> workspaceWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor = nullptr) {
@@ -116,55 +107,54 @@ namespace hyprdeck {
         closeWindows(workspaceWindows(workspace, monitor));
     }
 
-    bool CWorkspaceNavigator::switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
+    SWorkspaceNavigationResult CWorkspaceNavigator::switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
         auto workspace = card.workspace;
 
         if (!workspace && !card.special) {
             if (activePlugin()->workspaceFilter().applied())
-                return false;
+                return {};
 
             workspace = activePlugin()->hyprland().createWorkspace(card.id, monitor->m_id, std::to_string(card.id), true);
         }
 
         if (!workspace)
-            return false;
+            return {};
+
+        SWorkspaceNavigationResult result{
+            .success = true,
+        };
 
         if (card.special) {
-            activePlugin()->selection().setSelectedRow(ESelectedRow::SPECIAL);
-            activePlugin()->selection().setSelectedSpecialID(workspace->m_id);
+            result.selectedRow       = ESelectedRow::SPECIAL;
+            result.selectedSpecialID = workspace->m_id;
 
             if (monitor->m_activeSpecialWorkspace == workspace)
                 monitor->setSpecialWorkspace(nullptr);
             else
                 monitor->setSpecialWorkspace(workspace);
         } else {
-            activePlugin()->selection().setSelectedRow(ESelectedRow::NORMAL);
-            activePlugin()->selection().setSelectedNormalID(workspace->m_id);
+            result.selectedRow      = ESelectedRow::NORMAL;
+            result.selectedNormalID = workspace->m_id;
 
             monitor->changeWorkspace(workspace, false, true, false);
         }
 
-        activePlugin()->layout().invalidate();
-        activePlugin()->hyprland().damageMonitor(monitor);
-
-        return true;
+        return result;
     }
 
-    bool CWorkspaceNavigator::createNamedSpecialWorkspace(const std::string& name, const PHLMONITOR& monitor) {
+    SWorkspaceNavigationResult CWorkspaceNavigator::createNamedSpecialWorkspace(const std::string& name, const PHLMONITOR& monitor) {
         return createNamedSpecialWorkspaceInternal(name, monitor);
     }
 
-    bool CWorkspaceNavigator::renameSelectedSpecialWorkspace(const std::string& name, const PHLMONITOR& monitor) {
-        return renameSelectedSpecialWorkspaceInternal(name, monitor);
+    SWorkspaceNavigationResult CWorkspaceNavigator::renameSpecialWorkspace(const PHLWORKSPACE& workspace, const std::string& name) {
+        return renameSpecialWorkspaceInternal(workspace, name);
     }
 
-    void CWorkspaceNavigator::createSimpleSpecialWorkspace(const PHLMONITOR& monitor) {
+    SWorkspaceNavigationResult CWorkspaceNavigator::createSimpleSpecialWorkspace(const PHLMONITOR& monitor) {
         if (activePlugin()->workspaceFilter().applied())
-            return;
+            return {};
 
-        activePlugin()->naming().resetPromptState();
-
-        openSpecialWorkspace(createSpecialWorkspace(monitor), monitor);
+        return openSpecialWorkspace(createSpecialWorkspace(monitor), monitor);
     }
 
 } // namespace hyprdeck

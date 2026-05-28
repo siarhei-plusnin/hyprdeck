@@ -8,6 +8,8 @@
 
 namespace hyprdeck {
 
+    struct SWorkspaceNavigationResult;
+
     class CNamingController {
       public:
         bool promptOpen() const;
@@ -25,6 +27,7 @@ namespace hyprdeck {
       private:
         bool movePresetSelection(int direction);
         bool useSelectedPreset(const PHLMONITOR& monitor);
+        bool applySpecialNavigationResult(const SWorkspaceNavigationResult& result, const PHLMONITOR& monitor, bool centerSpecial);
         void confirmPrompt(const PHLMONITOR& monitor);
         void syncCustomSelectionAfterEdit();
 
