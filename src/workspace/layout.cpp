@@ -358,17 +358,29 @@ namespace hyprdeck {
 
         const double normalRatio  = m_state.stepX > 0.0 ? m_state.cameraX / m_state.stepX : 0.0;
         const double specialRatio = m_state.specialStepX > 0.0 ? m_state.specialCameraX / m_state.specialStepX : 0.0;
+        const double targetZoom   = std::clamp(overview.zoom() * factor, MIN_ZOOM, MAX_ZOOM);
 
-        overview.setZoom(overview.zoom() * factor);
-        invalidate();
+        activePlugin()->animations().cancelZoomAnimation();
+        if (activePlugin()->animations().animateZoom(overview.zoom(), targetZoom, normalRatio, specialRatio, monitor)) {
+            activePlugin()->hyprland().damageMonitor(monitor);
+            return;
+        }
 
-        recalculateCards(monitor);
-        m_state.cameraX        = normalRatio * m_state.stepX;
-        m_state.specialCameraX = specialRatio * m_state.specialStepX;
-        invalidate();
-        recalculateCards(monitor);
-
+        applyZoom(targetZoom, normalRatio, specialRatio, monitor);
         activePlugin()->hyprland().damageMonitor(monitor);
+    }
+
+    void CWorkspaceLayoutController::applyZoom(const double zoom, const double normalCameraRatio, const double specialCameraRatio, const PHLMONITOR& monitor) {
+        auto& overview = activePlugin()->overview();
+
+        overview.setZoom(zoom);
+        invalidate();
+
+        recalculateCards(monitor);
+        m_state.cameraX        = normalCameraRatio * m_state.stepX;
+        m_state.specialCameraX = specialCameraRatio * m_state.specialStepX;
+        invalidate();
+        recalculateCards(monitor);
     }
 
     void CWorkspaceLayoutController::recalculateCards(const PHLMONITOR& monitor) {
@@ -465,6 +477,9 @@ namespace hyprdeck {
         if (m_state.cameraX == next)
             return;
 
+        if (const auto monitor = activePlugin()->overview().monitor(); activePlugin()->animations().animateNormalCamera(m_state.cameraX, next, monitor))
+            return;
+
         m_state.cameraX = next;
         invalidate();
     }
@@ -475,6 +490,9 @@ namespace hyprdeck {
 
         const auto next = clampSpecialCamera(static_cast<double>(index) * m_state.specialStepX, m_state.specialCards.size());
         if (m_state.specialCameraX == next)
+            return;
+
+        if (const auto monitor = activePlugin()->overview().monitor(); activePlugin()->animations().animateSpecialCamera(m_state.specialCameraX, next, monitor))
             return;
 
         m_state.specialCameraX = next;

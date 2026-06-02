@@ -33,6 +33,7 @@ set(HYPRDECK_SOURCES
     src/overview/overview_controller.cpp
     src/overview/overview_interaction.cpp
     src/overlays/overlays.cpp
+    src/render/animations.cpp
     src/render/render_services.cpp
     src/render/rendering.cpp
     src/render/workspace_preview_renderer.cpp

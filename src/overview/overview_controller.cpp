@@ -157,8 +157,10 @@ namespace hyprdeck {
                     activePlugin()->naming().resetPromptState();
                     activePlugin()->layout().invalidate();
                     activePlugin()->layout().recalculateCards(monitor);
-                    if (result.selectedSpecialID)
+                    if (result.selectedSpecialID) {
                         activePlugin()->layout().centerSpecialCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), *result.selectedSpecialID));
+                        activePlugin()->animations().startSpecialCardAppearance(*result.selectedSpecialID, monitor);
+                    }
                     activePlugin()->hyprland().damageMonitor(monitor);
                 }
                 break;

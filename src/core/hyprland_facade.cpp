@@ -55,6 +55,11 @@ namespace hyprdeck {
             g_pHyprRenderer->damageMonitor(monitor);
     }
 
+    void CHyprlandFacade::scheduleAnimationFrame(const PHLMONITOR& monitor) const {
+        if (g_pCompositor && monitor)
+            g_pCompositor->scheduleFrameForMonitor(monitor, Aquamarine::IOutput::AQ_SCHEDULE_ANIMATION);
+    }
+
     void CHyprlandFacade::setCursorHidden(const bool hidden) const {
         if (g_pHyprRenderer)
             g_pHyprRenderer->setCursorHidden(hidden);
@@ -175,6 +180,11 @@ namespace hyprdeck {
     void CHyprlandFacade::addRectPass(CRectPassElement::SRectData data) const {
         if (g_pHyprRenderer)
             g_pHyprRenderer->m_renderPass.add(makeUnique<CRectPassElement>(std::move(data)));
+    }
+
+    void CHyprlandFacade::addRendererHintsPass(CRendererHintsPassElement::SData data) const {
+        if (g_pHyprRenderer)
+            g_pHyprRenderer->m_renderPass.add(makeUnique<CRendererHintsPassElement>(std::move(data)));
     }
 
     void CHyprlandFacade::addTexturePass(CTexPassElement::SRenderData data) const {

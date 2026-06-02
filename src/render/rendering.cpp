@@ -12,7 +12,23 @@
 
 #include <helpers/Monitor.hpp>
 
+#include <algorithm>
+
 namespace hyprdeck {
+    namespace {
+
+        CBox scaledFromCenter(CBox box, const float scale) {
+            const auto clamped = std::clamp(scale, 0.01F, 1.0F);
+            const auto oldW    = box.w;
+            const auto oldH    = box.h;
+            box.w *= clamped;
+            box.h *= clamped;
+            box.x += (oldW - box.w) / 2.0;
+            box.y += (oldH - box.h) / 2.0;
+            return box;
+        }
+
+    } // namespace
 
     void COverviewRenderer::renderOverview(const PHLMONITOR& monitor) {
         activePlugin()->layout().recalculateCards(monitor);
@@ -22,19 +38,36 @@ namespace hyprdeck {
         if (!activePlugin()->config().activeWorkspaceBackground())
             activePlugin()->workspacePreviewRenderer().renderEmptyWorkspaceBackground(monitor, snapshot);
 
+        auto& renderServices = activePlugin()->renderServices();
+        auto& animations     = activePlugin()->animations();
+
+        renderServices.pushOpacity(animations.overviewOpacity());
         activePlugin()->renderServices().addRect(CBox{0, 0, viewSize.x, viewSize.y}, colors::overviewScrim());
+
+        renderServices.pushRenderTransform(animations.overviewOffset(), animations.overviewScale());
 
         for (const auto& card : activePlugin()->layout().cards())
             activePlugin()->workspacePreviewRenderer().renderCard(card, monitor, snapshot);
 
-        for (const auto& card : activePlugin()->layout().specialCards())
+        for (auto card : activePlugin()->layout().specialCards()) {
+            const auto opacity = animations.specialCardOpacity(card.id);
+            if (opacity <= 0.001F)
+                continue;
+
+            card.box = scaledFromCenter(card.box, animations.specialCardScale(card.id));
+            renderServices.pushOpacity(opacity);
             activePlugin()->workspacePreviewRenderer().renderCard(card, monitor, snapshot);
+            renderServices.popOpacity();
+        }
 
         activePlugin()->workspaceFilter().render(monitor);
         activePlugin()->shortcuts().renderFooter(monitor);
         activePlugin()->naming().render(monitor);
         activePlugin()->confirmation().render(monitor);
         activePlugin()->shortcuts().renderMenu(monitor);
+        renderServices.popRenderTransform();
+        renderServices.popOpacity();
+
         activePlugin()->workspacePreviewRenderer().renderExternalOverlays(monitor, snapshot);
     }
 

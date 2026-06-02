@@ -12,6 +12,7 @@
 #include "overview_controller.hpp"
 #include "overview_interaction.hpp"
 #include "overlays.hpp"
+#include "animations.hpp"
 #include "render_services.hpp"
 #include "rendering.hpp"
 #include "selection.hpp"
@@ -57,6 +58,7 @@ namespace hyprdeck {
         CWorkspaceRepository& workspaces();
         CWorkspaceFilterMatcher& workspaceFilterMatcher();
         CWorkspacePreviewRenderer& workspacePreviewRenderer();
+        CAnimationController& animations();
         COverviewRenderer& renderer();
         CShortcutCatalog&   shortcutCatalog();
         CRenderServices&      renderServices();
@@ -76,6 +78,7 @@ namespace hyprdeck {
         CWorkspaceRepository m_workspaces;
         CWorkspaceFilterMatcher m_workspaceFilterMatcher;
         CWorkspacePreviewRenderer m_workspacePreviewRenderer;
+        CAnimationController m_animations;
         COverviewRenderer  m_renderer;
         CShortcutCatalog    m_shortcutCatalog;
         COverviewController m_overview;

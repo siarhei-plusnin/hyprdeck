@@ -62,6 +62,7 @@ namespace hyprdeck {
         const auto pos = activePlugin()->layout().cursorRenderPos(monitor);
 
         if (event.state == WL_POINTER_BUTTON_STATE_PRESSED) {
+            activePlugin()->animations().cancelCameraAnimations();
             interaction.dragging                = true;
             interaction.dragRow                 = activePlugin()->layout().dragRowAt(pos);
             interaction.dragStart               = pos;
@@ -90,11 +91,14 @@ namespace hyprdeck {
         activePlugin()->layout().recalculateCards(monitor);
 
         const auto pos = activePlugin()->layout().cursorRenderPos(monitor);
-        if (activePlugin()->layout().dragRowAt(pos) == EDragRow::SPECIAL)
+        if (activePlugin()->layout().dragRowAt(pos) == EDragRow::SPECIAL) {
+            activePlugin()->animations().cancelSpecialCameraAnimation();
             activePlugin()->layout().setSpecialCameraX(
                 activePlugin()->layout().clampSpecialCamera(activePlugin()->layout().specialCameraX() + (event.delta * ROW_SCROLL_SCALE), activePlugin()->layout().specialCardCount()));
-        else
+        } else {
+            activePlugin()->animations().cancelNormalCameraAnimation();
             activePlugin()->layout().setCameraX(activePlugin()->layout().clampCamera(activePlugin()->layout().cameraX() + (event.delta * ROW_SCROLL_SCALE)));
+        }
 
         activePlugin()->layout().invalidate();
 

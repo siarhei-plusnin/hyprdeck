@@ -68,6 +68,8 @@ namespace hyprdeck {
 
     struct SSessionState {
         bool      active          = false;
+        bool      rendering       = false;
+        bool      closing         = false;
         bool      zoomInitialized = false;
         MONITORID monitorID       = MONITOR_INVALID;
         double    zoom            = DEFAULT_ZOOM;

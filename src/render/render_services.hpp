@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <vector>
 
 namespace hyprdeck {
 
@@ -27,8 +28,12 @@ namespace hyprdeck {
         CBox                 expandedBox(CBox box, double amount) const;
         void                 addRect(const CBox& box, const CHyprColor& color, int rounding = 0);
         void                 addTexture(const SP<Render::ITexture>& texture, const CBox& box, float alpha = 1.0F, int rounding = 0, const CBox& clipBox = {});
+        void                 pushOpacity(float opacity);
+        void                 popOpacity();
+        void                 pushRenderTransform(Vector2D offset, float scale);
+        void                 popRenderTransform();
         SP<Render::ITexture> textTexture(std::string_view scope, const std::string& text, const CHyprColor& color, int fontSize, int weight,
-                                         ETextCacheMode cacheMode = ETextCacheMode::PERSISTENT);
+                                          ETextCacheMode cacheMode = ETextCacheMode::PERSISTENT);
         void                 clearTextTextureCache();
         void                 clearTextTextureCache(std::string_view scope);
         void                 updateCursorCache();
@@ -37,7 +42,10 @@ namespace hyprdeck {
         const SRenderCache& cache() const;
 
       private:
+        float effectiveOpacity() const;
+
         SRenderCache m_cache;
+        std::vector<float> m_opacityStack;
     };
 
 } // namespace hyprdeck

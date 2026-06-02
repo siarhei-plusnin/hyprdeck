@@ -8,6 +8,7 @@
 #include <helpers/math/Math.hpp>
 #include <render/Texture.hpp>
 #include <render/pass/RectPassElement.hpp>
+#include <render/pass/RendererHintsPassElement.hpp>
 #include <render/pass/TexPassElement.hpp>
 
 #include <string>
@@ -25,6 +26,7 @@ namespace hyprdeck {
         PHLMONITOR renderMonitor() const;
 
         void damageMonitor(const PHLMONITOR& monitor) const;
+        void scheduleAnimationFrame(const PHLMONITOR& monitor) const;
         void setCursorHidden(bool hidden) const;
 
         void lockSoftwarePointer(const PHLMONITOR& monitor) const;
@@ -55,6 +57,7 @@ namespace hyprdeck {
         void removeTimer(const SP<CEventLoopTimer>& timer) const;
 
         void                 addRectPass(CRectPassElement::SRectData data) const;
+        void                 addRendererHintsPass(CRendererHintsPassElement::SData data) const;
         void                 addTexturePass(CTexPassElement::SRenderData data) const;
         SP<Render::ITexture> renderText(const std::string& text, const CHyprColor& color, int fontSize, const std::string& fontFamily, int weight) const;
     };

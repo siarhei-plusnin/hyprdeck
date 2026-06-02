@@ -53,8 +53,11 @@ namespace hyprdeck {
             Config::Values::makeConfigValue<Config::Values::CFloatValue>(
                 "plugin:hyprdeck:default_zoom", "Default zoom used when opening hyprdeck", static_cast<Config::FLOAT>(DEFAULT_ZOOM),
                 Config::Values::SFloatValueOptions{.min = static_cast<Config::FLOAT>(MIN_ZOOM), .max = static_cast<Config::FLOAT>(MAX_ZOOM)}));
+        HyprlandAPI::addConfigValueV2(
+            m_handle,
+            Config::Values::makeConfigValue<Config::Values::CBoolValue>("plugin:hyprdeck:animations", "Enable hyprdeck overview animations", true));
         HyprlandAPI::addConfigValueV2(m_handle,
-                                      Config::Values::makeConfigValue<Config::Values::CBoolValue>("plugin:hyprdeck:active_workspace_background",
+                                       Config::Values::makeConfigValue<Config::Values::CBoolValue>("plugin:hyprdeck:active_workspace_background",
                                                                                                   "Use the active workspace as hyprdeck's background", true));
         HyprlandAPI::addConfigValueV2(
             m_handle, Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:font_family", "Font family used by hyprdeck text", "monospace"));
@@ -88,12 +91,13 @@ namespace hyprdeck {
     }
 
     void CHyprdeckPlugin::shutdown() {
-        m_overview.close();
+        m_overview.close(true);
         m_naming.resetComponent();
         m_workspaceFilter.resetState();
         m_confirmation.resetState();
         m_shortcuts.resetState();
         m_textInputRepeater.reset();
+        m_animations.reset();
         m_hooks.reset();
         m_renderServices.clearTextTextureCache();
         m_renderServices.clearCursorCache();
@@ -172,6 +176,10 @@ namespace hyprdeck {
 
     CWorkspacePreviewRenderer& CHyprdeckPlugin::workspacePreviewRenderer() {
         return m_workspacePreviewRenderer;
+    }
+
+    CAnimationController& CHyprdeckPlugin::animations() {
+        return m_animations;
     }
 
     COverviewRenderer& CHyprdeckPlugin::renderer() {

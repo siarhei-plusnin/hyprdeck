@@ -18,6 +18,7 @@ namespace hyprdeck {
       public:
         std::vector<std::string>        specialWorkspaceNames();
         double                          defaultZoom();
+        bool                            animationsEnabled();
         bool                            activeWorkspaceBackground();
         std::string                     fontFamily();
         EShortcutsFooterMode            shortcutsFooterMode();
@@ -33,6 +34,7 @@ namespace hyprdeck {
       private:
         std::optional<CConfigValue<std::string>>   m_namedSpecialWorkspaces;
         std::optional<CConfigValue<Config::FLOAT>> m_defaultZoom;
+        std::optional<CConfigValue<Config::BOOL>>  m_animationsEnabled;
         std::optional<CConfigValue<Config::BOOL>>  m_activeWorkspaceBackground;
         std::optional<CConfigValue<std::string>>   m_fontFamily;
         std::optional<CConfigValue<std::string>>   m_shortcutsFooterMode;

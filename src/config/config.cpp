@@ -65,6 +65,11 @@ namespace hyprdeck {
         return std::clamp(static_cast<double>(*value), MIN_ZOOM, MAX_ZOOM);
     }
 
+    bool CConfigStore::animationsEnabled() {
+        auto& value = configValue(m_animationsEnabled, "plugin:hyprdeck:animations");
+        return *value;
+    }
+
     bool CConfigStore::activeWorkspaceBackground() {
         auto& value = configValue(m_activeWorkspaceBackground, "plugin:hyprdeck:active_workspace_background");
         return *value;

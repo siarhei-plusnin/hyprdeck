@@ -29,6 +29,7 @@ namespace hyprdeck {
         double                clampSpecialCamera(double value, size_t count) const;
         void                  invalidate();
         void                  adjustZoom(double factor, const PHLMONITOR& monitor);
+        void                  applyZoom(double zoom, double normalCameraRatio, double specialCameraRatio, const PHLMONITOR& monitor);
         void                  recalculateCards(const PHLMONITOR& monitor);
         Vector2D              cursorRenderPos(const PHLMONITOR& monitor) const;
         const SWorkspaceCard* cardAt(const Vector2D& position) const;

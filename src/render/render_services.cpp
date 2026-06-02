@@ -2,6 +2,9 @@
 
 #include "plugin.hpp"
 
+#include <render/pass/RendererHintsPassElement.hpp>
+
+#include <algorithm>
 #include <utility>
 
 namespace hyprdeck {
@@ -14,10 +17,18 @@ namespace hyprdeck {
         return box;
     }
 
+    float CRenderServices::effectiveOpacity() const {
+        float opacity = 1.0F;
+        for (const auto value : m_opacityStack)
+            opacity *= value;
+
+        return std::clamp(opacity, 0.0F, 1.0F);
+    }
+
     void CRenderServices::addRect(const CBox& box, const CHyprColor& color, const int rounding) {
         CRectPassElement::SRectData data;
         data.box   = box;
-        data.color = color;
+        data.color = color.modifyA(color.a * effectiveOpacity());
         data.round = rounding;
 
         activePlugin()->hyprland().addRectPass(std::move(data));
@@ -30,11 +41,35 @@ namespace hyprdeck {
         CTexPassElement::SRenderData data;
         data.tex     = texture;
         data.box     = box;
-        data.a       = alpha;
+        data.a       = alpha * effectiveOpacity();
         data.round   = rounding;
         data.clipBox = clipBox;
 
         activePlugin()->hyprland().addTexturePass(std::move(data));
+    }
+
+    void CRenderServices::pushOpacity(const float opacity) {
+        m_opacityStack.push_back(std::clamp(opacity, 0.0F, 1.0F));
+    }
+
+    void CRenderServices::popOpacity() {
+        if (!m_opacityStack.empty())
+            m_opacityStack.pop_back();
+    }
+
+    void CRenderServices::pushRenderTransform(const Vector2D offset, const float scale) {
+        Render::SRenderModifData data;
+        if (offset != Vector2D{})
+            data.modifs.emplace_back(Render::SRenderModifData::RMOD_TYPE_TRANSLATE, offset);
+        if (scale != 1.0F)
+            data.modifs.emplace_back(Render::SRenderModifData::RMOD_TYPE_SCALECENTER, scale);
+
+        if (!data.modifs.empty())
+            activePlugin()->hyprland().addRendererHintsPass(CRendererHintsPassElement::SData{.renderModif = data});
+    }
+
+    void CRenderServices::popRenderTransform() {
+        activePlugin()->hyprland().addRendererHintsPass(CRendererHintsPassElement::SData{.renderModif = Render::SRenderModifData{}});
     }
 
     SP<Render::ITexture> CRenderServices::textTexture(std::string_view scope, const std::string& text, const CHyprColor& color, const int fontSize, const int weight,
