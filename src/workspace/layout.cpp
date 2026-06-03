@@ -157,7 +157,6 @@ namespace hyprdeck {
             }
 
             const double gap          = std::max(MIN_CARD_GAP, viewSize.x * CARD_GAP_RATIO * zoom);
-            const double baseGap      = std::max(MIN_CARD_GAP, viewSize.x * CARD_GAP_RATIO);
             const double specialScale = zoom < SPECIAL_CARD_SCALE_THRESHOLD ? zoom / SPECIAL_CARD_SCALE_THRESHOLD : 1.0;
             const double specialH     = hasSpecials ? baseCardH * SPECIAL_CARD_HEIGHT_RATIO * specialScale : 0.0;
             const double specialW     = specialH * aspect;
@@ -174,7 +173,7 @@ namespace hyprdeck {
                 .specialW    = specialW,
                 .specialH    = specialH,
                 .specialY    = hasNormals ? y + cardH + rowGap : y,
-                .specialGap  = std::max(MIN_SPECIAL_CARD_GAP, baseGap * SPECIAL_CARD_GAP_SCALE),
+                .specialGap  = gap,
                 .hasSpecials = hasSpecials,
             };
         }
