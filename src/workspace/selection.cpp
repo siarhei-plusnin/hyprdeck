@@ -299,6 +299,9 @@ namespace hyprdeck {
             if (!card || !activePlugin()->workspaces().isNormalWorkspace(card->workspace))
                 return;
 
+            if (!activePlugin()->workspaces().workspaceHasAnyWindows(card->workspace, monitor))
+                return;
+
             activePlugin()->confirmation().openCloseNormalWorkspaceConfirmation(card->workspace->m_id, monitor);
             return;
         }
