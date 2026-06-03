@@ -62,7 +62,7 @@ target_include_directories(hyprdeck PRIVATE
 )
 target_link_directories(hyprdeck PRIVATE ${HYPRLAND_LIBRARY_DIRS})
 target_link_libraries(hyprdeck PRIVATE ${HYPRLAND_LIBRARIES})
-target_compile_options(hyprdeck PRIVATE ${HYPRLAND_CFLAGS_OTHER} -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers)
+target_compile_options(hyprdeck PRIVATE ${HYPRLAND_CFLAGS_OTHER} -Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -fno-gnu-unique)
 
 set_target_properties(hyprdeck PROPERTIES
     PREFIX ""
