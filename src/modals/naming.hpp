@@ -25,8 +25,9 @@ namespace hyprdeck {
         void render(const PHLMONITOR& monitor) const;
 
       private:
-        bool movePresetSelection(int direction);
+        bool movePresetSelection(int direction, bool loop);
         bool useSelectedPreset(const PHLMONITOR& monitor);
+        std::vector<std::string> filteredPresetNames() const;
         bool applySpecialNavigationResult(const SWorkspaceNavigationResult& result, const PHLMONITOR& monitor, bool centerSpecial);
         void confirmPrompt(const PHLMONITOR& monitor);
         void syncCustomSelectionAfterEdit();

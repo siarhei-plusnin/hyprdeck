@@ -94,8 +94,11 @@ namespace hyprdeck {
             actions.push_back({.command = EShortcutCommand::TYPE_TEXT, .key = "type", .label = "Type", .description = "Edit the workspace name", .footer = false});
 
             if (promptMode == EPromptMode::CREATE_SPECIAL && !activePlugin()->config().specialWorkspaceNames().empty()) {
-                actions.push_back({.command = EShortcutCommand::SELECT_NAMED_PRESET, .key = "up/down", .label = "Select preset", .description = "Move through preset special workspace names", .footer = true});
-                actions.push_back({.command = EShortcutCommand::SELECT_NAMED_PRESET, .key = "ctrl+p / ctrl+n", .label = "Select preset", .description = "Move previous or next through preset names", .footer = true});
+                actions.push_back({.command = EShortcutCommand::SELECT_NAMED_PRESET,
+                                   .key = "up/down, ctrl+p/ctrl+n",
+                                   .label = "Select preset",
+                                   .description = "Move previous or next through matching preset names",
+                                   .footer = true});
                 actions.push_back({.command = EShortcutCommand::USE_NAMED_PRESET, .key = "space", .label = "Use preset", .description = "When no custom text is typed, create/open the selected preset", .footer = false});
             }
 

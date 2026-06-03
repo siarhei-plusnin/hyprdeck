@@ -34,7 +34,7 @@ namespace hyprdeck {
             return;
 
         const bool createPrompt = naming.promptMode == EPromptMode::CREATE_SPECIAL;
-        const auto names        = createPrompt ? activePlugin()->config().specialWorkspaceNames() : std::vector<std::string>{};
+        const auto names        = createPrompt ? filteredPresetNames() : std::vector<std::string>{};
 
         const auto   viewSize       = monitor->m_transformedSize;
         const double boxW           = std::min(620.0, viewSize.x * 0.70);
@@ -76,7 +76,7 @@ namespace hyprdeck {
             const size_t i   = first + rowIndex;
             const CBox   row{box.x + 18.0, box.y + 64.0 + inputH + (static_cast<double>(rowIndex) * rowH), box.w - 36.0, rowH - 8.0};
             if (!naming.promptCustomSelected && i == selected)
-                activePlugin()->renderServices().addRect(row, colors::componentSelected());
+                activePlugin()->renderServices().addRect(edgeCoveredBox(row), colors::componentSelected());
 
             const auto texture = labelTexture(names[i], 20, !naming.promptCustomSelected && i == selected ? 700 : 500);
             if (texture && texture->ok())

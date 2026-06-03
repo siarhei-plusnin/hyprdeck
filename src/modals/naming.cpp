@@ -8,6 +8,7 @@
 #include "selection.hpp"
 #include "shortcut_catalog.hpp"
 #include "runtime_types.hpp"
+#include "strings.hpp"
 #include "textinput.hpp"
 #include "textinput_repeat.hpp"
 
@@ -30,6 +31,10 @@ namespace hyprdeck {
                 return -1;
 
             return 1;
+        }
+
+        bool presetSelectionLoops(const IKeyboard::SKeyEvent event, const SKeyboardModifiers& modifiers) {
+            return event.keycode == KEY_UP || event.keycode == KEY_DOWN || (modifiers.ctrl && (event.keycode == KEY_N || event.keycode == KEY_P));
         }
 
         EShortcutCommand namingCommandForKey(const IKeyboard::SKeyEvent event, const SKeyboardModifiers& modifiers, const EPromptMode promptMode, const bool promptEmpty) {
@@ -80,10 +85,27 @@ namespace hyprdeck {
         return &m_state.promptInput;
     }
 
+    std::vector<std::string> CNamingController::filteredPresetNames() const {
+        auto names = activePlugin()->config().specialWorkspaceNames();
+        if (m_state.promptMode != EPromptMode::CREATE_SPECIAL || m_state.promptInput.text.empty())
+            return names;
+
+        const auto query = strings::normalizeSpecialWorkspaceName(m_state.promptInput.text);
+        if (query.empty())
+            return names;
+
+        std::erase_if(names, [&](const auto& name) { return !strings::containsInsensitive(name, query); });
+        return names;
+    }
+
     void CNamingController::syncCustomSelectionAfterEdit() {
         auto& naming = m_state;
-        if (naming.promptMode == EPromptMode::CREATE_SPECIAL)
+        if (naming.promptMode == EPromptMode::CREATE_SPECIAL) {
             naming.promptCustomSelected = !naming.promptInput.text.empty();
+
+            const auto names                = filteredPresetNames();
+            naming.namedSpecialPromptIndex = names.empty() || naming.promptCustomSelected ? 0 : std::min(naming.namedSpecialPromptIndex, names.size() - 1);
+        }
     }
 
     void CNamingController::handleTextChanged(const PHLMONITOR& monitor) {
@@ -91,12 +113,12 @@ namespace hyprdeck {
         damagePrompt(monitor);
     }
 
-    bool CNamingController::movePresetSelection(const int direction) {
+    bool CNamingController::movePresetSelection(const int direction, const bool loop) {
         auto& naming = m_state;
         if (naming.promptMode != EPromptMode::CREATE_SPECIAL)
             return false;
 
-        const auto names         = activePlugin()->config().specialWorkspaceNames();
+        const auto names         = filteredPresetNames();
         const bool hasCustomName = !naming.promptInput.text.empty();
         if (names.empty()) {
             if (hasCustomName && !naming.promptCustomSelected) {
@@ -108,11 +130,19 @@ namespace hyprdeck {
         }
 
         if (hasCustomName && naming.promptCustomSelected) {
-            if (direction <= 0)
+            naming.promptCustomSelected    = false;
+            naming.namedSpecialPromptIndex = direction < 0 ? names.size() - 1 : 0;
+            return true;
+        }
+
+        if (loop) {
+            const size_t currentIndex = std::min(naming.namedSpecialPromptIndex, names.size() - 1);
+            const size_t nextIndex    = direction < 0 ? (currentIndex == 0 ? names.size() - 1 : currentIndex - 1) : (currentIndex + 1) % names.size();
+            if (nextIndex == currentIndex)
                 return false;
 
             naming.promptCustomSelected    = false;
-            naming.namedSpecialPromptIndex = 0;
+            naming.namedSpecialPromptIndex = nextIndex;
             return true;
         }
 
@@ -131,7 +161,7 @@ namespace hyprdeck {
     }
 
     bool CNamingController::useSelectedPreset(const PHLMONITOR& monitor) {
-        const auto names = activePlugin()->config().specialWorkspaceNames();
+        const auto names = filteredPresetNames();
         if (names.empty())
             return false;
 
@@ -251,7 +281,10 @@ namespace hyprdeck {
         switch (command) {
             case EShortcutCommand::CANCEL_TEXT: closePrompt(monitor); return;
             case EShortcutCommand::CONFIRM_TEXT: confirmPrompt(monitor); return;
-            case EShortcutCommand::SELECT_NAMED_PRESET: dirty = movePresetSelection(presetSelectionDirection(event, modifiers)); break;
+            case EShortcutCommand::SELECT_NAMED_PRESET:
+                if (movePresetSelection(presetSelectionDirection(event, modifiers), presetSelectionLoops(event, modifiers)))
+                    damagePrompt(monitor);
+                return;
             case EShortcutCommand::USE_NAMED_PRESET: useSelectedPreset(monitor); return;
             case EShortcutCommand::DELETE_TEXT_BACKWARD:
             case EShortcutCommand::DELETE_TEXT_FORWARD:
