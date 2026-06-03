@@ -11,6 +11,7 @@
 #include <render/Texture.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 
 namespace hyprdeck {
@@ -39,16 +40,29 @@ namespace hyprdeck {
             return activePlugin()->renderServices().textTexture("workspace-filter", label, color, fontSize, weight, ETextCacheMode::NONE);
         }
 
+        CBox snappedBox(const CBox& box, const PHLMONITOR& monitor) {
+            const double scale = std::max(1.0, monitor ? monitor->m_scale : 1.0);
+            const double x1    = std::round(box.x * scale) / scale;
+            const double y1    = std::round(box.y * scale) / scale;
+            const double x2    = std::round((box.x + box.w) * scale) / scale;
+            const double y2    = std::round((box.y + box.h) * scale) / scale;
+            return CBox{x1, y1, x2 - x1, y2 - y1};
+        }
+
+        void renderClippedFill(const CBox& box, const CHyprColor& color) {
+            activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(box, 4.0), color, 0, box);
+        }
+
         void renderFilterBox(const CBox& box) {
-            activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(box, 2.0), colors::componentBorder());
-            activePlugin()->renderServices().addRect(box, colors::componentBackground());
+            renderClippedFill(activePlugin()->renderServices().expandedBox(box, 2.0), colors::componentBorder());
+            renderClippedFill(box, colors::componentBackground());
         }
 
         CBox filterBox(const PHLMONITOR& monitor) {
             const auto   viewSize = monitor->m_transformedSize;
             const double boxW     = std::min(460.0, viewSize.x - 48.0);
             const double boxH     = 40.0;
-            return CBox{(viewSize.x - boxW) / 2.0, filterY(monitor, boxH), boxW, boxH};
+            return snappedBox(CBox{(viewSize.x - boxW) / 2.0, filterY(monitor, boxH), boxW, boxH}, monitor);
         }
 
         void renderFilterPromptBox(const PHLMONITOR& monitor, const STextInputState& input) {

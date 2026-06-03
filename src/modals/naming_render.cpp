@@ -11,6 +11,7 @@
 #include <render/Texture.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -24,6 +25,18 @@ namespace hyprdeck {
         void renderComponentBox(const CBox& box) {
             activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(box, 2.0), colors::componentBorder());
             activePlugin()->renderServices().addRect(box, colors::componentBackground());
+        }
+
+        CBox snappedBox(const CBox& box) {
+            const double x1 = std::round(box.x);
+            const double y1 = std::round(box.y);
+            const double x2 = std::round(box.x + box.w);
+            const double y2 = std::round(box.y + box.h);
+            return CBox{x1, y1, x2 - x1, y2 - y1};
+        }
+
+        void renderSelectedRow(const CBox& row) {
+            activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(row, 4.0), colors::componentSelected(), 0, row);
         }
 
     } // namespace
@@ -46,7 +59,7 @@ namespace hyprdeck {
         const size_t maxVisibleRows = names.empty() ? 0 : std::max<size_t>(1, static_cast<size_t>(availableRowsH / rowH));
         const size_t visibleRows    = std::min(names.size(), maxVisibleRows);
         const double boxH           = 80.0 + inputH + (rowH * static_cast<double>(visibleRows));
-        const CBox   box{(viewSize.x - boxW) / 2.0, (viewSize.y - boxH) / 2.0, boxW, boxH};
+        const CBox   box = snappedBox(CBox{(viewSize.x - boxW) / 2.0, (viewSize.y - boxH) / 2.0, boxW, boxH});
 
         renderComponentBox(box);
 
@@ -55,7 +68,7 @@ namespace hyprdeck {
             activePlugin()->renderServices().addTexture(title, CBox{box.x + 24.0, box.y + 22.0, title->m_size.x, title->m_size.y});
 
         if (showInput) {
-            const CBox inputBox{box.x + 18.0, box.y + 64.0, box.w - 36.0, 42.0};
+            const CBox inputBox = snappedBox(CBox{box.x + 18.0, box.y + 64.0, box.w - 36.0, 42.0});
             activePlugin()->renderServices().addRect(inputBox, colors::componentSurface());
 
             renderTextInputLine("naming", naming.promptInput, inputBox, "", colors::textPrimary(), 20, 500);
@@ -74,9 +87,9 @@ namespace hyprdeck {
 
         for (size_t rowIndex = 0; rowIndex < visibleRows; ++rowIndex) {
             const size_t i   = first + rowIndex;
-            const CBox   row{box.x + 18.0, box.y + 64.0 + inputH + (static_cast<double>(rowIndex) * rowH), box.w - 36.0, rowH - 8.0};
+            const CBox   row = snappedBox(CBox{box.x + 18.0, box.y + 64.0 + inputH + (static_cast<double>(rowIndex) * rowH), box.w - 36.0, rowH - 8.0});
             if (!naming.promptCustomSelected && i == selected)
-                activePlugin()->renderServices().addRect(edgeCoveredBox(row), colors::componentSelected());
+                renderSelectedRow(row);
 
             const auto texture = labelTexture(names[i], 20, !naming.promptCustomSelected && i == selected ? 700 : 500);
             if (texture && texture->ok())

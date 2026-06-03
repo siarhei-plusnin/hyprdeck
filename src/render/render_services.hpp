@@ -26,7 +26,7 @@ namespace hyprdeck {
     class CRenderServices {
       public:
         CBox                 expandedBox(CBox box, double amount) const;
-        void                 addRect(const CBox& box, const CHyprColor& color, int rounding = 0);
+        void                 addRect(const CBox& box, const CHyprColor& color, int rounding = 0, const CBox& clipBox = {});
         void                 addTexture(const SP<Render::ITexture>& texture, const CBox& box, float alpha = 1.0F, int rounding = 0, const CBox& clipBox = {});
         void                 pushOpacity(float opacity);
         void                 popOpacity();

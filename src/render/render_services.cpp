@@ -25,11 +25,12 @@ namespace hyprdeck {
         return std::clamp(opacity, 0.0F, 1.0F);
     }
 
-    void CRenderServices::addRect(const CBox& box, const CHyprColor& color, const int rounding) {
+    void CRenderServices::addRect(const CBox& box, const CHyprColor& color, const int rounding, const CBox& clipBox) {
         CRectPassElement::SRectData data;
-        data.box   = box;
-        data.color = color.modifyA(color.a * effectiveOpacity());
-        data.round = rounding;
+        data.box     = box;
+        data.color   = color.modifyA(color.a * effectiveOpacity());
+        data.round   = rounding;
+        data.clipBox = clipBox;
 
         activePlugin()->hyprland().addRectPass(std::move(data));
     }
