@@ -114,8 +114,9 @@ namespace hyprdeck {
     } // namespace
 
     bool COverlayPolicy::layerIsExternalOverlay(const PHLLS& layer) const {
-        return layer && (layer->m_interactivity != 0 || namespaceMatchesInputOverlay(layer->m_namespace) || namespaceMatchesNotificationOverlay(layer->m_namespace) ||
-                         namespaceMatchesHiddenCaptureOverlay(layer->m_namespace));
+        return layer &&
+            (layer->m_interactivity != 0 || namespaceMatchesInputOverlay(layer->m_namespace) || namespaceMatchesNotificationOverlay(layer->m_namespace) ||
+             namespaceMatchesHiddenCaptureOverlay(layer->m_namespace));
     }
 
     bool COverlayPolicy::layerShouldRenderOverOverview(const PHLLS& layer) const {
@@ -126,8 +127,9 @@ namespace hyprdeck {
     }
 
     bool COverlayPolicy::windowIsExternalOverlay(const PHLWINDOW& window) const {
-        return window && (namespaceMatchesInputOverlay(window->m_class) || namespaceMatchesInputOverlay(window->m_initialClass) ||
-                          namespaceMatchesNotificationOverlay(window->m_class) || namespaceMatchesNotificationOverlay(window->m_initialClass));
+        return window &&
+            (namespaceMatchesInputOverlay(window->m_class) || namespaceMatchesInputOverlay(window->m_initialClass) || namespaceMatchesNotificationOverlay(window->m_class) ||
+             namespaceMatchesNotificationOverlay(window->m_initialClass));
     }
 
     bool COverlayPolicy::externalOverlayActive(const PHLMONITOR& monitor) const {

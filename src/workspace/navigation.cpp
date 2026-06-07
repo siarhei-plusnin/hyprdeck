@@ -73,7 +73,7 @@ namespace hyprdeck {
             if (!workspace)
                 return {};
 
-            workspace->m_name    = "special:" + normalizedName;
+            workspace->m_name = "special:" + normalizedName;
 
             activePlugin()->hyprland().postWorkspaceRenameEvent(workspace);
 

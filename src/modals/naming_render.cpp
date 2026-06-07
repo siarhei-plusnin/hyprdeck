@@ -22,21 +22,22 @@ namespace hyprdeck {
             return activePlugin()->renderServices().textTexture("naming", label, colors::textPrimary(), fontSize, weight, cacheMode);
         }
 
-        void renderComponentBox(const CBox& box) {
-            activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(box, 2.0), colors::componentBorder());
-            activePlugin()->renderServices().addRect(box, colors::componentBackground());
-        }
-
-        CBox snappedBox(const CBox& box) {
-            const double x1 = std::round(box.x);
-            const double y1 = std::round(box.y);
-            const double x2 = std::round(box.x + box.w);
-            const double y2 = std::round(box.y + box.h);
+        CBox snappedBox(const CBox& box, const PHLMONITOR& monitor) {
+            const double scale = std::max(1.0, monitor ? monitor->m_scale : 1.0);
+            const double x1    = std::round(box.x * scale) / scale;
+            const double y1    = std::round(box.y * scale) / scale;
+            const double x2    = std::round((box.x + box.w) * scale) / scale;
+            const double y2    = std::round((box.y + box.h) * scale) / scale;
             return CBox{x1, y1, x2 - x1, y2 - y1};
         }
 
-        void renderSelectedRow(const CBox& row) {
-            activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(row, 4.0), colors::componentSelected(), 0, row);
+        void renderClippedFill(const CBox& box, const CHyprColor& color) {
+            activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(box, 4.0), color, 0, box);
+        }
+
+        void renderComponentBox(const CBox& box) {
+            renderClippedFill(activePlugin()->renderServices().expandedBox(box, 2.0), colors::componentBorder());
+            renderClippedFill(box, colors::componentBackground());
         }
 
     } // namespace
@@ -46,8 +47,8 @@ namespace hyprdeck {
         if (naming.promptMode == EPromptMode::NONE)
             return;
 
-        const bool createPrompt = naming.promptMode == EPromptMode::CREATE_SPECIAL;
-        const auto names        = createPrompt ? filteredPresetNames() : std::vector<std::string>{};
+        const bool   createPrompt = naming.promptMode == EPromptMode::CREATE_SPECIAL;
+        const auto   names        = createPrompt ? filteredPresetNames() : std::vector<std::string>{};
 
         const auto   viewSize       = monitor->m_transformedSize;
         const double boxW           = std::min(620.0, viewSize.x * 0.70);
@@ -59,7 +60,7 @@ namespace hyprdeck {
         const size_t maxVisibleRows = names.empty() ? 0 : std::max<size_t>(1, static_cast<size_t>(availableRowsH / rowH));
         const size_t visibleRows    = std::min(names.size(), maxVisibleRows);
         const double boxH           = 80.0 + inputH + (rowH * static_cast<double>(visibleRows));
-        const CBox   box = snappedBox(CBox{(viewSize.x - boxW) / 2.0, (viewSize.y - boxH) / 2.0, boxW, boxH});
+        const CBox   box            = snappedBox(CBox{(viewSize.x - boxW) / 2.0, (viewSize.y - boxH) / 2.0, boxW, boxH}, monitor);
 
         renderComponentBox(box);
 
@@ -68,8 +69,8 @@ namespace hyprdeck {
             activePlugin()->renderServices().addTexture(title, CBox{box.x + 24.0, box.y + 22.0, title->m_size.x, title->m_size.y});
 
         if (showInput) {
-            const CBox inputBox = snappedBox(CBox{box.x + 18.0, box.y + 64.0, box.w - 36.0, 42.0});
-            activePlugin()->renderServices().addRect(inputBox, colors::componentSurface());
+            const CBox inputBox = snappedBox(CBox{box.x + 18.0, box.y + 64.0, box.w - 36.0, 42.0}, monitor);
+            renderClippedFill(inputBox, colors::componentSurface());
 
             renderTextInputLine("naming", naming.promptInput, inputBox, "", colors::textPrimary(), 20, 500);
         }
@@ -87,9 +88,9 @@ namespace hyprdeck {
 
         for (size_t rowIndex = 0; rowIndex < visibleRows; ++rowIndex) {
             const size_t i   = first + rowIndex;
-            const CBox   row = snappedBox(CBox{box.x + 18.0, box.y + 64.0 + inputH + (static_cast<double>(rowIndex) * rowH), box.w - 36.0, rowH - 8.0});
+            const CBox   row = snappedBox(CBox{box.x + 18.0, box.y + 64.0 + inputH + (static_cast<double>(rowIndex) * rowH), box.w - 36.0, rowH - 8.0}, monitor);
             if (!naming.promptCustomSelected && i == selected)
-                renderSelectedRow(row);
+                renderClippedFill(row, colors::componentSelected());
 
             const auto texture = labelTexture(names[i], 20, !naming.promptCustomSelected && i == selected ? 700 : 500);
             if (texture && texture->ok())

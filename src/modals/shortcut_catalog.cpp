@@ -13,40 +13,90 @@ namespace hyprdeck {
             const auto                   selectedRow = activePlugin()->selection().selectedRow();
             std::vector<SShortcutAction> actions;
 
-            actions.push_back({.command = EShortcutCommand::MOVE_SELECTION, .key = "h/l, left/right", .label = "Move", .description = "Move selection across the current row", .footer = true});
+            actions.push_back(
+                {.command = EShortcutCommand::MOVE_SELECTION, .key = "h/l, left/right", .label = "Move", .description = "Move selection across the current row", .footer = true});
 
             if (selectedRow == ESelectedRow::NORMAL) {
-                actions.push_back({.command = EShortcutCommand::SELECT_SPECIAL_ROW, .key = "j, down", .label = "Special row", .description = "Move focus to the special workspace row", .footer = true});
-                actions.push_back({.command = EShortcutCommand::SWITCH_NORMAL_WORKSPACE, .key = "1-0", .label = "Switch", .description = "Switch to normal workspace 1-10", .footer = true});
-                actions.push_back({.command = EShortcutCommand::TOGGLE_SELECTION, .key = "space", .label = "Hide special", .description = "Close the active special workspace without leaving overview", .footer = false});
-                actions.push_back({.command = EShortcutCommand::OPEN_SELECTION, .key = "enter / f", .label = "Open normal", .description = "Close overview on the selected normal workspace", .footer = false});
-                actions.push_back({.command = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS, .key = "q", .label = "Close apps", .description = "Ask all windows on the selected normal workspace to close", .footer = true});
+                actions.push_back({.command     = EShortcutCommand::SELECT_SPECIAL_ROW,
+                                   .key         = "j, down",
+                                   .label       = "Special row",
+                                   .description = "Move focus to the special workspace row",
+                                   .footer      = true});
+                actions.push_back(
+                    {.command = EShortcutCommand::SWITCH_NORMAL_WORKSPACE, .key = "1-0", .label = "Switch", .description = "Switch to normal workspace 1-10", .footer = true});
+                actions.push_back({.command     = EShortcutCommand::TOGGLE_SELECTION,
+                                   .key         = "space",
+                                   .label       = "Hide special",
+                                   .description = "Close the active special workspace without leaving overview",
+                                   .footer      = false});
+                actions.push_back({.command     = EShortcutCommand::OPEN_SELECTION,
+                                   .key         = "enter / f",
+                                   .label       = "Open normal",
+                                   .description = "Close overview on the selected normal workspace",
+                                   .footer      = false});
+                actions.push_back({.command     = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS,
+                                   .key         = "q",
+                                   .label       = "Close apps",
+                                   .description = "Ask all windows on the selected normal workspace to close",
+                                   .footer      = true});
             } else {
-                actions.push_back({.command = EShortcutCommand::SELECT_NORMAL_ROW, .key = "k, up", .label = "Normal row", .description = "Move focus to the normal workspace row", .footer = true});
-                actions.push_back({.command = EShortcutCommand::TOGGLE_SELECTION, .key = "space", .label = "Toggle special", .description = "Open or hide the selected special workspace", .footer = false});
-                actions.push_back({.command = EShortcutCommand::OPEN_SELECTION, .key = "enter / f", .label = "Open special", .description = "Open the selected special workspace and close overview", .footer = true});
-                actions.push_back({.command = EShortcutCommand::RENAME_SPECIAL, .key = "r", .label = "Rename", .description = "Rename the selected special workspace", .footer = true});
-                actions.push_back({.command = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS, .key = "q", .label = "Close apps", .description = "Ask all windows on the selected special workspace to close", .footer = true});
+                actions.push_back({.command     = EShortcutCommand::SELECT_NORMAL_ROW,
+                                   .key         = "k, up",
+                                   .label       = "Normal row",
+                                   .description = "Move focus to the normal workspace row",
+                                   .footer      = true});
+                actions.push_back({.command     = EShortcutCommand::TOGGLE_SELECTION,
+                                   .key         = "space",
+                                   .label       = "Toggle special",
+                                   .description = "Open or hide the selected special workspace",
+                                   .footer      = false});
+                actions.push_back({.command     = EShortcutCommand::OPEN_SELECTION,
+                                   .key         = "enter / f",
+                                   .label       = "Open special",
+                                   .description = "Open the selected special workspace and close overview",
+                                   .footer      = true});
+                actions.push_back(
+                    {.command = EShortcutCommand::RENAME_SPECIAL, .key = "r", .label = "Rename", .description = "Rename the selected special workspace", .footer = true});
+                actions.push_back({.command     = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS,
+                                   .key         = "q",
+                                   .label       = "Close apps",
+                                   .description = "Ask all windows on the selected special workspace to close",
+                                   .footer      = true});
             }
 
             if (!activePlugin()->workspaceFilter().applied()) {
-                actions.push_back({.command = EShortcutCommand::CREATE_SIMPLE_SPECIAL, .key = "a", .label = "New special", .description = "Create an unnamed special workspace", .footer = true});
-                actions.push_back({.command = EShortcutCommand::CREATE_NAMED_SPECIAL, .key = "n", .label = "Named special", .description = "Create a preset or dynamically named special workspace", .footer = true});
+                actions.push_back(
+                    {.command = EShortcutCommand::CREATE_SIMPLE_SPECIAL, .key = "a", .label = "New special", .description = "Create an unnamed special workspace", .footer = true});
+                actions.push_back({.command     = EShortcutCommand::CREATE_NAMED_SPECIAL,
+                                   .key         = "n",
+                                   .label       = "Named special",
+                                   .description = "Create a preset or dynamically named special workspace",
+                                   .footer      = true});
             }
 
-            actions.push_back({.command = EShortcutCommand::JUMP_SELECTION, .key = "shift+h/l", .label = "Jump", .description = "Jump to the first or last card in the current row", .footer = false});
-            actions.push_back({.command = EShortcutCommand::ZOOM_PRESET, .key = "ctrl+= / ctrl+-", .label = "Zoom", .description = "Cycle workspace preview zoom presets", .footer = false});
-            actions.push_back({.command = EShortcutCommand::OPEN_WORKSPACE_FILTER, .key = "ctrl+f", .label = "Filter", .description = "Filter workspaces by window class or title", .footer = true});
+            actions.push_back({.command     = EShortcutCommand::JUMP_SELECTION,
+                               .key         = "shift+h/l",
+                               .label       = "Jump",
+                               .description = "Jump to the first or last card in the current row",
+                               .footer      = false});
+            actions.push_back(
+                {.command = EShortcutCommand::ZOOM_PRESET, .key = "ctrl+= / ctrl+-", .label = "Zoom", .description = "Cycle workspace preview zoom presets", .footer = false});
+            actions.push_back({.command     = EShortcutCommand::OPEN_WORKSPACE_FILTER,
+                               .key         = "ctrl+f",
+                               .label       = "Filter",
+                               .description = "Filter workspaces by window class or title",
+                               .footer      = true});
 
-            actions.push_back({.command = EShortcutCommand::CLEAR_WORKSPACE_FILTER,
-                               .key = "delete / ctrl+c",
-                               .label = "Clear filter",
+            actions.push_back({.command     = EShortcutCommand::CLEAR_WORKSPACE_FILTER,
+                               .key         = "delete / ctrl+c",
+                               .label       = "Clear filter",
                                .description = "Show all workspaces again when a filter is active",
-                               .footer = activePlugin()->workspaceFilter().applied()});
+                               .footer      = activePlugin()->workspaceFilter().applied()});
 
             actions.push_back({.command = EShortcutCommand::PAN_ROW, .key = "scroll / drag", .label = "Pan", .description = "Move the row under the pointer", .footer = false});
             actions.push_back({.command = EShortcutCommand::CLOSE_OVERLAY, .key = "esc / right click", .label = "Close", .description = "Close the overview", .footer = false});
-            actions.push_back({.command = EShortcutCommand::OPEN_KEYBINDINGS, .key = "?", .label = "Keybindings", .description = "Open this searchable shortcuts menu", .footer = true});
+            actions.push_back(
+                {.command = EShortcutCommand::OPEN_KEYBINDINGS, .key = "?", .label = "Keybindings", .description = "Open this searchable shortcuts menu", .footer = true});
             return actions;
         }
 
@@ -55,7 +105,11 @@ namespace hyprdeck {
                 {.command = EShortcutCommand::CONFIRM_TEXT, .key = "enter", .label = "Apply", .description = "Keep this workspace filter active", .footer = true},
                 {.command = EShortcutCommand::CANCEL_TEXT, .key = "esc", .label = "Cancel", .description = "Close the filter field without applying edits", .footer = true},
                 {.command = EShortcutCommand::DELETE_TEXT_BACKWARD, .key = "backspace", .label = "Delete", .description = "Edit the filter text; hold to repeat", .footer = true},
-                {.command = EShortcutCommand::DELETE_TEXT_FORWARD, .key = "delete", .label = "Delete forward", .description = "Edit the filter text; hold to repeat", .footer = false},
+                {.command     = EShortcutCommand::DELETE_TEXT_FORWARD,
+                 .key         = "delete",
+                 .label       = "Delete forward",
+                 .description = "Edit the filter text; hold to repeat",
+                 .footer      = false},
                 {.command = EShortcutCommand::MOVE_TEXT_CURSOR, .key = "left/right", .label = "Move cursor", .description = "Move inside the filter text", .footer = true},
                 {.command = EShortcutCommand::MOVE_TEXT_WORD, .key = "ctrl+left/right", .label = "Move word", .description = "Move the cursor by word", .footer = false},
                 {.command = EShortcutCommand::CLEAR_TEXT, .key = "ctrl+u / ctrl+k", .label = "Clear", .description = "Clear the filter field", .footer = false},
@@ -77,32 +131,68 @@ namespace hyprdeck {
             std::vector<SShortcutAction> actions;
 
             if (promptMode == EPromptMode::RENAME_SPECIAL) {
-                actions.push_back({.command = EShortcutCommand::CONFIRM_TEXT, .key = "enter", .label = "Confirm", .description = "Rename the selected special workspace", .footer = true});
+                actions.push_back(
+                    {.command = EShortcutCommand::CONFIRM_TEXT, .key = "enter", .label = "Confirm", .description = "Rename the selected special workspace", .footer = true});
             } else {
-                actions.push_back({.command = EShortcutCommand::CONFIRM_TEXT, .key = "enter", .label = "Confirm", .description = "Create or open the selected special workspace name", .footer = true});
+                actions.push_back({.command     = EShortcutCommand::CONFIRM_TEXT,
+                                   .key         = "enter",
+                                   .label       = "Confirm",
+                                   .description = "Create or open the selected special workspace name",
+                                   .footer      = true});
             }
 
             actions.push_back({.command = EShortcutCommand::CANCEL_TEXT, .key = "esc", .label = "Cancel", .description = "Close the naming prompt", .footer = true});
-            actions.push_back({.command = EShortcutCommand::DELETE_TEXT_BACKWARD, .key = "backspace", .label = "Delete", .description = "Delete the character before the cursor; hold to repeat", .footer = true});
-            actions.push_back({.command = EShortcutCommand::DELETE_TEXT_WORD_BACKWARD, .key = "ctrl+w", .label = "Delete word", .description = "Delete the word before the cursor", .footer = true});
-            actions.push_back({.command = EShortcutCommand::MOVE_TEXT_CURSOR, .key = "left/right", .label = "Move cursor", .description = "Move inside the typed name", .footer = true});
-            actions.push_back({.command = EShortcutCommand::MOVE_TEXT_WORD, .key = "ctrl+left/right", .label = "Move word", .description = "Move the cursor by word", .footer = false});
-            actions.push_back({.command = EShortcutCommand::DELETE_TEXT_FORWARD, .key = "delete", .label = "Delete forward", .description = "Delete the character after the cursor; hold to repeat", .footer = false});
-            actions.push_back({.command = EShortcutCommand::DELETE_TEXT_WORD_FORWARD, .key = "ctrl+delete", .label = "Delete next word", .description = "Delete the word after the cursor", .footer = false});
-            actions.push_back({.command = EShortcutCommand::MOVE_TEXT_LINE_ENDS, .key = "ctrl+a / ctrl+e", .label = "Line ends", .description = "Move to the beginning or end of the name", .footer = false});
-            actions.push_back({.command = EShortcutCommand::CLEAR_TEXT, .key = "ctrl+u / ctrl+k", .label = "Clear", .description = "Clear all text or clear from cursor to end", .footer = false});
+            actions.push_back({.command     = EShortcutCommand::DELETE_TEXT_BACKWARD,
+                               .key         = "backspace",
+                               .label       = "Delete",
+                               .description = "Delete the character before the cursor; hold to repeat",
+                               .footer      = true});
+            actions.push_back({.command     = EShortcutCommand::DELETE_TEXT_WORD_BACKWARD,
+                               .key         = "ctrl+w",
+                               .label       = "Delete word",
+                               .description = "Delete the word before the cursor",
+                               .footer      = true});
+            actions.push_back(
+                {.command = EShortcutCommand::MOVE_TEXT_CURSOR, .key = "left/right", .label = "Move cursor", .description = "Move inside the typed name", .footer = true});
+            actions.push_back(
+                {.command = EShortcutCommand::MOVE_TEXT_WORD, .key = "ctrl+left/right", .label = "Move word", .description = "Move the cursor by word", .footer = false});
+            actions.push_back({.command     = EShortcutCommand::DELETE_TEXT_FORWARD,
+                               .key         = "delete",
+                               .label       = "Delete forward",
+                               .description = "Delete the character after the cursor; hold to repeat",
+                               .footer      = false});
+            actions.push_back({.command     = EShortcutCommand::DELETE_TEXT_WORD_FORWARD,
+                               .key         = "ctrl+delete",
+                               .label       = "Delete next word",
+                               .description = "Delete the word after the cursor",
+                               .footer      = false});
+            actions.push_back({.command     = EShortcutCommand::MOVE_TEXT_LINE_ENDS,
+                               .key         = "ctrl+a / ctrl+e",
+                               .label       = "Line ends",
+                               .description = "Move to the beginning or end of the name",
+                               .footer      = false});
+            actions.push_back({.command     = EShortcutCommand::CLEAR_TEXT,
+                               .key         = "ctrl+u / ctrl+k",
+                               .label       = "Clear",
+                               .description = "Clear all text or clear from cursor to end",
+                               .footer      = false});
             actions.push_back({.command = EShortcutCommand::TYPE_TEXT, .key = "type", .label = "Type", .description = "Edit the workspace name", .footer = false});
 
             if (promptMode == EPromptMode::CREATE_SPECIAL && !activePlugin()->config().specialWorkspaceNames().empty()) {
-                actions.push_back({.command = EShortcutCommand::SELECT_NAMED_PRESET,
-                                   .key = "up/down, ctrl+p/ctrl+n",
-                                   .label = "Select preset",
+                actions.push_back({.command     = EShortcutCommand::SELECT_NAMED_PRESET,
+                                   .key         = "up/down, ctrl+p/ctrl+n",
+                                   .label       = "Select preset",
                                    .description = "Move previous or next through matching preset names",
-                                   .footer = true});
-                actions.push_back({.command = EShortcutCommand::USE_NAMED_PRESET, .key = "space", .label = "Use preset", .description = "When no custom text is typed, create/open the selected preset", .footer = false});
+                                   .footer      = true});
+                actions.push_back({.command     = EShortcutCommand::USE_NAMED_PRESET,
+                                   .key         = "space",
+                                   .label       = "Use preset",
+                                   .description = "When no custom text is typed, create/open the selected preset",
+                                   .footer      = false});
             }
 
-            actions.push_back({.command = EShortcutCommand::OPEN_KEYBINDINGS, .key = "?", .label = "Keybindings", .description = "Open this searchable shortcuts menu", .footer = true});
+            actions.push_back(
+                {.command = EShortcutCommand::OPEN_KEYBINDINGS, .key = "?", .label = "Keybindings", .description = "Open this searchable shortcuts menu", .footer = true});
             return actions;
         }
 

@@ -27,8 +27,8 @@ namespace hyprdeck {
         void focusActiveWorkspace(const PHLMONITOR& monitor) {
             const auto& workspaces = activePlugin()->workspaces();
 
-            const auto activeSpecialID = workspaces.activeSpecialWorkspaceID(monitor);
-            const auto activeNormalID  = workspaces.activeNormalWorkspaceID(monitor);
+            const auto  activeSpecialID = workspaces.activeSpecialWorkspaceID(monitor);
+            const auto  activeNormalID  = workspaces.activeNormalWorkspaceID(monitor);
 
             activePlugin()->layout().setResetCamera(true);
             activePlugin()->selection().setActiveSelection(activeNormalID, activeSpecialID);
@@ -167,7 +167,7 @@ namespace hyprdeck {
     }
 
     void CWorkspaceFilterController::resetState() {
-        auto& filter = m_state;
+        auto& filter      = m_state;
         filter.promptOpen = false;
         filter.text.clear();
         filter.previousText.clear();

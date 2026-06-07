@@ -11,17 +11,17 @@
 namespace hyprdeck {
     namespace {
 
-        const std::vector<std::string>& configuredCommaSeparatedNames(const std::string& rawConfig, CConfigStore::SNameCache& cache,
-                                                                       const bool stripSpecialPrefix, const bool normalizeLower, const bool expandEnv) {
+        const std::vector<std::string>& configuredCommaSeparatedNames(const std::string& rawConfig, CConfigStore::SNameCache& cache, const bool stripSpecialPrefix,
+                                                                      const bool normalizeLower, const bool expandEnv) {
             if (rawConfig == cache.raw)
                 return cache.names;
 
             std::vector<std::string> names;
             const auto               expandedConfig = expandEnv ? env::expandVariables(rawConfig) : rawConfig;
-            std::string_view         raw = expandedConfig;
+            std::string_view         raw            = expandedConfig;
 
             while (!raw.empty()) {
-                const auto comma = raw.find(',');
+                const auto  comma = raw.find(',');
 
                 std::string name = strings::trim(raw.substr(0, comma));
                 if (stripSpecialPrefix)

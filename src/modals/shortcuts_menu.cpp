@@ -53,16 +53,16 @@ namespace hyprdeck {
     }
 
     void CShortcutMenuController::measure(const PHLMONITOR& monitor) {
-        const auto   actions  = activePlugin()->shortcutCatalog().currentActions();
+        const auto   actions   = activePlugin()->shortcutCatalog().currentActions();
         auto&        shortcuts = m_state;
-        const auto   viewSize = monitor->m_transformedSize;
-        const double rowH     = 52.0;
-        const auto   title    = labelTexture("Keybindings", 30, 750);
-        const auto   search   = labelTexture(searchLabel(), 23, 500, ETextCacheMode::NONE);
+        const auto   viewSize  = monitor->m_transformedSize;
+        const double rowH      = 52.0;
+        const auto   title     = labelTexture("Keybindings", 30, 750);
+        const auto   search    = labelTexture(searchLabel(), 23, 500, ETextCacheMode::NONE);
 
-        double keyW         = 0.0;
-        double labelW       = 0.0;
-        double descriptionW = 0.0;
+        double       keyW         = 0.0;
+        double       labelW       = 0.0;
+        double       descriptionW = 0.0;
         for (const auto& action : actions) {
             const auto key         = labelTexture(action.key, 21, 750);
             const auto label       = labelTexture(action.label, 21, 700);

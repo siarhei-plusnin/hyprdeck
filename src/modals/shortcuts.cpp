@@ -52,7 +52,7 @@ namespace hyprdeck {
 
     void CShortcutMenuController::openMenu(const PHLMONITOR& monitor) {
         auto& shortcuts = m_state;
-        shortcuts.open      = true;
+        shortcuts.open  = true;
         shortcuts.searchInput.reset();
         measure(monitor);
         activePlugin()->hyprland().damageMonitor(monitor);
@@ -67,7 +67,7 @@ namespace hyprdeck {
     }
 
     void CShortcutMenuController::resetState() {
-        auto& shortcuts   = m_state;
+        auto& shortcuts      = m_state;
         shortcuts.open       = false;
         shortcuts.width      = 0.0;
         shortcuts.height     = 0.0;

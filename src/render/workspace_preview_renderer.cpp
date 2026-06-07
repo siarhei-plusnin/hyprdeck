@@ -123,7 +123,7 @@ namespace hyprdeck {
         }
 
         void renderWindowPass(const SWorkspaceCard& card, const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot, const bool floatingPass) {
-            PHLWINDOW deferredFocusedWindow;
+            PHLWINDOW  deferredFocusedWindow;
 
             const auto renderWindowList = [&](const std::vector<PHLWINDOW>& windows) {
                 for (const auto& window : windows) {
@@ -214,7 +214,8 @@ namespace hyprdeck {
             activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(card.box, current ? 11.0 : 7.0),
                                                      current ? colors::activeCardSelectionGlow() : colors::inactiveCardSelectionGlow());
 
-        activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(card.box, current ? 7.0 : 3.0), current ? colors::accent() : colors::inactiveCardBorder());
+        activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(card.box, current ? 7.0 : 3.0),
+                                                 current ? colors::accent() : colors::inactiveCardBorder());
         renderWorkspacePreview(card, monitor, snapshot);
 
         if (card.label.empty())

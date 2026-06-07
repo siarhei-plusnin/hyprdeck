@@ -32,8 +32,8 @@ namespace hyprdeck {
             return;
 
         if (interaction.dragRow == EDragRow::SPECIAL)
-            activePlugin()->layout().setSpecialCameraX(
-                activePlugin()->layout().clampSpecialCamera(interaction.dragStartSpecialCameraX - (renderPos.x - interaction.dragStart.x), activePlugin()->layout().specialCardCount()));
+            activePlugin()->layout().setSpecialCameraX(activePlugin()->layout().clampSpecialCamera(interaction.dragStartSpecialCameraX - (renderPos.x - interaction.dragStart.x),
+                                                                                                   activePlugin()->layout().specialCardCount()));
         else
             activePlugin()->layout().setCameraX(activePlugin()->layout().clampCamera(interaction.dragStartCameraX - (renderPos.x - interaction.dragStart.x)));
 
@@ -93,8 +93,8 @@ namespace hyprdeck {
         const auto pos = activePlugin()->layout().cursorRenderPos(monitor);
         if (activePlugin()->layout().dragRowAt(pos) == EDragRow::SPECIAL) {
             activePlugin()->animations().cancelSpecialCameraAnimation();
-            activePlugin()->layout().setSpecialCameraX(
-                activePlugin()->layout().clampSpecialCamera(activePlugin()->layout().specialCameraX() + (event.delta * ROW_SCROLL_SCALE), activePlugin()->layout().specialCardCount()));
+            activePlugin()->layout().setSpecialCameraX(activePlugin()->layout().clampSpecialCamera(activePlugin()->layout().specialCameraX() + (event.delta * ROW_SCROLL_SCALE),
+                                                                                                   activePlugin()->layout().specialCardCount()));
         } else {
             activePlugin()->animations().cancelNormalCameraAnimation();
             activePlugin()->layout().setCameraX(activePlugin()->layout().clampCamera(activePlugin()->layout().cameraX() + (event.delta * ROW_SCROLL_SCALE)));

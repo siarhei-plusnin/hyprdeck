@@ -70,37 +70,37 @@ namespace hyprdeck {
         }
 
         SLayoutInputs layoutInputs(const PHLMONITOR& monitor, const SLayoutState& layout) {
-            const auto  selection         = activePlugin()->selection().snapshot();
-            const auto& overview          = activePlugin()->overview();
-            const auto& workspaces        = activePlugin()->workspaces();
-            const auto  lastWorkspace     = workspaces.lastWorkspaceToShow(monitor);
-            auto        rows              = activePlugin()->workspaceFilterMatcher().apply(monitor, defaultNormalWorkspaceIDs(lastWorkspace), workspaces.specialWorkspacesToShow(monitor));
-            auto       normalIDs         = std::move(rows.normalWorkspaceIDs);
-            auto       specialWorkspaces = std::move(rows.specialWorkspaces);
-            const auto activeNormalID    = workspaces.activeNormalWorkspaceID(monitor);
-            const auto activeSpecialID   = workspaces.activeSpecialWorkspaceID(monitor);
+            const auto    selection     = activePlugin()->selection().snapshot();
+            const auto&   overview      = activePlugin()->overview();
+            const auto&   workspaces    = activePlugin()->workspaces();
+            const auto    lastWorkspace = workspaces.lastWorkspaceToShow(monitor);
+            auto          rows = activePlugin()->workspaceFilterMatcher().apply(monitor, defaultNormalWorkspaceIDs(lastWorkspace), workspaces.specialWorkspacesToShow(monitor));
+            auto          normalIDs         = std::move(rows.normalWorkspaceIDs);
+            auto          specialWorkspaces = std::move(rows.specialWorkspaces);
+            const auto    activeNormalID    = workspaces.activeNormalWorkspaceID(monitor);
+            const auto    activeSpecialID   = workspaces.activeSpecialWorkspaceID(monitor);
 
             SLayoutInputs inputs{
                 .signature =
                     SLayoutSignature{
-                        .monitorID                = monitor->m_id,
-                        .transformedW             = monitor->m_transformedSize.x,
-                        .transformedH             = monitor->m_transformedSize.y,
-                        .pixelW                   = monitor->m_pixelSize.x,
-                        .pixelH                   = monitor->m_pixelSize.y,
-                        .zoom                     = overview.zoom(),
-                        .cameraX                  = layout.cameraX,
-                        .specialCameraX           = layout.specialCameraX,
-                        .resetCamera              = layout.resetCamera,
-                        .selectedRow              = selection.selectedRow,
-                        .selectedNormalID         = selection.selectedNormalID,
-                        .selectedSpecialID        = selection.selectedSpecialID,
-                        .activeNormalID           = activeNormalID,
-                        .activeSpecialID          = activeSpecialID,
-                        .lastWorkspace            = lastWorkspace,
-                        .normalWorkspaceIDs       = normalIDs,
-                        .specialWorkspaceKeys     = specialWorkspaceKeys(specialWorkspaces),
-                        .workspaceFilter          = std::string{activePlugin()->workspaceFilter().text()},
+                        .monitorID            = monitor->m_id,
+                        .transformedW         = monitor->m_transformedSize.x,
+                        .transformedH         = monitor->m_transformedSize.y,
+                        .pixelW               = monitor->m_pixelSize.x,
+                        .pixelH               = monitor->m_pixelSize.y,
+                        .zoom                 = overview.zoom(),
+                        .cameraX              = layout.cameraX,
+                        .specialCameraX       = layout.specialCameraX,
+                        .resetCamera          = layout.resetCamera,
+                        .selectedRow          = selection.selectedRow,
+                        .selectedNormalID     = selection.selectedNormalID,
+                        .selectedSpecialID    = selection.selectedSpecialID,
+                        .activeNormalID       = activeNormalID,
+                        .activeSpecialID      = activeSpecialID,
+                        .lastWorkspace        = lastWorkspace,
+                        .normalWorkspaceIDs   = normalIDs,
+                        .specialWorkspaceKeys = specialWorkspaceKeys(specialWorkspaces),
+                        .workspaceFilter      = std::string{activePlugin()->workspaceFilter().text()},
                     },
                 .normalWorkspaceIDs = std::move(normalIDs),
                 .specialWorkspaces  = std::move(specialWorkspaces),
@@ -113,17 +113,17 @@ namespace hyprdeck {
         }
 
         void storeCleanLayoutSignature(const SLayoutInputs& inputs, SLayoutState& layout) {
-            const auto selection   = activePlugin()->selection().snapshot();
-            const auto& overview = activePlugin()->overview();
-            auto  signature   = inputs.signature;
+            const auto  selection = activePlugin()->selection().snapshot();
+            const auto& overview  = activePlugin()->overview();
+            auto        signature = inputs.signature;
 
-            signature.zoom                     = overview.zoom();
-            signature.cameraX                  = layout.cameraX;
-            signature.specialCameraX           = layout.specialCameraX;
-            signature.resetCamera              = layout.resetCamera;
-            signature.selectedRow              = selection.selectedRow;
-            signature.selectedNormalID         = selection.selectedNormalID;
-            signature.selectedSpecialID        = selection.selectedSpecialID;
+            signature.zoom              = overview.zoom();
+            signature.cameraX           = layout.cameraX;
+            signature.specialCameraX    = layout.specialCameraX;
+            signature.resetCamera       = layout.resetCamera;
+            signature.selectedRow       = selection.selectedRow;
+            signature.selectedNormalID  = selection.selectedNormalID;
+            signature.selectedSpecialID = selection.selectedSpecialID;
 
             layout.signature      = std::move(signature);
             layout.signatureValid = true;
@@ -220,7 +220,7 @@ namespace hyprdeck {
             }
 
             activePlugin()->selection().setLastActiveNormalID(activeID);
-            layout.cameraX               = activePlugin()->layout().clampCameraForCount(layout.cameraX, ids.size());
+            layout.cameraX = activePlugin()->layout().clampCameraForCount(layout.cameraX, ids.size());
         }
 
         void appendNormalCards(SLayoutState& layout, const PHLMONITOR& monitor, const SLayoutMetrics& metrics, const std::vector<WORKSPACEID>& ids) {
@@ -240,8 +240,8 @@ namespace hyprdeck {
             }
         }
 
-        void updateSpecialCards(SLayoutState& layout, const std::vector<PHLWORKSPACE>& workspaces, const SLayoutMetrics& metrics, const WORKSPACEID activeID, const bool resetCamera,
-                                const bool activeChanged, const bool centerActiveChange) {
+        void updateSpecialCards(SLayoutState& layout, const std::vector<PHLWORKSPACE>& workspaces, const SLayoutMetrics& metrics, const WORKSPACEID activeID,
+                                const bool resetCamera, const bool activeChanged, const bool centerActiveChange) {
             layout.specialStepX = metrics.specialW + metrics.specialGap;
 
             const size_t totalCards = workspaces.size();
@@ -384,7 +384,7 @@ namespace hyprdeck {
 
     void CWorkspaceLayoutController::recalculateCards(const PHLMONITOR& monitor) {
         const auto selection = activePlugin()->selection().snapshot();
-        auto& overview    = activePlugin()->overview();
+        auto&      overview  = activePlugin()->overview();
 
         const auto viewSize = monitor->m_transformedSize;
         if (viewSize.x <= 1 || viewSize.y <= 1) {
@@ -404,18 +404,18 @@ namespace hyprdeck {
         m_state.cards.clear();
         m_state.specialCards.clear();
 
-        const bool  resetCamera          = m_state.resetCamera;
-        const auto& normalWorkspaceIDs   = inputs.normalWorkspaceIDs;
-        const auto& specialWorkspaces    = inputs.specialWorkspaces;
-        const bool  showNormalRow        = !normalWorkspaceIDs.empty();
-        const bool  showSpecialRow       = !specialWorkspaces.empty();
-        const auto  metrics              = layoutMetrics(monitor, showNormalRow, showSpecialRow);
-        const auto  activeNormalID       = inputs.activeNormalID;
-        const auto  activeSpecialID      = inputs.activeSpecialID;
-        const bool  normalChanged        = selection.lastActiveNormalID != WORKSPACE_INVALID && activeNormalID != selection.lastActiveNormalID;
-        const bool  specialChanged       = activeSpecialID != WORKSPACE_INVALID && activeSpecialID != selection.lastActiveSpecialID;
-        const bool  centerActiveNormal   = selection.selectedNormalID != activeNormalID;
-        const bool  centerActiveSpecial  = selection.selectedSpecialID != activeSpecialID;
+        const bool  resetCamera         = m_state.resetCamera;
+        const auto& normalWorkspaceIDs  = inputs.normalWorkspaceIDs;
+        const auto& specialWorkspaces   = inputs.specialWorkspaces;
+        const bool  showNormalRow       = !normalWorkspaceIDs.empty();
+        const bool  showSpecialRow      = !specialWorkspaces.empty();
+        const auto  metrics             = layoutMetrics(monitor, showNormalRow, showSpecialRow);
+        const auto  activeNormalID      = inputs.activeNormalID;
+        const auto  activeSpecialID     = inputs.activeSpecialID;
+        const bool  normalChanged       = selection.lastActiveNormalID != WORKSPACE_INVALID && activeNormalID != selection.lastActiveNormalID;
+        const bool  specialChanged      = activeSpecialID != WORKSPACE_INVALID && activeSpecialID != selection.lastActiveSpecialID;
+        const bool  centerActiveNormal  = selection.selectedNormalID != activeNormalID;
+        const bool  centerActiveSpecial = selection.selectedSpecialID != activeSpecialID;
 
         m_state.stepX = metrics.cardW + metrics.gap;
 

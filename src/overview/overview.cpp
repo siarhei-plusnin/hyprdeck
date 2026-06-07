@@ -105,12 +105,13 @@ namespace hyprdeck {
             m_session.zoomInitialized = true;
         }
 
-        m_session.active               = true;
-        m_session.rendering            = true;
-        m_session.closing              = false;
+        m_session.active    = true;
+        m_session.rendering = true;
+        m_session.closing   = false;
         activePlugin()->layout().setResetCamera(true);
-        m_session.monitorID            = monitor->m_id;
-        activePlugin()->selection().setActiveSelection(activePlugin()->workspaces().activeNormalWorkspaceID(monitor), activePlugin()->workspaces().activeSpecialWorkspaceID(monitor));
+        m_session.monitorID = monitor->m_id;
+        activePlugin()->selection().setActiveSelection(activePlugin()->workspaces().activeNormalWorkspaceID(monitor),
+                                                       activePlugin()->workspaces().activeSpecialWorkspaceID(monitor));
         resetInteractionState();
         activePlugin()->layout().invalidate();
 
@@ -130,8 +131,8 @@ namespace hyprdeck {
         if (!renderMonitor || renderMonitor->m_id != m_session.monitorID)
             return;
 
-        const bool externalInputActive = m_session.active &&
-            (activePlugin()->overlays().externalOverlayActive(renderMonitor) || activePlugin()->overlays().pointerOverNotificationOverlay(renderMonitor));
+        const bool externalInputActive =
+            m_session.active && (activePlugin()->overlays().externalOverlayActive(renderMonitor) || activePlugin()->overlays().pointerOverNotificationOverlay(renderMonitor));
         if (!m_session.active) {
             if (activePlugin()->hyprland().softwarePointerLockedFor(renderMonitor))
                 activePlugin()->hyprland().unlockSoftwarePointer(renderMonitor);

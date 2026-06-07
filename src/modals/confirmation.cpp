@@ -46,7 +46,8 @@ namespace hyprdeck {
             const double contentW = keyTexture->m_size.x + gap + labelTexture->m_size.x;
             const double x        = box.x + ((box.w - contentW) / 2.0);
             activePlugin()->renderServices().addTexture(keyTexture, CBox{x, box.y + ((box.h - keyTexture->m_size.y) / 2.0), keyTexture->m_size.x, keyTexture->m_size.y});
-            activePlugin()->renderServices().addTexture(labelTexture, CBox{x + keyTexture->m_size.x + gap, box.y + ((box.h - labelTexture->m_size.y) / 2.0), labelTexture->m_size.x, labelTexture->m_size.y});
+            activePlugin()->renderServices().addTexture(
+                labelTexture, CBox{x + keyTexture->m_size.x + gap, box.y + ((box.h - labelTexture->m_size.y) / 2.0), labelTexture->m_size.x, labelTexture->m_size.y});
         }
 
     } // namespace
@@ -59,9 +60,9 @@ namespace hyprdeck {
         if (workspaceID == WORKSPACE_INVALID)
             return;
 
-        auto& confirmation              = m_state;
-        confirmation.open               = true;
-        confirmation.normalWorkspaceID  = workspaceID;
+        auto& confirmation             = m_state;
+        confirmation.open              = true;
+        confirmation.normalWorkspaceID = workspaceID;
         damageConfirmation(monitor);
     }
 

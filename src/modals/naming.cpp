@@ -44,8 +44,8 @@ namespace hyprdeck {
             if (event.keycode == KEY_ENTER || event.keycode == KEY_KPENTER)
                 return EShortcutCommand::CONFIRM_TEXT;
 
-            if (promptMode == EPromptMode::CREATE_SPECIAL && (event.keycode == KEY_UP || event.keycode == KEY_DOWN || (modifiers.ctrl && event.keycode == KEY_P) ||
-                                                               (modifiers.ctrl && event.keycode == KEY_N)))
+            if (promptMode == EPromptMode::CREATE_SPECIAL &&
+                (event.keycode == KEY_UP || event.keycode == KEY_DOWN || (modifiers.ctrl && event.keycode == KEY_P) || (modifiers.ctrl && event.keycode == KEY_N)))
                 return EShortcutCommand::SELECT_NAMED_PRESET;
 
             if (event.keycode == KEY_SPACE && promptMode == EPromptMode::CREATE_SPECIAL && promptEmpty)
@@ -103,7 +103,7 @@ namespace hyprdeck {
         if (naming.promptMode == EPromptMode::CREATE_SPECIAL) {
             naming.promptCustomSelected = !naming.promptInput.text.empty();
 
-            const auto names                = filteredPresetNames();
+            const auto names               = filteredPresetNames();
             naming.namedSpecialPromptIndex = names.empty() || naming.promptCustomSelected ? 0 : std::min(naming.namedSpecialPromptIndex, names.size() - 1);
         }
     }

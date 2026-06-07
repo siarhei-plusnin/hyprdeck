@@ -25,7 +25,7 @@ namespace hyprdeck {
 
         std::unique_ptr<CHyprdeckPlugin> g_plugin;
 
-        SDispatchResult dispatchToggle(std::string args) {
+        SDispatchResult                  dispatchToggle(std::string args) {
             if (!g_plugin)
                 return SDispatchResult{.passEvent = false, .success = false};
 
@@ -44,33 +44,33 @@ namespace hyprdeck {
     CHyprdeckPlugin::CHyprdeckPlugin(HANDLE handle) : m_handle(handle) {}
 
     void CHyprdeckPlugin::registerConfig() {
-        HyprlandAPI::addConfigValueV2(
-            m_handle,
-            Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:named_special_workspaces",
-                                                                          "Comma-separated special workspace names shown by hyprdeck's named creator", ""));
-        HyprlandAPI::addConfigValueV2(
-            m_handle,
-            Config::Values::makeConfigValue<Config::Values::CFloatValue>(
-                "plugin:hyprdeck:default_zoom", "Default zoom used when opening hyprdeck", static_cast<Config::FLOAT>(DEFAULT_ZOOM),
-                Config::Values::SFloatValueOptions{.min = static_cast<Config::FLOAT>(MIN_ZOOM), .max = static_cast<Config::FLOAT>(MAX_ZOOM)}));
-        HyprlandAPI::addConfigValueV2(
-            m_handle,
-            Config::Values::makeConfigValue<Config::Values::CBoolValue>("plugin:hyprdeck:animations", "Enable hyprdeck overview animations", true));
         HyprlandAPI::addConfigValueV2(m_handle,
-                                       Config::Values::makeConfigValue<Config::Values::CBoolValue>("plugin:hyprdeck:active_workspace_background",
-                                                                                                  "Use the active workspace as hyprdeck's background", true));
+                                      Config::Values::makeConfigValue<Config::Values::CStringValue>(
+                                          "plugin:hyprdeck:named_special_workspaces", "Comma-separated special workspace names shown by hyprdeck's named creator", ""));
+        HyprlandAPI::addConfigValueV2(m_handle,
+                                      Config::Values::makeConfigValue<Config::Values::CFloatValue>(
+                                          "plugin:hyprdeck:default_zoom", "Default zoom used when opening hyprdeck", static_cast<Config::FLOAT>(DEFAULT_ZOOM),
+                                          Config::Values::SFloatValueOptions{.min = static_cast<Config::FLOAT>(MIN_ZOOM), .max = static_cast<Config::FLOAT>(MAX_ZOOM)}));
+        HyprlandAPI::addConfigValueV2(m_handle,
+                                      Config::Values::makeConfigValue<Config::Values::CBoolValue>("plugin:hyprdeck:animations", "Enable hyprdeck overview animations", true));
+        HyprlandAPI::addConfigValueV2(
+            m_handle,
+            Config::Values::makeConfigValue<Config::Values::CBoolValue>("plugin:hyprdeck:active_workspace_background", "Use the active workspace as hyprdeck's background", true));
         HyprlandAPI::addConfigValueV2(
             m_handle, Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:font_family", "Font family used by hyprdeck text", "monospace"));
-        HyprlandAPI::addConfigValueV2(m_handle,
-                                      Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:shortcuts_footer",
-                                                                                                    "Keyboard shortcuts footer visibility: full, hint, or none", "full"));
-        HyprlandAPI::addConfigValueV2(m_handle, Config::Values::makeConfigValue<Config::Values::CStringValue>(
-                                                    "plugin:hyprdeck:blocking_overlays", "Comma-separated case-insensitive overlay name substrings that block hyprdeck input", ""));
         HyprlandAPI::addConfigValueV2(
-            m_handle, Config::Values::makeConfigValue<Config::Values::CStringValue>(
-                          "plugin:hyprdeck:non_blocking_overlays", "Comma-separated case-insensitive overlay name substrings rendered over hyprdeck without blocking input", ""));
-        HyprlandAPI::addConfigValueV2(m_handle, Config::Values::makeConfigValue<Config::Values::CStringValue>(
-                                                    "plugin:hyprdeck:display_capture_overlays", "Comma-separated case-insensitive capture overlay names hidden under hyprdeck", ""));
+            m_handle,
+            Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:shortcuts_footer", "Keyboard shortcuts footer visibility: full, hint, or none", "full"));
+        HyprlandAPI::addConfigValueV2(m_handle,
+                                      Config::Values::makeConfigValue<Config::Values::CStringValue>(
+                                          "plugin:hyprdeck:blocking_overlays", "Comma-separated case-insensitive overlay name substrings that block hyprdeck input", ""));
+        HyprlandAPI::addConfigValueV2(
+            m_handle,
+            Config::Values::makeConfigValue<Config::Values::CStringValue>(
+                "plugin:hyprdeck:non_blocking_overlays", "Comma-separated case-insensitive overlay name substrings rendered over hyprdeck without blocking input", ""));
+        HyprlandAPI::addConfigValueV2(m_handle,
+                                      Config::Values::makeConfigValue<Config::Values::CStringValue>(
+                                          "plugin:hyprdeck:display_capture_overlays", "Comma-separated case-insensitive capture overlay names hidden under hyprdeck", ""));
     }
 
     void CHyprdeckPlugin::init() {
@@ -78,16 +78,9 @@ namespace hyprdeck {
 
         HyprlandAPI::addDispatcherV2(m_handle, "hyprdeck:toggle", dispatchToggle);
         HyprlandAPI::addLuaFunction(m_handle, "hyprdeck", "toggle", luaDispatchToggle);
-        m_hooks.registerHooks(
-            m_overview.onRenderStage,
-            m_inputRouter.onMouseMove,
-            m_inputRouter.onMouseButton,
-            m_inputRouter.onMouseAxis,
-            m_inputRouter.onKeyboard
-        );
+        m_hooks.registerHooks(m_overview.onRenderStage, m_inputRouter.onMouseMove, m_inputRouter.onMouseButton, m_inputRouter.onMouseAxis, m_inputRouter.onKeyboard);
 
         HyprlandAPI::addNotification(m_handle, "hyprdeck loaded", colors::accentOpaque(), 2500);
-
     }
 
     void CHyprdeckPlugin::shutdown() {

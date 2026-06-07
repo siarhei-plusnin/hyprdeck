@@ -41,11 +41,11 @@ namespace hyprdeck {
         if (!m_state.open)
             return;
 
-        auto&        shortcuts = m_state;
-        const auto   actions  = filteredActions();
-        const auto   viewSize = monitor->m_transformedSize;
-        const double rowH     = 52.0;
-        const auto   title    = labelTexture("Keybindings", 30, 750);
+        auto&                             shortcuts = m_state;
+        const auto                        actions   = filteredActions();
+        const auto                        viewSize  = monitor->m_transformedSize;
+        const double                      rowH      = 52.0;
+        const auto                        title     = labelTexture("Keybindings", 30, 750);
 
         std::vector<SP<Render::ITexture>> keyTextures;
         std::vector<SP<Render::ITexture>> labelTextures;
@@ -105,7 +105,8 @@ namespace hyprdeck {
 
             const auto& description = descriptionTextures[i];
             if (description && description->ok())
-                activePlugin()->renderServices().addTexture(description, CBox{row.x + descX, row.y + ((row.h - description->m_size.y) / 2.0), description->m_size.x, description->m_size.y});
+                activePlugin()->renderServices().addTexture(description,
+                                                            CBox{row.x + descX, row.y + ((row.h - description->m_size.y) / 2.0), description->m_size.x, description->m_size.y});
         }
     }
 

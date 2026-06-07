@@ -20,8 +20,8 @@ namespace hyprdeck {
         double filterY(const PHLMONITOR& monitor, const double boxH) {
             const auto& cards        = activePlugin()->layout().cards();
             const auto& specialCards = activePlugin()->layout().specialCards();
-            const auto  viewSize = monitor->m_transformedSize;
-            double      y        = (viewSize.y - boxH) / 2.0;
+            const auto  viewSize     = monitor->m_transformedSize;
+            double      y            = (viewSize.y - boxH) / 2.0;
 
             if (!cards.empty() && !specialCards.empty()) {
                 const double normalBottom = cards.front().box.y + cards.front().box.h;

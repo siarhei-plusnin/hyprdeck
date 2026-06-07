@@ -90,7 +90,7 @@ namespace hyprdeck {
     SWorkspaceFilterRows CWorkspaceFilterMatcher::apply(const PHLMONITOR& monitor, std::vector<WORKSPACEID> normalWorkspaceIDs, std::vector<PHLWORKSPACE> specialWorkspaces) const {
         SWorkspaceFilterRows rows{.normalWorkspaceIDs = std::move(normalWorkspaceIDs), .specialWorkspaces = std::move(specialWorkspaces)};
 
-        const auto loweredQuery = strings::lower(activePlugin()->workspaceFilter().text());
+        const auto           loweredQuery = strings::lower(activePlugin()->workspaceFilter().text());
         if (loweredQuery.empty())
             return rows;
 

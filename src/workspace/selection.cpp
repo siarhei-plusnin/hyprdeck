@@ -85,7 +85,7 @@ namespace hyprdeck {
             if (selection.selectedRow == ESelectedRow::NORMAL && !specialCards.empty())
                 selection.selectedRow = ESelectedRow::SPECIAL;
         } else if (activePlugin()->workspaces().cardIndexByID(cards, selection.selectedNormalID) < 0) {
-            const auto activeID = activePlugin()->workspaces().activeNormalWorkspaceID(monitor);
+            const auto activeID        = activePlugin()->workspaces().activeNormalWorkspaceID(monitor);
             selection.selectedNormalID = activePlugin()->workspaces().cardIndexByID(cards, activeID) >= 0 ? activeID : cards.front().id;
         }
 
@@ -123,8 +123,8 @@ namespace hyprdeck {
 
     const SWorkspaceCard* CSelectionController::selectedSpecialCard() const {
         const auto& specialCards = activePlugin()->layout().specialCards();
-        const auto& selection = m_state;
-        const int   index     = activePlugin()->workspaces().cardIndexByID(specialCards, selection.selectedSpecialID);
+        const auto& selection    = m_state;
+        const int   index        = activePlugin()->workspaces().cardIndexByID(specialCards, selection.selectedSpecialID);
         if (index < 0)
             return nullptr;
 
@@ -274,15 +274,14 @@ namespace hyprdeck {
         }
 
         const auto workspace = activePlugin()->hyprland().workspaceByID(id);
-        applyNavigationResult(
-            activePlugin()->navigator().switchWorkspaceCard(
-                SWorkspaceCard{
-                    .id        = id,
-                    .workspace = activePlugin()->workspaces().isNormalWorkspace(workspace) ? workspace : nullptr,
-                    .label     = std::to_string(id),
-                    .special   = false,
-                },
-                monitor));
+        applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(
+            SWorkspaceCard{
+                .id        = id,
+                .workspace = activePlugin()->workspaces().isNormalWorkspace(workspace) ? workspace : nullptr,
+                .label     = std::to_string(id),
+                .special   = false,
+            },
+            monitor));
 
         activePlugin()->layout().invalidate();
         activePlugin()->layout().recalculateCards(monitor);
@@ -346,8 +345,8 @@ namespace hyprdeck {
             return;
         }
 
-        const bool special = selection.selectedRow == ESelectedRow::SPECIAL;
-        const auto& cards  = special ? activePlugin()->layout().specialCards() : activePlugin()->layout().cards();
+        const bool  special = selection.selectedRow == ESelectedRow::SPECIAL;
+        const auto& cards   = special ? activePlugin()->layout().specialCards() : activePlugin()->layout().cards();
 
         if (cards.empty())
             return;
@@ -402,8 +401,8 @@ namespace hyprdeck {
             return;
         }
 
-        const bool special = selection.selectedRow == ESelectedRow::SPECIAL;
-        const auto& cards  = special ? activePlugin()->layout().specialCards() : activePlugin()->layout().cards();
+        const bool  special = selection.selectedRow == ESelectedRow::SPECIAL;
+        const auto& cards   = special ? activePlugin()->layout().specialCards() : activePlugin()->layout().cards();
 
         if (cards.empty())
             return;
@@ -425,9 +424,8 @@ namespace hyprdeck {
 
         if (activePlugin()->workspaces().cardIsActive(target, monitor))
             activePlugin()->hyprland().damageMonitor(monitor);
-        else
-            if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(target, monitor)))
-                activePlugin()->hyprland().damageMonitor(monitor);
+        else if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(target, monitor)))
+            activePlugin()->hyprland().damageMonitor(monitor);
     }
 
 } // namespace hyprdeck
