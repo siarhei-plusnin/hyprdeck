@@ -27,6 +27,7 @@ namespace hyprdeck {
         bool animateNormalCamera(double from, double to, const PHLMONITOR& monitor);
         bool animateSpecialCamera(double from, double to, const PHLMONITOR& monitor);
         bool animateZoom(double from, double to, double normalCameraRatio, double specialCameraRatio, const PHLMONITOR& monitor);
+        double zoomTarget(double fallback) const;
 
         void cancelCameraAnimations();
         void cancelNormalCameraAnimation();

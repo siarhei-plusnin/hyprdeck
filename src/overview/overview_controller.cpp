@@ -58,24 +58,28 @@ namespace hyprdeck {
         void setPresetZoom(const int direction, const PHLMONITOR& monitor) {
             auto& overview = activePlugin()->overview();
             activePlugin()->layout().recalculateCards(monitor);
+            const double stepZoom = activePlugin()->animations().zoomTarget(overview.zoom());
 
             double target = ZOOM_PRESETS[0];
             if (direction > 0) {
                 target = ZOOM_PRESETS[std::size(ZOOM_PRESETS) - 1];
                 for (const double preset : ZOOM_PRESETS) {
-                    if (preset > overview.zoom() + 0.001) {
+                    if (preset > stepZoom + 0.001) {
                         target = preset;
                         break;
                     }
                 }
             } else {
                 for (int i = static_cast<int>(std::size(ZOOM_PRESETS)) - 1; i >= 0; --i) {
-                    if (ZOOM_PRESETS[i] < overview.zoom() - 0.001) {
+                    if (ZOOM_PRESETS[i] < stepZoom - 0.001) {
                         target = ZOOM_PRESETS[i];
                         break;
                     }
                 }
             }
+
+            if ((direction > 0 && target <= stepZoom + 0.001) || (direction <= 0 && target >= stepZoom - 0.001))
+                return;
 
             activePlugin()->layout().adjustZoom(target / std::max(0.001, overview.zoom()), monitor);
         }

@@ -363,6 +363,13 @@ namespace hyprdeck {
         return true;
     }
 
+    double CAnimationController::zoomTarget(const double fallback) const {
+        if (m_zoom && m_zoom->isBeingAnimated())
+            return m_zoom->goal();
+
+        return fallback;
+    }
+
     void CAnimationController::cancelCameraAnimations() {
         cancelNormalCameraAnimation();
         cancelSpecialCameraAnimation();
