@@ -1,5 +1,7 @@
 #pragma once
 
+#include "runtime_types.hpp"
+
 #include <helpers/AnimatedVariable.hpp>
 
 namespace hyprdeck {
@@ -18,7 +20,9 @@ namespace hyprdeck {
         float overviewOpacity() const;
 
         void  startSpecialCardAppearance(WORKSPACEID id, const PHLMONITOR& monitor);
+        void  startSpecialCardClose(const SWorkspaceCard& card, const PHLMONITOR& monitor);
         float specialCardOpacity(WORKSPACEID id) const;
+        bool  closingSpecialCard(SWorkspaceCard& card, float& opacity) const;
 
         bool animateNormalCamera(double from, double to, const PHLMONITOR& monitor);
         bool animateSpecialCamera(double from, double to, const PHLMONITOR& monitor);
@@ -35,6 +39,7 @@ namespace hyprdeck {
         void ensureSpecialCameraAnimation();
         void ensureZoomAnimation();
         void ensureSpecialCardAppearanceAnimation();
+        void ensureSpecialCardCloseAnimation();
 
         MONITORID m_monitorID = MONITOR_INVALID;
 
@@ -43,7 +48,9 @@ namespace hyprdeck {
         PHLANIMVAR<float> m_specialCamera;
         PHLANIMVAR<float> m_zoom;
         PHLANIMVAR<float> m_specialCardAppearance;
+        PHLANIMVAR<float> m_specialCardClose;
         WORKSPACEID       m_specialCardAppearanceID = WORKSPACE_INVALID;
+        SWorkspaceCard    m_specialCardClosing      = SWorkspaceCard{.id = WORKSPACE_INVALID};
 
         double m_zoomNormalCameraRatio  = 0.0;
         double m_zoomSpecialCameraRatio = 0.0;

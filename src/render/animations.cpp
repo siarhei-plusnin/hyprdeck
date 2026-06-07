@@ -81,13 +81,16 @@ namespace hyprdeck {
         m_specialCamera.reset();
         m_zoom.reset();
         m_specialCardAppearance.reset();
+        m_specialCardClose.reset();
         m_specialCardAppearanceID = WORKSPACE_INVALID;
+        m_specialCardClosing      = SWorkspaceCard{.id = WORKSPACE_INVALID};
         m_monitorID               = MONITOR_INVALID;
     }
 
     bool CAnimationController::active() const {
         return pluginAnimationsEnabled() &&
-            (overviewAnimating() || beingAnimated(m_normalCamera) || beingAnimated(m_specialCamera) || beingAnimated(m_zoom) || beingAnimated(m_specialCardAppearance));
+            (overviewAnimating() || beingAnimated(m_normalCamera) || beingAnimated(m_specialCamera) || beingAnimated(m_zoom) || beingAnimated(m_specialCardAppearance) ||
+             beingAnimated(m_specialCardClose));
     }
 
     void CAnimationController::update(const PHLMONITOR& monitor) {
@@ -121,6 +124,10 @@ namespace hyprdeck {
 
         finishIfComplete(m_overviewOpacity);
         finishIfComplete(m_specialCardAppearance);
+        finishIfComplete(m_specialCardClose);
+
+        if (m_specialCardClosing.id != WORKSPACE_INVALID && m_specialCardClose && !m_specialCardClose->isBeingAnimated() && m_specialCardClose->value() <= 0.001F)
+            m_specialCardClosing = SWorkspaceCard{.id = WORKSPACE_INVALID};
     }
 
     void CAnimationController::ensureOverviewAnimations() {
@@ -199,6 +206,14 @@ namespace hyprdeck {
         m_specialCardAppearance->setUpdateCallback([this](auto) { damageAnimationMonitor(m_monitorID); });
     }
 
+    void CAnimationController::ensureSpecialCardCloseAnimation() {
+        if (m_specialCardClose || !g_pAnimationManager)
+            return;
+
+        g_pAnimationManager->createAnimation(1.0F, m_specialCardClose, animationConfig("specialWorkspaceOut"), AVARDAMAGE_NONE);
+        m_specialCardClose->setUpdateCallback([this](auto) { damageAnimationMonitor(m_monitorID); });
+    }
+
     void CAnimationController::startSpecialCardAppearance(const WORKSPACEID id, const PHLMONITOR& monitor) {
         if (!monitor || id == WORKSPACE_INVALID || !shouldAnimateFloat("specialWorkspaceIn", 0.0F, 1.0F))
             return;
@@ -214,11 +229,43 @@ namespace hyprdeck {
         *m_specialCardAppearance = 1.0F;
     }
 
-    float CAnimationController::specialCardOpacity(const WORKSPACEID id) const {
-        if (id != m_specialCardAppearanceID)
-            return 1.0F;
+    void CAnimationController::startSpecialCardClose(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
+        if (!monitor || !card.special || card.id == WORKSPACE_INVALID || !shouldAnimateFloat("specialWorkspaceOut", 1.0F, 0.0F))
+            return;
 
-        return sampledFloat(m_specialCardAppearance, 1.0F);
+        ensureSpecialCardCloseAnimation();
+        if (!m_specialCardClose)
+            return;
+
+        m_monitorID          = monitor->m_id;
+        m_specialCardClosing = card;
+        m_specialCardClose->setConfig(animationConfig("specialWorkspaceOut"));
+        m_specialCardClose->setValueAndWarp(1.0F);
+        *m_specialCardClose = 0.0F;
+    }
+
+    float CAnimationController::specialCardOpacity(const WORKSPACEID id) const {
+        float opacity = 1.0F;
+
+        if (id == m_specialCardAppearanceID)
+            opacity *= sampledFloat(m_specialCardAppearance, 1.0F);
+
+        if (id == m_specialCardClosing.id)
+            opacity *= sampledFloat(m_specialCardClose, 1.0F);
+
+        return opacity;
+    }
+
+    bool CAnimationController::closingSpecialCard(SWorkspaceCard& card, float& opacity) const {
+        if (m_specialCardClosing.id == WORKSPACE_INVALID)
+            return false;
+
+        opacity = sampledFloat(m_specialCardClose, 0.0F);
+        if (opacity <= 0.001F)
+            return false;
+
+        card = m_specialCardClosing;
+        return true;
     }
 
     void CAnimationController::ensureNormalCameraAnimation() {

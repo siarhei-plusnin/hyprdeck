@@ -12,7 +12,9 @@
 #include <managers/EventManager.hpp>
 #include <render/Renderer.hpp>
 
+#include <algorithm>
 #include <string>
+#include <vector>
 
 namespace hyprdeck {
 
@@ -101,10 +103,70 @@ namespace hyprdeck {
                 window->sendClose();
         }
 
+        void animateSpecialCloseIfEmpty(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) {
+            if (!workspace || activePlugin()->workspaces().workspaceHasAnyWindows(workspace, monitor))
+                return;
+
+            const auto& cards = activePlugin()->layout().specialCards();
+            const int   index = activePlugin()->workspaces().cardIndexByID(cards, workspace->m_id);
+            if (index >= 0)
+                activePlugin()->animations().startSpecialCardClose(cards[index], monitor);
+        }
+
+        WORKSPACEID nextSpecialSelectionAfterRemoving(const PHLWORKSPACE& workspace) {
+            if (!workspace)
+                return WORKSPACE_INVALID;
+
+            const auto&              cards = activePlugin()->layout().specialCards();
+            int                      oldIndex = -1;
+            std::vector<WORKSPACEID> remainingIDs;
+            remainingIDs.reserve(cards.size());
+
+            for (size_t i = 0; i < cards.size(); ++i) {
+                if (cards[i].id == workspace->m_id) {
+                    oldIndex = static_cast<int>(i);
+                    continue;
+                }
+
+                remainingIDs.push_back(cards[i].id);
+            }
+
+            if (remainingIDs.empty())
+                return WORKSPACE_INVALID;
+
+            const auto nextIndex = static_cast<size_t>(std::clamp(oldIndex <= 0 ? 0 : oldIndex - 1, 0, static_cast<int>(remainingIDs.size() - 1)));
+            return remainingIDs[nextIndex];
+        }
+
     } // namespace
 
     void CWorkspaceNavigator::closeWorkspaceWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) {
         closeWindows(workspaceWindows(workspace, monitor));
+    }
+
+    SWorkspaceNavigationResult CWorkspaceNavigator::hideActiveSpecialWorkspace(const PHLMONITOR& monitor, const bool animateIfEmpty) {
+        if (!monitor || !monitor->m_activeSpecialWorkspace)
+            return {};
+
+        const auto workspace     = monitor->m_activeSpecialWorkspace;
+        const bool willDisappear = !activePlugin()->workspaces().workspaceHasAnyWindows(workspace, monitor);
+
+        SWorkspaceNavigationResult result{
+            .success = true,
+        };
+
+        if (willDisappear) {
+            result.selectedSpecialID = nextSpecialSelectionAfterRemoving(workspace);
+            if (*result.selectedSpecialID == WORKSPACE_INVALID)
+                result.selectedRow = ESelectedRow::NORMAL;
+        } else
+            result.selectedSpecialID = workspace->m_id;
+
+        if (animateIfEmpty && willDisappear)
+            animateSpecialCloseIfEmpty(workspace, monitor);
+
+        monitor->setSpecialWorkspace(nullptr);
+        return result;
     }
 
     SWorkspaceNavigationResult CWorkspaceNavigator::switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
@@ -128,9 +190,11 @@ namespace hyprdeck {
             result.selectedRow       = ESelectedRow::SPECIAL;
             result.selectedSpecialID = workspace->m_id;
 
-            if (monitor->m_activeSpecialWorkspace == workspace)
-                monitor->setSpecialWorkspace(nullptr);
-            else
+            if (monitor->m_activeSpecialWorkspace == workspace) {
+                result = hideActiveSpecialWorkspace(monitor);
+                if (!result.selectedRow && result.selectedSpecialID && *result.selectedSpecialID != WORKSPACE_INVALID)
+                    result.selectedRow = ESelectedRow::SPECIAL;
+            } else
                 monitor->setSpecialWorkspace(workspace);
         } else {
             result.selectedRow      = ESelectedRow::NORMAL;

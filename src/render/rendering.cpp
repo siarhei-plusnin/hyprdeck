@@ -12,7 +12,17 @@
 
 #include <helpers/Monitor.hpp>
 
+#include <algorithm>
+#include <vector>
+
 namespace hyprdeck {
+    namespace {
+
+        bool cardVisible(const std::vector<SWorkspaceCard>& cards, const WORKSPACEID id) {
+            return std::ranges::any_of(cards, [&](const auto& card) { return card.id == id; });
+        }
+
+    } // namespace
 
     void COverviewRenderer::renderOverview(const PHLMONITOR& monitor) {
         activePlugin()->layout().recalculateCards(monitor);
@@ -38,6 +48,14 @@ namespace hyprdeck {
 
             renderServices.pushOpacity(opacity);
             activePlugin()->workspacePreviewRenderer().renderCard(card, monitor, snapshot);
+            renderServices.popOpacity();
+        }
+
+        SWorkspaceCard closingCard;
+        float          closingOpacity = 1.0F;
+        if (animations.closingSpecialCard(closingCard, closingOpacity) && !cardVisible(activePlugin()->layout().specialCards(), closingCard.id)) {
+            renderServices.pushOpacity(closingOpacity);
+            activePlugin()->workspacePreviewRenderer().renderCard(closingCard, monitor, snapshot);
             renderServices.popOpacity();
         }
 

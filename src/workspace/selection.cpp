@@ -14,7 +14,6 @@
 #include <algorithm>
 
 namespace hyprdeck {
-
     SSelectionState CSelectionController::snapshot() const {
         return m_state;
     }
@@ -157,7 +156,7 @@ namespace hyprdeck {
         }
 
         if (!card->special && (activePlugin()->workspaces().cardIsActive(*card, monitor) || activePlugin()->workspaces().cardIsSelected(*card))) {
-            monitor->setSpecialWorkspace(nullptr);
+            applyNavigationResult(activePlugin()->navigator().hideActiveSpecialWorkspace(monitor));
             activePlugin()->overview().close();
             return;
         }
@@ -207,8 +206,7 @@ namespace hyprdeck {
 
         auto& selection = m_state;
         if (selection.selectedRow == ESelectedRow::NORMAL) {
-            if (monitor->m_activeSpecialWorkspace)
-                monitor->setSpecialWorkspace(nullptr);
+            applyNavigationResult(activePlugin()->navigator().hideActiveSpecialWorkspace(monitor));
 
             if (const auto* card = selectedNormalCard()) {
                 if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor))) {
@@ -239,8 +237,7 @@ namespace hyprdeck {
 
         auto& selection = m_state;
         if (selection.selectedRow == ESelectedRow::NORMAL) {
-            if (monitor->m_activeSpecialWorkspace)
-                monitor->setSpecialWorkspace(nullptr);
+            applyNavigationResult(activePlugin()->navigator().hideActiveSpecialWorkspace(monitor));
 
             if (const auto* card = selectedNormalCard()) {
                 if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor)))
@@ -266,8 +263,7 @@ namespace hyprdeck {
             return;
 
         if (id == activePlugin()->workspaces().activeNormalWorkspaceID(monitor)) {
-            if (monitor->m_activeSpecialWorkspace)
-                monitor->setSpecialWorkspace(nullptr);
+            applyNavigationResult(activePlugin()->navigator().hideActiveSpecialWorkspace(monitor));
 
             activePlugin()->overview().close();
             return;
@@ -309,12 +305,14 @@ namespace hyprdeck {
         if (!card || !card->workspace)
             return;
 
-        const int oldIndex = activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), selection.selectedSpecialID);
+        const auto closingCard = *card;
+        const int  oldIndex    = activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), selection.selectedSpecialID);
 
+        activePlugin()->animations().startSpecialCardClose(closingCard, monitor);
         activePlugin()->navigator().closeWorkspaceWindows(card->workspace);
 
         if (monitor->m_activeSpecialWorkspace == card->workspace)
-            monitor->setSpecialWorkspace(nullptr);
+            activePlugin()->navigator().hideActiveSpecialWorkspace(monitor, false);
 
         selection.selectedRow       = ESelectedRow::SPECIAL;
         selection.selectedSpecialID = WORKSPACE_INVALID;

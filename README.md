@@ -39,11 +39,12 @@ hyprdeck reads Hyprland animation leaves directly for enabled state and interpol
 
 | hyprdeck animation | Hyprland leaf |
 | --- | --- |
-| Overview open opacity | `fadeLayersIn` |
-| Overview close opacity | `fadeLayersOut` |
+| Overview open opacity | `layersIn` |
+| Overview close opacity | `layersOut` |
 | Normal workspace row centering | `workspacesIn` |
 | Special workspace row centering | `specialWorkspaceIn` |
 | New special card opacity | `specialWorkspaceIn` |
+| Closing special card opacity | `specialWorkspaceOut` |
 | Zoom changes | `workspacesIn` |
 
 Comma-separated workspace names are trimmed, de-duplicated, and may include or omit a leading `special:` prefix. Overlay lists are comma-separated case-insensitive namespace/class substrings; `$VAR` and `${VAR}` expansion is supported there.
