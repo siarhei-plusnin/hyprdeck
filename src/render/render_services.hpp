@@ -30,8 +30,6 @@ namespace hyprdeck {
         void                 addTexture(const SP<Render::ITexture>& texture, const CBox& box, float alpha = 1.0F, int rounding = 0, const CBox& clipBox = {});
         void                 pushOpacity(float opacity);
         void                 popOpacity();
-        void                 pushRenderTransform(Vector2D offset, float scale);
-        void                 popRenderTransform();
         SP<Render::ITexture> textTexture(std::string_view scope, const std::string& text, const CHyprColor& color, int fontSize, int weight,
                                           ETextCacheMode cacheMode = ETextCacheMode::PERSISTENT);
         void                 clearTextTextureCache();

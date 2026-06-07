@@ -15,13 +15,10 @@ namespace hyprdeck {
         bool startOverviewClose(const PHLMONITOR& monitor);
         bool overviewAnimating() const;
 
-        float    overviewOpacity() const;
-        float    overviewScale() const;
-        Vector2D overviewOffset() const;
+        float overviewOpacity() const;
 
         void  startSpecialCardAppearance(WORKSPACEID id, const PHLMONITOR& monitor);
         float specialCardOpacity(WORKSPACEID id) const;
-        float specialCardScale(WORKSPACEID id) const;
 
         bool animateNormalCamera(double from, double to, const PHLMONITOR& monitor);
         bool animateSpecialCamera(double from, double to, const PHLMONITOR& monitor);
@@ -41,15 +38,12 @@ namespace hyprdeck {
 
         MONITORID m_monitorID = MONITOR_INVALID;
 
-        PHLANIMVAR<float>    m_overviewOpacity;
-        PHLANIMVAR<float>    m_overviewScale;
-        PHLANIMVAR<Vector2D> m_overviewOffset;
-        PHLANIMVAR<float>    m_normalCamera;
-        PHLANIMVAR<float>    m_specialCamera;
-        PHLANIMVAR<float>    m_zoom;
-        PHLANIMVAR<float>    m_specialCardAppearance;
-        WORKSPACEID          m_specialCardAppearanceID = WORKSPACE_INVALID;
-        float                m_specialCardStartScale   = 1.0F;
+        PHLANIMVAR<float> m_overviewOpacity;
+        PHLANIMVAR<float> m_normalCamera;
+        PHLANIMVAR<float> m_specialCamera;
+        PHLANIMVAR<float> m_zoom;
+        PHLANIMVAR<float> m_specialCardAppearance;
+        WORKSPACEID       m_specialCardAppearanceID = WORKSPACE_INVALID;
 
         double m_zoomNormalCameraRatio  = 0.0;
         double m_zoomSpecialCameraRatio = 0.0;
