@@ -36,8 +36,19 @@ namespace hyprdeck {
         }
 
         void renderComponentBox(const CBox& box) {
-            renderClippedFill(activePlugin()->renderServices().expandedBox(box, 2.0), colors::componentBorder());
             renderClippedFill(box, colors::componentBackground());
+
+            constexpr double BORDER  = 2.0;
+            constexpr double OVERLAP = 1.0;
+            const CBox       top{box.x - BORDER, box.y - BORDER, box.w + (BORDER * 2.0), BORDER + OVERLAP};
+            const CBox       bottom{box.x - BORDER, box.y + box.h - OVERLAP, box.w + (BORDER * 2.0), BORDER + OVERLAP};
+            const CBox       left{box.x - BORDER, box.y - BORDER, BORDER + OVERLAP, box.h + (BORDER * 2.0)};
+            const CBox       right{box.x + box.w - OVERLAP, box.y - BORDER, BORDER + OVERLAP, box.h + (BORDER * 2.0)};
+
+            renderClippedFill(top, colors::componentBorder());
+            renderClippedFill(bottom, colors::componentBorder());
+            renderClippedFill(left, colors::componentBorder());
+            renderClippedFill(right, colors::componentBorder());
         }
 
     } // namespace
