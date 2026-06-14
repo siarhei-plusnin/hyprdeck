@@ -188,6 +188,16 @@ namespace hyprdeck {
             return;
         }
 
+        if (row == ESelectedRow::NORMAL) {
+            const auto& specialCards = activePlugin()->layout().specialCards();
+            if (specialCards.size() == 1 && specialCards.front().workspace && monitor->m_activeSpecialWorkspace == specialCards.front().workspace &&
+                !activePlugin()->workspaces().workspaceHasAnyWindows(specialCards.front().workspace, monitor)) {
+                applyNavigationResult(activePlugin()->navigator().hideActiveSpecialWorkspace(monitor));
+                activePlugin()->layout().invalidate();
+                activePlugin()->layout().recalculateCards(monitor);
+            }
+        }
+
         selection.selectedRow = row;
         activePlugin()->layout().invalidate();
         ensureSelection(monitor);
@@ -285,23 +295,24 @@ namespace hyprdeck {
         activePlugin()->hyprland().damageMonitor(monitor);
     }
 
-    void CSelectionController::closeSelectedWorkspaceWindows(const PHLMONITOR& monitor) {
+    void CSelectionController::closeSelectedNormalWorkspaceWindows(const PHLMONITOR& monitor) {
         activePlugin()->layout().recalculateCards(monitor);
 
-        auto& selection = m_state;
-        if (selection.selectedRow == ESelectedRow::NORMAL) {
-            const auto* card = selectedNormalCard();
-            if (!card || !activePlugin()->workspaces().isNormalWorkspace(card->workspace))
-                return;
-
-            if (!activePlugin()->workspaces().workspaceHasAnyWindows(card->workspace, monitor))
-                return;
-
-            activePlugin()->confirmation().openCloseNormalWorkspaceConfirmation(card->workspace->m_id, monitor);
+        const auto* card = selectedNormalCard();
+        if (!card || !activePlugin()->workspaces().isNormalWorkspace(card->workspace))
             return;
-        }
 
-        const auto* card = selectedSpecialCard();
+        if (!activePlugin()->workspaces().workspaceHasAnyWindows(card->workspace, monitor))
+            return;
+
+        activePlugin()->confirmation().openCloseNormalWorkspaceConfirmation(card->workspace->m_id, monitor);
+    }
+
+    void CSelectionController::closeSelectedSpecialWorkspaceWindows(const PHLMONITOR& monitor) {
+        activePlugin()->layout().recalculateCards(monitor);
+
+        auto&       selection = m_state;
+        const auto* card      = selectedSpecialCard();
         if (!card || !card->workspace)
             return;
 

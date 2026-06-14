@@ -36,7 +36,8 @@ namespace hyprdeck {
         void                  toggleSelection(const PHLMONITOR& monitor);
         void                  openSelection(const PHLMONITOR& monitor);
         void                  switchNormalWorkspaceByID(WORKSPACEID id, const PHLMONITOR& monitor);
-        void                  closeSelectedWorkspaceWindows(const PHLMONITOR& monitor);
+        void                  closeSelectedNormalWorkspaceWindows(const PHLMONITOR& monitor);
+        void                  closeSelectedSpecialWorkspaceWindows(const PHLMONITOR& monitor);
         void                  moveSelection(int direction, const PHLMONITOR& monitor);
         void                  jumpSelection(int direction, const PHLMONITOR& monitor);
 

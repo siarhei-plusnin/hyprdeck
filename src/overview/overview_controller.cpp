@@ -101,8 +101,12 @@ namespace hyprdeck {
                 return EShortcutCommand::TOGGLE_SELECTION;
             if (event.keycode == KEY_ENTER || event.keycode == KEY_KPENTER || event.keycode == KEY_F)
                 return EShortcutCommand::OPEN_SELECTION;
-            if (event.keycode == KEY_Q)
-                return EShortcutCommand::CLOSE_WORKSPACE_WINDOWS;
+            if (event.keycode == KEY_Q) {
+                if (activePlugin()->selection().selectedRow() == ESelectedRow::NORMAL)
+                    return EShortcutCommand::CLOSE_NORMAL_WORKSPACE_WINDOWS;
+
+                return EShortcutCommand::CLOSE_SPECIAL_WORKSPACE_WINDOWS;
+            }
             if (activePlugin()->workspaceFilter().applied() && (event.keycode == KEY_A || event.keycode == KEY_N))
                 return EShortcutCommand::NONE;
             if (event.keycode == KEY_A)
@@ -154,7 +158,8 @@ namespace hyprdeck {
             case EShortcutCommand::TOGGLE_SELECTION: activePlugin()->selection().toggleSelection(monitor); break;
             case EShortcutCommand::OPEN_SELECTION: activePlugin()->selection().openSelection(monitor); break;
 
-            case EShortcutCommand::CLOSE_WORKSPACE_WINDOWS: activePlugin()->selection().closeSelectedWorkspaceWindows(monitor); break;
+            case EShortcutCommand::CLOSE_NORMAL_WORKSPACE_WINDOWS: activePlugin()->selection().closeSelectedNormalWorkspaceWindows(monitor); break;
+            case EShortcutCommand::CLOSE_SPECIAL_WORKSPACE_WINDOWS: activePlugin()->selection().closeSelectedSpecialWorkspaceWindows(monitor); break;
 
             case EShortcutCommand::CREATE_SIMPLE_SPECIAL:
                 if (const auto result = activePlugin()->navigator().createSimpleSpecialWorkspace(monitor); activePlugin()->selection().applyNavigationResult(result)) {

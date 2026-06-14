@@ -34,7 +34,7 @@ namespace hyprdeck {
                                    .label       = "Open normal",
                                    .description = "Close overview on the selected normal workspace",
                                    .footer      = false});
-                actions.push_back({.command     = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS,
+                actions.push_back({.command     = EShortcutCommand::CLOSE_NORMAL_WORKSPACE_WINDOWS,
                                    .key         = "q",
                                    .label       = "Close apps",
                                    .description = "Ask all windows on the selected normal workspace to close",
@@ -57,7 +57,7 @@ namespace hyprdeck {
                                    .footer      = true});
                 actions.push_back(
                     {.command = EShortcutCommand::RENAME_SPECIAL, .key = "r", .label = "Rename", .description = "Rename the selected special workspace", .footer = true});
-                actions.push_back({.command     = EShortcutCommand::CLOSE_WORKSPACE_WINDOWS,
+                actions.push_back({.command     = EShortcutCommand::CLOSE_SPECIAL_WORKSPACE_WINDOWS,
                                    .key         = "q",
                                    .label       = "Close apps",
                                    .description = "Ask all windows on the selected special workspace to close",
