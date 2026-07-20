@@ -5,10 +5,9 @@
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
-#include <Compositor.hpp>
 #include <desktop/Workspace.hpp>
 #include <desktop/view/Window.hpp>
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 #include <managers/EventManager.hpp>
 #include <render/Renderer.hpp>
 

@@ -9,7 +9,7 @@
 #include "textinput_repeat.hpp"
 #include "workspaces.hpp"
 
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 #include <render/Renderer.hpp>
 
 #include <linux/input-event-codes.h>

@@ -3,7 +3,7 @@
 #include "colors.hpp"
 #include "plugin.hpp"
 
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 
 #include <algorithm>
 #include <chrono>

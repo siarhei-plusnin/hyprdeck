@@ -7,7 +7,7 @@
 #include "strings.hpp"
 #include "textinput.hpp"
 
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 #include <render/Texture.hpp>
 
 #include <algorithm>

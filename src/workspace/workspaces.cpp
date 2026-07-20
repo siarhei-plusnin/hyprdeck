@@ -4,11 +4,10 @@
 #include "plugin.hpp"
 #include "strings.hpp"
 
-#include <Compositor.hpp>
 #include <algorithm>
 #include <desktop/Workspace.hpp>
 #include <desktop/view/Window.hpp>
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 
 #include <string>
 
@@ -16,7 +15,7 @@ namespace hyprdeck {
     namespace {
 
         bool shouldCountWindow(const PHLWINDOW& window, const PHLMONITOR& monitor) {
-            if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden())
+            if (!window || !window->m_isMapped || window->isHidden())
                 return false;
 
             return activePlugin()->workspaces().windowBelongsToMonitor(window, monitor) && activePlugin()->workspaces().isNormalWorkspace(window->m_workspace);
@@ -45,7 +44,7 @@ namespace hyprdeck {
             return false;
 
         for (const auto& window : activePlugin()->hyprland().windows()) {
-            if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden())
+            if (!window || !window->m_isMapped || window->isHidden())
                 continue;
 
             if (windowBelongsToMonitor(window, monitor) && windowBelongsToWorkspace(window, workspace))

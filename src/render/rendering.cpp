@@ -10,7 +10,7 @@
 #include "workspace_filter.hpp"
 #include "workspace_preview_renderer.hpp"
 
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 
 #include <algorithm>
 #include <vector>

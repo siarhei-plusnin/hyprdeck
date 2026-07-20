@@ -12,8 +12,7 @@
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
-#include <helpers/Monitor.hpp>
-#include <managers/PointerManager.hpp>
+#include <output/Monitor.hpp>
 #include <render/Renderer.hpp>
 
 #include <algorithm>

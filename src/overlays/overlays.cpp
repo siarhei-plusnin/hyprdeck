@@ -4,10 +4,9 @@
 #include "plugin.hpp"
 #include "strings.hpp"
 
-#include <Compositor.hpp>
 #include <desktop/view/LayerSurface.hpp>
 #include <desktop/view/Window.hpp>
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 #include <managers/input/InputManager.hpp>
 
 #include <array>
@@ -24,11 +23,11 @@ namespace hyprdeck {
         }
 
         bool layerReadyForDetection(const PHLLS& layer) {
-            return layer && layer->m_mapped && !layer->m_fadingOut;
+            return layer && layer->m_mapped;
         }
 
         bool windowReadyForDetection(const PHLWINDOW& window) {
-            return window && window->m_isMapped && !window->m_fadingOut && !window->isHidden();
+            return window && window->m_isMapped && !window->isHidden();
         }
 
         bool layerVisibleOnMonitor(const PHLLS& layer, const PHLMONITOR& monitor) {
@@ -101,7 +100,7 @@ namespace hyprdeck {
             if (!layerVisibleOnMonitor(layer, monitor))
                 return false;
 
-            return boxContainsPointer(CBox{layer->m_realPosition->value(), layer->m_realSize->value()});
+            return boxContainsPointer(layer->geometricBox(Desktop::View::IGeometric::GEOMETRIC_CURRENT));
         }
 
         bool pointerOverWindow(const PHLWINDOW& window, const PHLMONITOR& monitor) {

@@ -6,9 +6,8 @@
 #include "workspace_filter_match.hpp"
 #include "workspaces.hpp"
 
-#include <Compositor.hpp>
 #include <desktop/Workspace.hpp>
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 #include <managers/input/InputManager.hpp>
 #include <render/Renderer.hpp>
 

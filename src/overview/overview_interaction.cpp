@@ -8,8 +8,7 @@
 #include "selection.hpp"
 #include "runtime_types.hpp"
 
-#include <helpers/Monitor.hpp>
-#include <managers/PointerManager.hpp>
+#include <output/Monitor.hpp>
 #include <render/Renderer.hpp>
 
 #include <linux/input-event-codes.h>

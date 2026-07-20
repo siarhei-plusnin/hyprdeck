@@ -7,9 +7,8 @@
 #include "runtime_types.hpp"
 #include "workspaces.hpp"
 
-#include <Compositor.hpp>
 #include <desktop/Workspace.hpp>
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 #include <render/Renderer.hpp>
 #include <render/Texture.hpp>
 

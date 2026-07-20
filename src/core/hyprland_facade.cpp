@@ -1,17 +1,20 @@
 #include "hyprland_facade.hpp"
 
-#include <Compositor.hpp>
 #include <desktop/state/FocusState.hpp>
+#include <desktop/state/ViewState.hpp>
 #include <desktop/Workspace.hpp>
 #include <devices/IKeyboard.hpp>
 #include <hyprutils/memory/UniquePtr.hpp>
 #include <managers/EventManager.hpp>
-#include <managers/PointerManager.hpp>
 #include <managers/SeatManager.hpp>
 #include <managers/eventLoop/EventLoopManager.hpp>
 #include <managers/eventLoop/EventLoopTimer.hpp>
 #include <managers/input/InputManager.hpp>
+#include <output/Monitor.hpp>
+#include <pointer/PointerManager.hpp>
 #include <render/Renderer.hpp>
+#include <state/MonitorState.hpp>
+#include <state/WorkspaceState.hpp>
 
 using Hyprutils::Memory::makeUnique;
 
@@ -32,11 +35,11 @@ namespace hyprdeck {
     } // namespace
 
     PHLMONITOR CHyprlandFacade::monitorFromID(const MONITORID monitorID) const {
-        return g_pCompositor ? g_pCompositor->getMonitorFromID(monitorID) : nullptr;
+        return State::monitorState() ? State::monitorState()->query().id(monitorID).run() : nullptr;
     }
 
     PHLMONITOR CHyprlandFacade::monitorFromCursor() const {
-        return g_pCompositor ? g_pCompositor->getMonitorFromCursor() : nullptr;
+        return State::monitorState() ? State::monitorState()->query().vec(mouseCoords()).run() : nullptr;
     }
 
     PHLMONITOR CHyprlandFacade::activeMonitor() const {
@@ -56,8 +59,8 @@ namespace hyprdeck {
     }
 
     void CHyprlandFacade::scheduleAnimationFrame(const PHLMONITOR& monitor) const {
-        if (g_pCompositor && monitor)
-            g_pCompositor->scheduleFrameForMonitor(monitor, Aquamarine::IOutput::AQ_SCHEDULE_ANIMATION);
+        if (monitor)
+            monitor->scheduleFrame(Aquamarine::IOutput::AQ_SCHEDULE_ANIMATION);
     }
 
     void CHyprlandFacade::setCursorHidden(const bool hidden) const {
@@ -66,22 +69,22 @@ namespace hyprdeck {
     }
 
     void CHyprlandFacade::lockSoftwarePointer(const PHLMONITOR& monitor) const {
-        if (g_pPointerManager && monitor)
-            g_pPointerManager->lockSoftwareForMonitor(monitor);
+        if (Pointer::mgr() && monitor)
+            Pointer::mgr()->lockSoftwareForMonitor(monitor);
     }
 
     void CHyprlandFacade::unlockSoftwarePointer(const PHLMONITOR& monitor) const {
-        if (g_pPointerManager && monitor)
-            g_pPointerManager->unlockSoftwareForMonitor(monitor);
+        if (Pointer::mgr() && monitor)
+            Pointer::mgr()->unlockSoftwareForMonitor(monitor);
     }
 
     bool CHyprlandFacade::softwarePointerLockedFor(const PHLMONITOR& monitor) const {
-        return g_pPointerManager && monitor && g_pPointerManager->softwareLockedFor(monitor);
+        return Pointer::mgr() && monitor && Pointer::mgr()->softwareLockedFor(monitor);
     }
 
     void CHyprlandFacade::damageCursor(const PHLMONITOR& monitor) const {
-        if (g_pPointerManager && monitor)
-            g_pPointerManager->damageCursor(monitor);
+        if (Pointer::mgr() && monitor)
+            Pointer::mgr()->damageCursor(monitor);
     }
 
     Vector2D CHyprlandFacade::mouseCoords() const {
@@ -89,47 +92,47 @@ namespace hyprdeck {
     }
 
     Vector2D CHyprlandFacade::pointerPosition() const {
-        return g_pPointerManager ? g_pPointerManager->position() : Vector2D{};
+        return Pointer::mgr() ? Pointer::mgr()->position() : Vector2D{};
     }
 
     SP<Render::ITexture> CHyprlandFacade::currentCursorTexture() const {
-        return g_pPointerManager ? g_pPointerManager->getCurrentCursorTexture() : nullptr;
+        return Pointer::mgr() ? Pointer::mgr()->getCurrentCursorTexture() : nullptr;
     }
 
     Vector2D CHyprlandFacade::currentCursorHotspot() const {
-        return g_pPointerManager ? g_pPointerManager->currentCursorImage().hotspot : Vector2D{};
+        return Pointer::mgr() ? Pointer::mgr()->currentCursorImage().hotspot : Vector2D{};
     }
 
     Vector2D CHyprlandFacade::cursorSizeLogical() const {
-        return g_pPointerManager ? g_pPointerManager->cursorSizeLogical() : Vector2D{};
+        return Pointer::mgr() ? Pointer::mgr()->cursorSizeLogical() : Vector2D{};
     }
 
     const std::vector<PHLWINDOW>& CHyprlandFacade::windows() const {
-        return g_pCompositor ? g_pCompositor->m_windows : emptyWindows();
+        return Desktop::viewState() ? Desktop::viewState()->windows() : emptyWindows();
     }
 
     std::vector<PHLWORKSPACE> CHyprlandFacade::workspacesCopy() const {
-        return g_pCompositor ? g_pCompositor->getWorkspacesCopy() : std::vector<PHLWORKSPACE>{};
+        return State::workspaceState() ? State::workspaceState()->workspacesCopy() : std::vector<PHLWORKSPACE>{};
     }
 
     PHLWORKSPACE CHyprlandFacade::workspaceByID(const WORKSPACEID id) const {
-        return g_pCompositor ? g_pCompositor->getWorkspaceByID(id) : nullptr;
+        return State::workspaceState() ? State::workspaceState()->query().id(id).run() : nullptr;
     }
 
     PHLWORKSPACE CHyprlandFacade::workspaceByName(const std::string& name) const {
-        return g_pCompositor ? g_pCompositor->getWorkspaceByName(name) : nullptr;
+        return State::workspaceState() ? State::workspaceState()->query().name(name).run() : nullptr;
     }
 
     WORKSPACEID CHyprlandFacade::newSpecialWorkspaceID() const {
-        return g_pCompositor ? g_pCompositor->getNewSpecialID() : WORKSPACE_INVALID;
+        return State::workspaceState() ? State::workspaceState()->newSpecialID() : WORKSPACE_INVALID;
     }
 
     bool CHyprlandFacade::isSpecialWorkspaceID(const WORKSPACEID id) const {
-        return g_pCompositor && g_pCompositor->isWorkspaceSpecial(id);
+        return State::workspaceState() && State::workspaceState()->isSpecial(id);
     }
 
-    PHLWORKSPACE CHyprlandFacade::createWorkspace(const WORKSPACEID id, const MONITORID monitorID, const std::string& name, const bool persistent) const {
-        return g_pCompositor ? g_pCompositor->createNewWorkspace(id, monitorID, name, persistent) : nullptr;
+    PHLWORKSPACE CHyprlandFacade::createWorkspace(const WORKSPACEID id, const MONITORID monitorID, const std::string& name, const bool isEmpty) const {
+        return State::workspaceState() ? State::workspaceState()->create(id, monitorID, name, isEmpty) : nullptr;
     }
 
     void CHyprlandFacade::postWorkspaceRenameEvent(const PHLWORKSPACE& workspace) const {

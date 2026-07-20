@@ -46,7 +46,7 @@ namespace hyprdeck {
         PHLWORKSPACE                  workspaceByName(const std::string& name) const;
         WORKSPACEID                   newSpecialWorkspaceID() const;
         bool                          isSpecialWorkspaceID(WORKSPACEID id) const;
-        PHLWORKSPACE                  createWorkspace(WORKSPACEID id, MONITORID monitorID, const std::string& name, bool persistent) const;
+        PHLWORKSPACE                  createWorkspace(WORKSPACEID id, MONITORID monitorID, const std::string& name, bool isEmpty) const;
         void                          postWorkspaceRenameEvent(const PHLWORKSPACE& workspace) const;
 
         SKeyboardModifiers keyboardModifiers() const;

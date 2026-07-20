@@ -9,7 +9,7 @@
 #include <desktop/state/FocusState.hpp>
 #include <desktop/view/LayerSurface.hpp>
 #include <desktop/view/Window.hpp>
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 #include <protocols/core/Compositor.hpp>
 #include <render/Texture.hpp>
 
@@ -70,7 +70,7 @@ namespace hyprdeck {
         }
 
         bool layerVisibleOnMonitor(const PHLLS& layer, const PHLMONITOR& monitor) {
-            if (!layer || !layer->m_mapped || layer->m_fadingOut)
+            if (!layer || !layer->m_mapped)
                 return false;
 
             const auto layerMonitor = layer->m_monitor.lock();
@@ -81,8 +81,8 @@ namespace hyprdeck {
             if (!layerVisibleOnMonitor(layer, monitor))
                 return;
 
-            const CBox box{layer->m_realPosition->value(), layer->m_realSize->value()};
-            drawSurfaceTree(layer->wlSurface()->resource(), box, card.box, monitor, layer->m_alpha->value(), 0);
+            const auto box = layer->geometricBox(Desktop::View::IGeometric::GEOMETRIC_CURRENT);
+            drawSurfaceTree(layer->wlSurface()->resource(), box, card.box, monitor, layer->alpha().value(), 0);
         }
 
         void renderLayerGroupPreview(const std::vector<PHLLS>& layers, const SWorkspaceCard& card, const PHLMONITOR& monitor) {
@@ -106,7 +106,7 @@ namespace hyprdeck {
         }
 
         bool shouldPreviewWindow(const PHLWINDOW& window, const bool floatingPass) {
-            if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden())
+            if (!window || !window->m_isMapped || window->isHidden())
                 return false;
 
             return window->m_isFloating == floatingPass;
@@ -189,7 +189,7 @@ namespace hyprdeck {
         }
 
         for (const auto& window : activePlugin()->hyprland().windows()) {
-            if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden())
+            if (!window || !window->m_isMapped || window->isHidden())
                 continue;
 
             if (!activePlugin()->workspaces().windowBelongsToMonitor(window, monitor))

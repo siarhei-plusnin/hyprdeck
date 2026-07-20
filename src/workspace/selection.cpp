@@ -8,7 +8,7 @@
 #include "plugin.hpp"
 #include "workspaces.hpp"
 
-#include <Compositor.hpp>
+#include <desktop/Workspace.hpp>
 #include <render/Renderer.hpp>
 
 #include <algorithm>

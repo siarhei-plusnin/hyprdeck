@@ -4,10 +4,10 @@
 #include "overview.hpp"
 #include "plugin.hpp"
 
+#include <animation/AnimationManager.hpp>
 #include <config/ConfigValue.hpp>
 #include <config/shared/animation/AnimationTree.hpp>
-#include <helpers/Monitor.hpp>
-#include <managers/animation/AnimationManager.hpp>
+#include <output/Monitor.hpp>
 
 #include <cmath>
 #include <string>
@@ -131,11 +131,11 @@ namespace hyprdeck {
     }
 
     void CAnimationController::ensureOverviewAnimations() {
-        if (!g_pAnimationManager)
+        if (!Animation::mgr())
             return;
 
         if (!m_overviewOpacity) {
-            g_pAnimationManager->createAnimation(1.0F, m_overviewOpacity, animationConfig("layersIn"), AVARDAMAGE_NONE);
+            Animation::mgr()->createAnimation(1.0F, m_overviewOpacity, animationConfig("layersIn"), AVARDAMAGE_NONE);
             m_overviewOpacity->setUpdateCallback([this](auto) { damageAnimationMonitor(m_monitorID); });
         }
     }
@@ -199,18 +199,18 @@ namespace hyprdeck {
     }
 
     void CAnimationController::ensureSpecialCardAppearanceAnimation() {
-        if (m_specialCardAppearance || !g_pAnimationManager)
+        if (m_specialCardAppearance || !Animation::mgr())
             return;
 
-        g_pAnimationManager->createAnimation(1.0F, m_specialCardAppearance, animationConfig("specialWorkspaceIn"), AVARDAMAGE_NONE);
+        Animation::mgr()->createAnimation(1.0F, m_specialCardAppearance, animationConfig("specialWorkspaceIn"), AVARDAMAGE_NONE);
         m_specialCardAppearance->setUpdateCallback([this](auto) { damageAnimationMonitor(m_monitorID); });
     }
 
     void CAnimationController::ensureSpecialCardCloseAnimation() {
-        if (m_specialCardClose || !g_pAnimationManager)
+        if (m_specialCardClose || !Animation::mgr())
             return;
 
-        g_pAnimationManager->createAnimation(1.0F, m_specialCardClose, animationConfig("specialWorkspaceOut"), AVARDAMAGE_NONE);
+        Animation::mgr()->createAnimation(1.0F, m_specialCardClose, animationConfig("specialWorkspaceOut"), AVARDAMAGE_NONE);
         m_specialCardClose->setUpdateCallback([this](auto) { damageAnimationMonitor(m_monitorID); });
     }
 
@@ -269,10 +269,10 @@ namespace hyprdeck {
     }
 
     void CAnimationController::ensureNormalCameraAnimation() {
-        if (m_normalCamera || !g_pAnimationManager)
+        if (m_normalCamera || !Animation::mgr())
             return;
 
-        g_pAnimationManager->createAnimation(static_cast<float>(activePlugin()->layout().cameraX()), m_normalCamera, animationConfig("workspacesIn"), AVARDAMAGE_NONE);
+        Animation::mgr()->createAnimation(static_cast<float>(activePlugin()->layout().cameraX()), m_normalCamera, animationConfig("workspacesIn"), AVARDAMAGE_NONE);
         m_normalCamera->setUpdateCallback([this](auto) {
             const auto monitor = activePlugin()->hyprland().monitorFromID(m_monitorID);
             if (!monitor)
@@ -285,11 +285,10 @@ namespace hyprdeck {
     }
 
     void CAnimationController::ensureSpecialCameraAnimation() {
-        if (m_specialCamera || !g_pAnimationManager)
+        if (m_specialCamera || !Animation::mgr())
             return;
 
-        g_pAnimationManager->createAnimation(static_cast<float>(activePlugin()->layout().specialCameraX()), m_specialCamera, animationConfig("specialWorkspaceIn"),
-                                             AVARDAMAGE_NONE);
+        Animation::mgr()->createAnimation(static_cast<float>(activePlugin()->layout().specialCameraX()), m_specialCamera, animationConfig("specialWorkspaceIn"), AVARDAMAGE_NONE);
         m_specialCamera->setUpdateCallback([this](auto) {
             const auto monitor = activePlugin()->hyprland().monitorFromID(m_monitorID);
             if (!monitor)
@@ -302,10 +301,10 @@ namespace hyprdeck {
     }
 
     void CAnimationController::ensureZoomAnimation() {
-        if (m_zoom || !g_pAnimationManager)
+        if (m_zoom || !Animation::mgr())
             return;
 
-        g_pAnimationManager->createAnimation(static_cast<float>(activePlugin()->overview().zoom()), m_zoom, animationConfig("workspacesIn"), AVARDAMAGE_NONE);
+        Animation::mgr()->createAnimation(static_cast<float>(activePlugin()->overview().zoom()), m_zoom, animationConfig("workspacesIn"), AVARDAMAGE_NONE);
         m_zoom->setUpdateCallback([this](auto) {
             const auto monitor = activePlugin()->hyprland().monitorFromID(m_monitorID);
             if (!monitor)

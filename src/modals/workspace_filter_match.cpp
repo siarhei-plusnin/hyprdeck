@@ -6,10 +6,9 @@
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
-#include <Compositor.hpp>
 #include <desktop/Workspace.hpp>
 #include <desktop/view/Window.hpp>
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 
 #include <algorithm>
 #include <string_view>
@@ -19,7 +18,7 @@ namespace hyprdeck {
     namespace {
 
         bool windowReadyForFilter(const PHLWINDOW& window, const PHLMONITOR& monitor) {
-            if (!window || !window->m_isMapped || window->m_fadingOut || window->isHidden() || window->m_pinned || activePlugin()->overlays().windowIsExternalOverlay(window))
+            if (!window || !window->m_isMapped || window->isHidden() || window->m_pinned || activePlugin()->overlays().windowIsExternalOverlay(window))
                 return false;
 
             return activePlugin()->workspaces().windowBelongsToMonitor(window, monitor);

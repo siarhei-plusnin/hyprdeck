@@ -5,7 +5,7 @@
 #include "runtime_types.hpp"
 #include "textinput_render.hpp"
 
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 #include <render/Texture.hpp>
 
 #include <algorithm>

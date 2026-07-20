@@ -12,7 +12,7 @@
 #include "textinput.hpp"
 #include "textinput_repeat.hpp"
 
-#include <helpers/Monitor.hpp>
+#include <output/Monitor.hpp>
 #include <render/Renderer.hpp>
 
 #include <algorithm>
