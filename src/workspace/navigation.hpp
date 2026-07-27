@@ -16,7 +16,7 @@ namespace hyprdeck {
 
     class CWorkspaceNavigator {
       public:
-        SWorkspaceNavigationResult switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor, bool focusTarget = false);
+        SWorkspaceNavigationResult switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor);
         SWorkspaceNavigationResult hideActiveSpecialWorkspace(const PHLMONITOR& monitor, bool animateIfEmpty = true);
         void                       closeWorkspaceWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor = nullptr);
         SWorkspaceNavigationResult createSimpleSpecialWorkspace(const PHLMONITOR& monitor);

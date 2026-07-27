@@ -11,6 +11,8 @@
 #include "runtime_types.hpp"
 #include "workspace_filter.hpp"
 
+#include <output/Monitor.hpp>
+
 namespace hyprdeck {
     PHLMONITOR CInputRouter::activeHostMonitor() const {
         if (!activePlugin()->overview().active())
@@ -68,7 +70,16 @@ namespace hyprdeck {
 
     void CInputRouter::handleMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
         const auto monitor = activeHostMonitor();
-        if (!monitor || inputBlockedByExternalOverlay(monitor))
+        if (!monitor)
+            return;
+
+        // Let Hyprland focus and deliver clicks on outputs outside the overview host.
+        if (const auto pointerMonitor = activePlugin()->hyprland().monitorFromCursor(); pointerMonitor && pointerMonitor->m_id != monitor->m_id) {
+            activePlugin()->overview().close();
+            return;
+        }
+
+        if (inputBlockedByExternalOverlay(monitor))
             return;
 
         activePlugin()->overviewPointer().handleMouseButton(event, info, monitor);

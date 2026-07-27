@@ -34,6 +34,8 @@ namespace hyprdeck {
         void                          unlockSoftwarePointer(const PHLMONITOR& monitor) const;
         bool                          softwarePointerLockedFor(const PHLMONITOR& monitor) const;
         void                          damageCursor(const PHLMONITOR& monitor) const;
+        void                          moveCursor(const Vector2D& position) const;
+        void                          syncPointerFocus() const;
 
         Vector2D                      mouseCoords() const;
         Vector2D                      pointerPosition() const;

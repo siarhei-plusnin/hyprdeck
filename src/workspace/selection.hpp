@@ -42,6 +42,8 @@ namespace hyprdeck {
         void                  jumpSelection(int direction, const PHLMONITOR& monitor);
 
       private:
+        void            commitWorkspaceSelection(const PHLMONITOR& monitor) const;
+
         SSelectionState m_state;
     };
 

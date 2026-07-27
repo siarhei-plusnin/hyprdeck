@@ -103,6 +103,15 @@ namespace hyprdeck {
             Pointer::mgr()->damageCursor(monitor);
     }
 
+    void CHyprlandFacade::moveCursor(const Vector2D& position) const {
+        static_cast<void>(Config::Actions::moveCursor(position));
+    }
+
+    void CHyprlandFacade::syncPointerFocus() const {
+        if (g_pInputManager)
+            g_pInputManager->simulateMouseMovement();
+    }
+
     Vector2D CHyprlandFacade::mouseCoords() const {
         return g_pInputManager ? g_pInputManager->getMouseCoordsInternal() : Vector2D{};
     }

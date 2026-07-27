@@ -174,7 +174,7 @@ namespace hyprdeck {
         return result;
     }
 
-    SWorkspaceNavigationResult CWorkspaceNavigator::switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor, const bool focusTarget) {
+    SWorkspaceNavigationResult CWorkspaceNavigator::switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
         auto       workspace                = card.workspace;
         const bool specialWasActiveOnTarget = card.special && workspace && monitor && monitor->m_activeSpecialWorkspace == workspace;
 
@@ -210,10 +210,10 @@ namespace hyprdeck {
             result.selectedRow      = ESelectedRow::NORMAL;
             result.selectedNormalID = workspace->m_id;
 
-            monitor->changeWorkspace(workspace, false, true, !focusTarget);
+            monitor->changeWorkspace(workspace, false, true, true);
         }
 
-        activePlugin()->hyprland().focusMonitor(focusTarget ? monitor : activePlugin()->overview().hostMonitor());
+        activePlugin()->hyprland().focusMonitor(activePlugin()->overview().hostMonitor());
 
         return result;
     }

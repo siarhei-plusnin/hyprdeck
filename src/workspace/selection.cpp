@@ -148,6 +148,17 @@ namespace hyprdeck {
         return activePlugin()->workspaces().specialWorkspaceLabel(card->workspace);
     }
 
+    void CSelectionController::commitWorkspaceSelection(const PHLMONITOR& monitor) const {
+        activePlugin()->overview().close();
+        activePlugin()->hyprland().focusMonitor(monitor);
+
+        const auto pointerMonitor = activePlugin()->hyprland().monitorFromCursor();
+        if (!pointerMonitor || pointerMonitor->m_id != monitor->m_id)
+            activePlugin()->hyprland().moveCursor(monitor->middle());
+        else
+            activePlugin()->hyprland().syncPointerFocus();
+    }
+
     void CSelectionController::selectWorkspaceAt(const Vector2D& position, const PHLMONITOR& monitor) {
         const auto card = activePlugin()->layout().cardAt(position);
         if (!card) {
@@ -158,11 +169,9 @@ namespace hyprdeck {
         const bool native = activePlugin()->workspaces().cardIsNative(*card, monitor);
         if (!card->special && native && (activePlugin()->workspaces().cardIsActive(*card, monitor) || activePlugin()->workspaces().cardIsSelected(*card))) {
             applyNavigationResult(activePlugin()->navigator().hideActiveSpecialWorkspace(monitor));
-            if (activePlugin()->workspaces().cardIsActive(*card, monitor))
-                activePlugin()->hyprland().focusMonitor(monitor);
-            else
-                applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor, true));
-            activePlugin()->overview().close();
+            if (!activePlugin()->workspaces().cardIsActive(*card, monitor))
+                applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor));
+            commitWorkspaceSelection(monitor);
             return;
         }
 
@@ -255,8 +264,8 @@ namespace hyprdeck {
             applyNavigationResult(activePlugin()->navigator().hideActiveSpecialWorkspace(monitor));
 
             if (const auto* card = selectedNormalCard()) {
-                if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor, true)))
-                    activePlugin()->overview().close();
+                if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor)))
+                    commitWorkspaceSelection(monitor);
             } else
                 activePlugin()->overview().close();
             return;
@@ -267,9 +276,10 @@ namespace hyprdeck {
 
         if (const auto* card = selectedSpecialCard()) {
             if (card->workspace && monitor->m_activeSpecialWorkspace != card->workspace)
-                applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor, true));
-            else
-                activePlugin()->hyprland().focusMonitor(monitor);
+                applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*card, monitor));
+
+            commitWorkspaceSelection(monitor);
+            return;
         }
 
         activePlugin()->overview().close();
@@ -297,8 +307,7 @@ namespace hyprdeck {
 
         if (id == activePlugin()->workspaces().activeNormalWorkspaceID(monitor)) {
             applyNavigationResult(activePlugin()->navigator().hideActiveSpecialWorkspace(monitor));
-            activePlugin()->hyprland().focusMonitor(monitor);
-            activePlugin()->overview().close();
+            commitWorkspaceSelection(monitor);
             return;
         }
 
