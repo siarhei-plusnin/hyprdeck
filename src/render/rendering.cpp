@@ -101,10 +101,6 @@ namespace hyprdeck {
         auto& renderServices = activePlugin()->renderServices();
         renderServices.updateCursorCache();
 
-        activePlugin()->hyprland().setCursorHidden(false);
-
-        renderServices.updateCursorCache();
-
         const auto& renderCache = renderServices.cache();
         const auto  pos         = activePlugin()->hyprland().pointerPosition() - monitor->m_position - renderCache.cursorHotspot;
 

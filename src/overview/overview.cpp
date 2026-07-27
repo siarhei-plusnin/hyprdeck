@@ -4,7 +4,6 @@
 #include "config.hpp"
 #include "layout.hpp"
 #include "naming.hpp"
-#include "overlays.hpp"
 #include "plugin.hpp"
 #include "rendering.hpp"
 #include "shortcuts.hpp"
@@ -126,6 +125,8 @@ namespace hyprdeck {
         resetInteractionState();
 
         if (monitor) {
+            // Restore while still software-locked so the backend cannot start a nested cursor render.
+            activePlugin()->hyprland().setCursorHidden(false);
             setPointerLocked(monitor, false);
             activePlugin()->hyprland().damageMonitor(monitor);
             activePlugin()->hyprland().scheduleAnimationFrame(monitor);
@@ -169,6 +170,7 @@ namespace hyprdeck {
         activePlugin()->layout().invalidate();
 
         setPointerLocked(monitor, true);
+        activePlugin()->hyprland().setCursorHidden(false);
 
         activePlugin()->layout().recalculateCards(monitor);
         activePlugin()->animations().startOverviewOpen(monitor);
@@ -236,10 +238,10 @@ namespace hyprdeck {
             return;
 
         if (monitor->m_id == m_session.hostMonitorID) {
+            activePlugin()->hyprland().setCursorHidden(false);
             setPointerLocked(monitor, false);
             resetInteractionState();
             activePlugin()->animations().reset();
-            activePlugin()->hyprland().setCursorHidden(false);
             finishClose(monitor);
             return;
         }
@@ -270,20 +272,9 @@ namespace hyprdeck {
             return;
         }
 
-        const bool externalInputActive =
-            m_session.active && (activePlugin()->overlays().externalOverlayActive(renderMonitor) || activePlugin()->overlays().pointerOverNotificationOverlay(renderMonitor));
-        if (!m_session.active) {
-            setPointerLocked(renderMonitor, false);
-            activePlugin()->hyprland().setCursorHidden(false);
-        } else if (externalInputActive) {
-            setPointerLocked(renderMonitor, false);
-            activePlugin()->hyprland().setCursorHidden(false);
-        } else
-            setPointerLocked(renderMonitor, true);
-
         activePlugin()->animations().update(renderMonitor);
         activePlugin()->renderer().renderOverview(renderMonitor);
-        if (m_session.active && !externalInputActive)
+        if (m_session.active)
             activePlugin()->renderer().renderCursorOverlay(renderMonitor);
 
         if (m_session.closing && !activePlugin()->animations().overviewAnimating()) {
