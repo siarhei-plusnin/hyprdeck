@@ -23,7 +23,7 @@ namespace hyprdeck {
     namespace {
 
         void damagePrompt(const PHLMONITOR& monitor) {
-            activePlugin()->hyprland().damageMonitor(monitor);
+            activePlugin()->overview().damageHost();
         }
 
         int presetSelectionDirection(const IKeyboard::SKeyEvent event, const SKeyboardModifiers& modifiers) {
@@ -180,7 +180,7 @@ namespace hyprdeck {
 
         if (centerSpecial && result.selectedSpecialID) {
             activePlugin()->layout().centerSpecialCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), *result.selectedSpecialID));
-            activePlugin()->animations().startSpecialCardAppearance(*result.selectedSpecialID, monitor);
+            activePlugin()->animations().startSpecialCardAppearance(*result.selectedSpecialID, activePlugin()->overview().hostMonitor());
         }
 
         damagePrompt(monitor);

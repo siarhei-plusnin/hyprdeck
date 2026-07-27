@@ -61,6 +61,8 @@ namespace hyprdeck {
         HyprlandAPI::addConfigValueV2(
             m_handle,
             Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:shortcuts_footer", "Keyboard shortcuts footer visibility: full, hint, or none", "full"));
+        HyprlandAPI::addConfigValueV2(
+            m_handle, Config::Values::makeConfigValue<Config::Values::CStringValue>("plugin:hyprdeck:output_colors", "Comma-separated output-name to #RRGGBB color mappings", ""));
         HyprlandAPI::addConfigValueV2(m_handle,
                                       Config::Values::makeConfigValue<Config::Values::CStringValue>(
                                           "plugin:hyprdeck:blocking_overlays", "Comma-separated case-insensitive overlay name substrings that block hyprdeck input", ""));
@@ -78,7 +80,8 @@ namespace hyprdeck {
 
         HyprlandAPI::addDispatcherV2(m_handle, "hyprdeck:toggle", dispatchToggle);
         HyprlandAPI::addLuaFunction(m_handle, "hyprdeck", "toggle", luaDispatchToggle);
-        m_hooks.registerHooks(m_overview.onRenderStage, m_inputRouter.onMouseMove, m_inputRouter.onMouseButton, m_inputRouter.onMouseAxis, m_inputRouter.onKeyboard);
+        m_hooks.registerHooks(m_overview.onRenderStage, m_inputRouter.onMouseMove, m_inputRouter.onMouseButton, m_inputRouter.onMouseAxis, m_inputRouter.onKeyboard,
+                              m_overview.onStateChanged, m_overview.onMonitorRemoved);
 
         HyprlandAPI::addNotification(m_handle, "hyprdeck loaded", colors::accentOpaque(), 2500);
     }
@@ -145,6 +148,10 @@ namespace hyprdeck {
 
     CInputRouter& CHyprdeckPlugin::inputRouter() {
         return m_inputRouter;
+    }
+
+    CMonitorSelector& CHyprdeckPlugin::monitorSelector() {
+        return m_monitorSelector;
     }
 
     CConfigStore& CHyprdeckPlugin::config() {

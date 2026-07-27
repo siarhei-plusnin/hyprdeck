@@ -17,11 +17,11 @@
 namespace hyprdeck {
     namespace {
 
-        bool windowReadyForFilter(const PHLWINDOW& window, const PHLMONITOR& monitor) {
+        bool windowReadyForFilter(const PHLWINDOW& window) {
             if (!window || !window->m_isMapped || window->isHidden() || window->m_pinned || activePlugin()->overlays().windowIsExternalOverlay(window))
                 return false;
 
-            return activePlugin()->workspaces().windowBelongsToMonitor(window, monitor);
+            return true;
         }
 
         bool windowTextMatchesFilter(const PHLWINDOW& window, std::string_view loweredQuery) {
@@ -29,19 +29,11 @@ namespace hyprdeck {
                 strings::containsLowered(window->m_title, loweredQuery) || strings::containsLowered(window->m_initialTitle, loweredQuery);
         }
 
-        bool workspaceBelongsToMonitorForFilter(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) {
-            if (!workspace)
-                return false;
-
-            const auto workspaceMonitor = workspace->m_monitor.lock();
-            return workspaceMonitor && workspaceMonitor->m_id == monitor->m_id;
-        }
-
         bool workspaceNameMatchesFilter(const PHLWORKSPACE& workspace, std::string_view loweredQuery) {
             return workspace && strings::containsLowered(workspace->m_name, loweredQuery);
         }
 
-        bool workspaceMatchesFilter(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor, std::string_view loweredQuery) {
+        bool workspaceMatchesFilter(const PHLWORKSPACE& workspace, std::string_view loweredQuery) {
             if (!workspace)
                 return false;
 
@@ -49,7 +41,7 @@ namespace hyprdeck {
                 return true;
 
             for (const auto& window : activePlugin()->hyprland().windows()) {
-                if (!windowReadyForFilter(window, monitor) || !activePlugin()->workspaces().windowBelongsToWorkspace(window, workspace))
+                if (!windowReadyForFilter(window) || !activePlugin()->workspaces().windowBelongsToWorkspace(window, workspace))
                     continue;
 
                 if (windowTextMatchesFilter(window, loweredQuery))
@@ -59,28 +51,16 @@ namespace hyprdeck {
             return false;
         }
 
-        std::vector<WORKSPACEID> normalWorkspaceIDsMatchingFilter(const PHLMONITOR& monitor, std::string_view loweredQuery) {
+        std::vector<WORKSPACEID> normalWorkspaceIDsMatchingFilter(const std::vector<WORKSPACEID>& candidates, std::string_view loweredQuery) {
             std::vector<WORKSPACEID> ids;
+            ids.reserve(candidates.size());
 
-            for (const auto& workspace : activePlugin()->hyprland().workspacesCopy()) {
-                if (!activePlugin()->workspaces().isNormalWorkspace(workspace) || !workspaceBelongsToMonitorForFilter(workspace, monitor))
-                    continue;
-
-                if (workspaceNameMatchesFilter(workspace, loweredQuery))
-                    ids.push_back(workspace->m_id);
+            for (const auto id : candidates) {
+                const auto workspace = activePlugin()->hyprland().workspaceByID(id);
+                if (activePlugin()->workspaces().isNormalWorkspace(workspace) && workspaceMatchesFilter(workspace, loweredQuery))
+                    ids.push_back(id);
             }
 
-            for (const auto& window : activePlugin()->hyprland().windows()) {
-                if (!windowReadyForFilter(window, monitor) || !activePlugin()->workspaces().isNormalWorkspace(window->m_workspace))
-                    continue;
-
-                if (windowTextMatchesFilter(window, loweredQuery))
-                    ids.push_back(window->m_workspace->m_id);
-            }
-
-            std::ranges::sort(ids);
-            const auto duplicates = std::ranges::unique(ids);
-            ids.erase(duplicates.begin(), duplicates.end());
             return ids;
         }
 
@@ -93,8 +73,8 @@ namespace hyprdeck {
         if (loweredQuery.empty())
             return rows;
 
-        rows.normalWorkspaceIDs = normalWorkspaceIDsMatchingFilter(monitor, loweredQuery);
-        std::erase_if(rows.specialWorkspaces, [&](const auto& workspace) { return !workspaceMatchesFilter(workspace, monitor, loweredQuery); });
+        rows.normalWorkspaceIDs = normalWorkspaceIDsMatchingFilter(rows.normalWorkspaceIDs, loweredQuery);
+        std::erase_if(rows.specialWorkspaces, [&](const auto& workspace) { return !workspaceMatchesFilter(workspace, loweredQuery); });
         return rows;
     }
 

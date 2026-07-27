@@ -29,6 +29,7 @@ set(HYPRDECK_SOURCES
     src/modals/workspace_filter_match.cpp
     src/modals/workspace_filter_render.cpp
     src/overview/input.cpp
+    src/overview/monitor_selector.cpp
     src/overview/overview.cpp
     src/overview/overview_controller.cpp
     src/overview/overview_interaction.cpp

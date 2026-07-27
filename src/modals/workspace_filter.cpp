@@ -21,7 +21,7 @@ namespace hyprdeck {
 
         void damageFilter(const PHLMONITOR& monitor) {
             activePlugin()->layout().invalidate();
-            activePlugin()->hyprland().damageMonitor(monitor);
+            activePlugin()->overview().damageHost();
         }
 
         void focusActiveWorkspace(const PHLMONITOR& monitor) {
@@ -138,7 +138,7 @@ namespace hyprdeck {
         activePlugin()->textInputRepeater().stop();
 
         focusActiveWorkspace(monitor);
-        activePlugin()->hyprland().damageMonitor(monitor);
+        activePlugin()->overview().damageHost();
     }
 
     void CWorkspaceFilterController::clear(const PHLMONITOR& monitor) {

@@ -3,6 +3,7 @@
 #include <desktop/state/FocusState.hpp>
 #include <desktop/state/ViewState.hpp>
 #include <desktop/Workspace.hpp>
+#include <config/shared/actions/ConfigActions.hpp>
 #include <devices/IKeyboard.hpp>
 #include <hyprutils/memory/UniquePtr.hpp>
 #include <managers/EventManager.hpp>
@@ -14,6 +15,7 @@
 #include <pointer/PointerManager.hpp>
 #include <render/Renderer.hpp>
 #include <state/MonitorState.hpp>
+#include <state/WorkspacePlacementController.hpp>
 #include <state/WorkspaceState.hpp>
 
 using Hyprutils::Memory::makeUnique;
@@ -30,6 +32,7 @@ namespace hyprdeck {
             modifiers.ctrl  = modifiers.ctrl || (activeModifiers & HL_MODIFIER_CTRL);
             modifiers.shift = modifiers.shift || (activeModifiers & HL_MODIFIER_SHIFT);
             modifiers.super = modifiers.super || (activeModifiers & HL_MODIFIER_META);
+            modifiers.alt   = modifiers.alt || (activeModifiers & HL_MODIFIER_ALT);
         }
 
     } // namespace
@@ -51,6 +54,19 @@ namespace hyprdeck {
 
     PHLMONITOR CHyprlandFacade::renderMonitor() const {
         return g_pHyprRenderer ? g_pHyprRenderer->m_renderData.pMonitor.lock() : nullptr;
+    }
+
+    std::vector<PHLMONITOR> CHyprlandFacade::monitors() const {
+        if (!State::monitorState())
+            return {};
+
+        std::vector<PHLMONITOR> monitors;
+        for (const auto& monitor : State::monitorState()->monitors()) {
+            if (monitor && !monitor->m_mirrorOf.lock())
+                monitors.push_back(monitor);
+        }
+
+        return monitors;
     }
 
     void CHyprlandFacade::damageMonitor(const PHLMONITOR& monitor) const {
@@ -133,6 +149,16 @@ namespace hyprdeck {
 
     PHLWORKSPACE CHyprlandFacade::createWorkspace(const WORKSPACEID id, const MONITORID monitorID, const std::string& name, const bool isEmpty) const {
         return State::workspaceState() ? State::workspaceState()->create(id, monitorID, name, isEmpty) : nullptr;
+    }
+
+    void CHyprlandFacade::moveWorkspaceToMonitor(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const {
+        if (workspace && monitor && State::workspacePlacementController())
+            State::workspacePlacementController()->moveWorkspaceToMonitor(workspace, monitor, true);
+    }
+
+    void CHyprlandFacade::focusMonitor(const PHLMONITOR& monitor) const {
+        if (monitor)
+            static_cast<void>(Config::Actions::focusMonitor(monitor));
     }
 
     void CHyprlandFacade::postWorkspaceRenameEvent(const PHLWORKSPACE& workspace) const {

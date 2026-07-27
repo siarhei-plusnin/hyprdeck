@@ -44,7 +44,12 @@ namespace hyprdeck {
                 result.selectedNormalID = activePlugin()->workspaces().activeNormalWorkspaceID(monitor);
             }
 
+            const auto owner = activePlugin()->workspaces().workspaceMonitor(workspace);
+            if (owner && owner->m_id != monitor->m_id)
+                activePlugin()->hyprland().moveWorkspaceToMonitor(workspace, monitor);
+
             monitor->setSpecialWorkspace(workspace);
+            activePlugin()->hyprland().focusMonitor(activePlugin()->overview().hostMonitor());
             return result;
         }
 
@@ -109,14 +114,14 @@ namespace hyprdeck {
             const auto& cards = activePlugin()->layout().specialCards();
             const int   index = activePlugin()->workspaces().cardIndexByID(cards, workspace->m_id);
             if (index >= 0)
-                activePlugin()->animations().startSpecialCardClose(cards[index], monitor);
+                activePlugin()->animations().startSpecialCardClose(cards[index], activePlugin()->overview().hostMonitor());
         }
 
         WORKSPACEID nextSpecialSelectionAfterRemoving(const PHLWORKSPACE& workspace) {
             if (!workspace)
                 return WORKSPACE_INVALID;
 
-            const auto&              cards = activePlugin()->layout().specialCards();
+            const auto&              cards    = activePlugin()->layout().specialCards();
             int                      oldIndex = -1;
             std::vector<WORKSPACEID> remainingIDs;
             remainingIDs.reserve(cards.size());
@@ -147,8 +152,8 @@ namespace hyprdeck {
         if (!monitor || !monitor->m_activeSpecialWorkspace)
             return {};
 
-        const auto workspace     = monitor->m_activeSpecialWorkspace;
-        const bool willDisappear = !activePlugin()->workspaces().workspaceHasAnyWindows(workspace, monitor);
+        const auto                 workspace     = monitor->m_activeSpecialWorkspace;
+        const bool                 willDisappear = !activePlugin()->workspaces().workspaceHasAnyWindows(workspace, monitor);
 
         SWorkspaceNavigationResult result{
             .success = true,
@@ -165,11 +170,13 @@ namespace hyprdeck {
             animateSpecialCloseIfEmpty(workspace, monitor);
 
         monitor->setSpecialWorkspace(nullptr);
+        activePlugin()->hyprland().focusMonitor(activePlugin()->overview().hostMonitor());
         return result;
     }
 
-    SWorkspaceNavigationResult CWorkspaceNavigator::switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
-        auto workspace = card.workspace;
+    SWorkspaceNavigationResult CWorkspaceNavigator::switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor, const bool focusTarget) {
+        auto       workspace                = card.workspace;
+        const bool specialWasActiveOnTarget = card.special && workspace && monitor && monitor->m_activeSpecialWorkspace == workspace;
 
         if (!workspace && !card.special) {
             if (activePlugin()->workspaceFilter().applied())
@@ -181,6 +188,10 @@ namespace hyprdeck {
         if (!workspace)
             return {};
 
+        const auto owner = activePlugin()->workspaces().workspaceMonitor(workspace);
+        if (owner && owner->m_id != monitor->m_id)
+            activePlugin()->hyprland().moveWorkspaceToMonitor(workspace, monitor);
+
         SWorkspaceNavigationResult result{
             .success = true,
         };
@@ -189,7 +200,7 @@ namespace hyprdeck {
             result.selectedRow       = ESelectedRow::SPECIAL;
             result.selectedSpecialID = workspace->m_id;
 
-            if (monitor->m_activeSpecialWorkspace == workspace) {
+            if (specialWasActiveOnTarget) {
                 result = hideActiveSpecialWorkspace(monitor);
                 if (!result.selectedRow && result.selectedSpecialID && *result.selectedSpecialID != WORKSPACE_INVALID)
                     result.selectedRow = ESelectedRow::SPECIAL;
@@ -199,8 +210,10 @@ namespace hyprdeck {
             result.selectedRow      = ESelectedRow::NORMAL;
             result.selectedNormalID = workspace->m_id;
 
-            monitor->changeWorkspace(workspace, false, true, false);
+            monitor->changeWorkspace(workspace, false, true, !focusTarget);
         }
+
+        activePlugin()->hyprland().focusMonitor(focusTarget ? monitor : activePlugin()->overview().hostMonitor());
 
         return result;
     }

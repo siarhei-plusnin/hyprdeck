@@ -12,19 +12,65 @@
 #include <string>
 
 namespace hyprdeck {
-    namespace {
+    bool CWorkspaceRepository::isNormalWorkspace(const PHLWORKSPACE& workspace) const {
+        return workspace && !workspace->m_isSpecialWorkspace && workspace->m_id != WORKSPACE_INVALID;
+    }
 
-        bool shouldCountWindow(const PHLWINDOW& window, const PHLMONITOR& monitor) {
-            if (!window || !window->m_isMapped || window->isHidden())
-                return false;
+    bool CWorkspaceRepository::isNumericNormalWorkspace(const PHLWORKSPACE& workspace) const {
+        return isNormalWorkspace(workspace) && workspace->m_id > 0;
+    }
 
-            return activePlugin()->workspaces().windowBelongsToMonitor(window, monitor) && activePlugin()->workspaces().isNormalWorkspace(window->m_workspace);
+    bool CWorkspaceRepository::isNamedNormalWorkspace(const PHLWORKSPACE& workspace) const {
+        return isNormalWorkspace(workspace) && workspace->m_id <= 0;
+    }
+
+    std::string CWorkspaceRepository::normalWorkspaceLabel(const PHLWORKSPACE& workspace) const {
+        if (!isNormalWorkspace(workspace))
+            return "";
+
+        if (isNamedNormalWorkspace(workspace))
+            return workspace->m_name;
+
+        const auto id = std::to_string(workspace->m_id);
+        return workspace->m_name.empty() || workspace->m_name == id ? id : id + ": " + workspace->m_name;
+    }
+
+    std::vector<PHLWORKSPACE> CWorkspaceRepository::namedNormalWorkspacesToShow() const {
+        std::vector<PHLWORKSPACE> workspaces;
+        for (const auto& workspace : activePlugin()->hyprland().workspacesCopy()) {
+            if (isNamedNormalWorkspace(workspace))
+                workspaces.push_back(workspace);
         }
 
-    } // namespace
+        std::ranges::sort(workspaces, [](const auto& lhs, const auto& rhs) { return strings::lower(lhs->m_name) < strings::lower(rhs->m_name); });
+        return workspaces;
+    }
 
-    bool CWorkspaceRepository::isNormalWorkspace(const PHLWORKSPACE& workspace) const {
-        return workspace && !workspace->m_isSpecialWorkspace && workspace->m_id > 0;
+    PHLMONITOR CWorkspaceRepository::workspaceMonitor(const PHLWORKSPACE& workspace) const {
+        if (!workspace)
+            return nullptr;
+
+        if (const auto monitor = workspace->m_monitor.lock(); monitor)
+            return monitor;
+
+        for (const auto& window : activePlugin()->hyprland().windows()) {
+            if (windowBelongsToWorkspace(window, workspace)) {
+                if (const auto monitor = window->m_monitor.lock(); monitor)
+                    return monitor;
+            }
+        }
+
+        for (const auto& monitor : activePlugin()->hyprland().monitors()) {
+            if (monitor && (monitor->m_activeWorkspace == workspace || monitor->m_activeSpecialWorkspace == workspace))
+                return monitor;
+        }
+
+        return nullptr;
+    }
+
+    bool CWorkspaceRepository::workspaceBelongsToMonitor(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const {
+        const auto owner = workspaceMonitor(workspace);
+        return owner && monitor && owner->m_id == monitor->m_id;
     }
 
     bool CWorkspaceRepository::windowBelongsToMonitor(const PHLWINDOW& window, const PHLMONITOR& monitor) const {
@@ -54,6 +100,18 @@ namespace hyprdeck {
         return false;
     }
 
+    bool CWorkspaceRepository::workspaceHasAnyWindows(const PHLWORKSPACE& workspace) const {
+        if (!workspace)
+            return false;
+
+        for (const auto& window : activePlugin()->hyprland().windows()) {
+            if (window && window->m_isMapped && !window->isHidden() && windowBelongsToWorkspace(window, workspace))
+                return true;
+        }
+
+        return false;
+    }
+
     WORKSPACEID CWorkspaceRepository::specialWorkspaceId(const PHLWORKSPACE& workspace) const {
         if (!workspace)
             return WORKSPACE_INVALID;
@@ -70,17 +128,15 @@ namespace hyprdeck {
         return label.empty() ? "special" : label;
     }
 
-    std::vector<PHLWORKSPACE> CWorkspaceRepository::specialWorkspacesToShow(const PHLMONITOR& monitor) const {
+    std::vector<PHLWORKSPACE> CWorkspaceRepository::specialWorkspacesToShow() const {
         std::vector<PHLWORKSPACE> workspaces;
         for (const auto& workspace : activePlugin()->hyprland().workspacesCopy()) {
             if (!workspace || !workspace->m_isSpecialWorkspace)
                 continue;
 
-            const auto workspaceMonitor = workspace->m_monitor.lock();
-            if (workspaceMonitor && workspaceMonitor->m_id != monitor->m_id)
-                continue;
-
-            if (!workspaceHasAnyWindows(workspace, monitor) && workspace != monitor->m_activeSpecialWorkspace)
+            const bool active =
+                std::ranges::any_of(activePlugin()->hyprland().monitors(), [&](const auto& monitor) { return monitor && monitor->m_activeSpecialWorkspace == workspace; });
+            if (!workspaceHasAnyWindows(workspace) && !active)
                 continue;
 
             workspaces.push_back(workspace);
@@ -90,17 +146,14 @@ namespace hyprdeck {
         return workspaces;
     }
 
-    WORKSPACEID CWorkspaceRepository::lastWorkspaceToShow(const PHLMONITOR& monitor) const {
-        WORKSPACEID highestOccupied = 0;
-
-        for (const auto& window : activePlugin()->hyprland().windows()) {
-            if (!shouldCountWindow(window, monitor))
-                continue;
-
-            highestOccupied = std::max(highestOccupied, window->m_workspace->m_id);
+    WORKSPACEID CWorkspaceRepository::lastWorkspaceToShow() const {
+        WORKSPACEID highestExisting = 0;
+        for (const auto& workspace : activePlugin()->hyprland().workspacesCopy()) {
+            if (isNumericNormalWorkspace(workspace))
+                highestExisting = std::max(highestExisting, workspace->m_id);
         }
 
-        return std::max<WORKSPACEID>({static_cast<long>(3), highestOccupied + 1, activeNormalWorkspaceID(monitor) + 1});
+        return std::max<WORKSPACEID>(3, highestExisting + 1);
     }
 
     WORKSPACEID CWorkspaceRepository::activeNormalWorkspaceID(const PHLMONITOR& monitor) const {
@@ -127,10 +180,23 @@ namespace hyprdeck {
     }
 
     bool CWorkspaceRepository::cardIsActive(const SWorkspaceCard& card, const PHLMONITOR& monitor) const {
-        if (card.special)
-            return card.workspace && monitor->m_activeSpecialWorkspace == card.workspace;
+        const auto owner = workspaceMonitor(card.workspace);
+        if (!owner)
+            return false;
 
-        return card.id == activeNormalWorkspaceID(monitor);
+        if (card.special)
+            return owner->m_activeSpecialWorkspace == card.workspace;
+
+        return owner->m_activeWorkspace == card.workspace;
+    }
+
+    bool CWorkspaceRepository::cardIsNative(const SWorkspaceCard& card, const PHLMONITOR& monitor) const {
+        if (!monitor)
+            return false;
+        if (!card.workspace)
+            return !card.special;
+
+        return workspaceBelongsToMonitor(card.workspace, monitor);
     }
 
     bool CWorkspaceRepository::cardIsSelected(const SWorkspaceCard& card) const {

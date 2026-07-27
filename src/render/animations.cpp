@@ -106,7 +106,7 @@ namespace hyprdeck {
 
         if (beingAnimated(m_zoom)) {
             activePlugin()->layout().applyZoom(sampledFloat(m_zoom, static_cast<float>(activePlugin()->overview().zoom())), m_zoomNormalCameraRatio, m_zoomSpecialCameraRatio,
-                                               monitor);
+                                               activePlugin()->overview().selectedMonitor());
             finishIfComplete(m_zoom);
         }
 
@@ -306,11 +306,11 @@ namespace hyprdeck {
 
         Animation::mgr()->createAnimation(static_cast<float>(activePlugin()->overview().zoom()), m_zoom, animationConfig("workspacesIn"), AVARDAMAGE_NONE);
         m_zoom->setUpdateCallback([this](auto) {
-            const auto monitor = activePlugin()->hyprland().monitorFromID(m_monitorID);
-            if (!monitor)
+            const auto selectedMonitor = activePlugin()->overview().selectedMonitor();
+            if (!selectedMonitor)
                 return;
 
-            activePlugin()->layout().applyZoom(m_zoom->value(), m_zoomNormalCameraRatio, m_zoomSpecialCameraRatio, monitor);
+            activePlugin()->layout().applyZoom(m_zoom->value(), m_zoomNormalCameraRatio, m_zoomSpecialCameraRatio, selectedMonitor);
             damageAnimationMonitor(m_monitorID);
         });
     }

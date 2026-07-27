@@ -38,7 +38,7 @@ namespace hyprdeck {
         }
 
         double renderScale() {
-            const auto monitor = activePlugin()->overview().monitor();
+            const auto monitor = activePlugin()->overview().hostMonitor();
             return std::max(1.0, monitor ? monitor->m_scale : 1.0);
         }
 

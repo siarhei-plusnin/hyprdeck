@@ -2,6 +2,8 @@
 
 #include "constants.hpp"
 #include "layout.hpp"
+#include "input.hpp"
+#include "monitor_selector.hpp"
 #include "overview.hpp"
 #include "overlays.hpp"
 #include "plugin.hpp"
@@ -56,9 +58,30 @@ namespace hyprdeck {
 
         info.cancelled = true;
 
-        activePlugin()->layout().recalculateCards(monitor);
-
         const auto pos = activePlugin()->layout().cursorRenderPos(monitor);
+        if (event.state == WL_POINTER_BUTTON_STATE_RELEASED && interaction.pressedMonitorID != MONITOR_INVALID) {
+            const auto pressedMonitorID  = interaction.pressedMonitorID;
+            interaction.pressedMonitorID = MONITOR_INVALID;
+            if (activePlugin()->monitorSelector().monitorAt(pos, monitor) == pressedMonitorID && activePlugin()->inputRouter().activeInputMode() == EInputMode::OVERVIEW)
+                activePlugin()->overview().selectMonitor(activePlugin()->hyprland().monitorFromID(pressedMonitorID));
+            activePlugin()->overview().damageHost();
+            return;
+        }
+
+        if (event.state == WL_POINTER_BUTTON_STATE_PRESSED) {
+            interaction.pressedMonitorID = activePlugin()->monitorSelector().monitorAt(pos, monitor);
+            if (interaction.pressedMonitorID != MONITOR_INVALID) {
+                interaction.dragging = false;
+                interaction.dragRow  = EDragRow::NONE;
+                return;
+            }
+        }
+
+        const auto selectedMonitor = activePlugin()->overview().selectedMonitor();
+        if (!selectedMonitor)
+            return;
+
+        activePlugin()->layout().recalculateCards(selectedMonitor);
 
         if (event.state == WL_POINTER_BUTTON_STATE_PRESSED) {
             activePlugin()->animations().cancelCameraAnimations();
@@ -75,9 +98,9 @@ namespace hyprdeck {
             interaction.dragRow  = EDragRow::NONE;
 
             if (interaction.dragStart.distance(pos) < CLICK_DRAG_THRESHOLD)
-                activePlugin()->selection().selectWorkspaceAt(pos, monitor);
+                activePlugin()->selection().selectWorkspaceAt(pos, selectedMonitor);
 
-            activePlugin()->hyprland().damageMonitor(monitor);
+            activePlugin()->overview().damageHost();
         }
     }
 
@@ -87,7 +110,11 @@ namespace hyprdeck {
 
         info.cancelled = true;
 
-        activePlugin()->layout().recalculateCards(monitor);
+        const auto selectedMonitor = activePlugin()->overview().selectedMonitor();
+        if (!selectedMonitor)
+            return;
+
+        activePlugin()->layout().recalculateCards(selectedMonitor);
 
         const auto pos = activePlugin()->layout().cursorRenderPos(monitor);
         if (activePlugin()->layout().dragRowAt(pos) == EDragRow::SPECIAL) {
@@ -101,12 +128,13 @@ namespace hyprdeck {
 
         activePlugin()->layout().invalidate();
 
-        activePlugin()->hyprland().damageMonitor(monitor);
+        activePlugin()->overview().damageHost();
     }
 
     void COverviewPointerController::resetState() {
-        m_state.dragging = false;
-        m_state.dragRow  = EDragRow::NONE;
+        m_state.dragging         = false;
+        m_state.dragRow          = EDragRow::NONE;
+        m_state.pressedMonitorID = MONITOR_INVALID;
     }
 
 } // namespace hyprdeck

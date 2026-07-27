@@ -4,6 +4,7 @@
 #include "confirmation.hpp"
 #include "config.hpp"
 #include "layout.hpp"
+#include "monitor_selector.hpp"
 #include "naming.hpp"
 #include "plugin.hpp"
 #include "shortcuts.hpp"
@@ -13,6 +14,7 @@
 #include <output/Monitor.hpp>
 
 #include <algorithm>
+#include <unordered_map>
 #include <vector>
 
 namespace hyprdeck {
@@ -25,12 +27,33 @@ namespace hyprdeck {
     } // namespace
 
     void COverviewRenderer::renderOverview(const PHLMONITOR& monitor) {
-        activePlugin()->layout().recalculateCards(monitor);
+        const auto selectedMonitor = activePlugin()->overview().selectedMonitor();
+        if (!selectedMonitor)
+            return;
 
-        const auto viewSize = monitor->m_transformedSize;
-        const auto snapshot = activePlugin()->workspacePreviewRenderer().buildSnapshot(monitor);
+        activePlugin()->layout().recalculateCards(selectedMonitor);
+
+        const auto viewSize     = monitor->m_transformedSize;
+        const auto hostSnapshot = activePlugin()->workspacePreviewRenderer().buildSnapshot(monitor);
         if (!activePlugin()->config().activeWorkspaceBackground())
-            activePlugin()->workspacePreviewRenderer().renderEmptyWorkspaceBackground(monitor, snapshot);
+            activePlugin()->workspacePreviewRenderer().renderEmptyWorkspaceBackground(monitor, hostSnapshot);
+
+        std::unordered_map<MONITORID, SWorkspacePreviewSnapshot> snapshots;
+        const auto                                               snapshotFor = [&](const PHLMONITOR& sourceMonitor) -> const SWorkspacePreviewSnapshot& {
+            if (sourceMonitor->m_id == monitor->m_id)
+                return hostSnapshot;
+
+            const auto [entry, inserted] = snapshots.try_emplace(sourceMonitor->m_id);
+            if (inserted)
+                entry->second = activePlugin()->workspacePreviewRenderer().buildSnapshot(sourceMonitor);
+            return entry->second;
+        };
+
+        const auto sourceFor = [&](const SWorkspaceCard& card) {
+            if (const auto source = activePlugin()->hyprland().monitorFromID(card.sourceMonitorID); source)
+                return source;
+            return selectedMonitor;
+        };
 
         auto& renderServices = activePlugin()->renderServices();
         auto& animations     = activePlugin()->animations();
@@ -38,8 +61,10 @@ namespace hyprdeck {
         renderServices.pushOpacity(animations.overviewOpacity());
         activePlugin()->renderServices().addRect(CBox{0, 0, viewSize.x, viewSize.y}, colors::overviewScrim());
 
-        for (const auto& card : activePlugin()->layout().cards())
-            activePlugin()->workspacePreviewRenderer().renderCard(card, monitor, snapshot);
+        for (const auto& card : activePlugin()->layout().cards()) {
+            const auto sourceMonitor = sourceFor(card);
+            activePlugin()->workspacePreviewRenderer().renderCard(card, sourceMonitor, selectedMonitor, snapshotFor(sourceMonitor));
+        }
 
         for (auto card : activePlugin()->layout().specialCards()) {
             const auto opacity = animations.specialCardOpacity(card.id);
@@ -47,7 +72,8 @@ namespace hyprdeck {
                 continue;
 
             renderServices.pushOpacity(opacity);
-            activePlugin()->workspacePreviewRenderer().renderCard(card, monitor, snapshot);
+            const auto sourceMonitor = sourceFor(card);
+            activePlugin()->workspacePreviewRenderer().renderCard(card, sourceMonitor, selectedMonitor, snapshotFor(sourceMonitor));
             renderServices.popOpacity();
         }
 
@@ -55,10 +81,12 @@ namespace hyprdeck {
         float          closingOpacity = 1.0F;
         if (animations.closingSpecialCard(closingCard, closingOpacity) && !cardVisible(activePlugin()->layout().specialCards(), closingCard.id)) {
             renderServices.pushOpacity(closingOpacity);
-            activePlugin()->workspacePreviewRenderer().renderCard(closingCard, monitor, snapshot);
+            const auto sourceMonitor = sourceFor(closingCard);
+            activePlugin()->workspacePreviewRenderer().renderCard(closingCard, sourceMonitor, selectedMonitor, snapshotFor(sourceMonitor));
             renderServices.popOpacity();
         }
 
+        activePlugin()->monitorSelector().render(monitor);
         activePlugin()->workspaceFilter().render(monitor);
         activePlugin()->shortcuts().renderFooter(monitor);
         activePlugin()->naming().render(monitor);
@@ -66,7 +94,7 @@ namespace hyprdeck {
         activePlugin()->shortcuts().renderMenu(monitor);
         renderServices.popOpacity();
 
-        activePlugin()->workspacePreviewRenderer().renderExternalOverlays(monitor, snapshot);
+        activePlugin()->workspacePreviewRenderer().renderExternalOverlays(monitor, hostSnapshot);
     }
 
     void COverviewRenderer::renderCursorOverlay(const PHLMONITOR& monitor) {

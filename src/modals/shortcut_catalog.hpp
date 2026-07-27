@@ -9,6 +9,7 @@ namespace hyprdeck {
 
     enum class EShortcutCommand {
         NONE,
+        CYCLE_MONITOR,
         MOVE_SELECTION,
         JUMP_SELECTION,
         SELECT_SPECIAL_ROW,
@@ -45,10 +46,10 @@ namespace hyprdeck {
 
     struct SShortcutAction {
         EShortcutCommand command = EShortcutCommand::NONE;
-        std::string key;
-        std::string label;
-        std::string description;
-        bool        footer = false;
+        std::string      key;
+        std::string      label;
+        std::string      description;
+        bool             footer = false;
     };
 
     class CShortcutCatalog {

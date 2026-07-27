@@ -38,15 +38,18 @@ namespace hyprdeck {
     };
 
     struct SWorkspaceCard {
-        WORKSPACEID  id        = 0;
-        CBox         box       = {};
-        PHLWORKSPACE workspace = nullptr;
+        WORKSPACEID  id              = 0;
+        CBox         box             = {};
+        PHLWORKSPACE workspace       = nullptr;
+        MONITORID    sourceMonitorID = MONITOR_INVALID;
+        std::string  sourceOutputName;
         std::string  label;
         bool         special = false;
     };
 
     struct SLayoutSignature {
-        MONITORID                monitorID         = MONITOR_INVALID;
+        MONITORID                hostMonitorID     = MONITOR_INVALID;
+        MONITORID                selectedMonitorID = MONITOR_INVALID;
         double                   transformedW      = 0.0;
         double                   transformedH      = 0.0;
         double                   pixelW            = 0.0;
@@ -62,25 +65,29 @@ namespace hyprdeck {
         WORKSPACEID              activeSpecialID   = WORKSPACE_INVALID;
         WORKSPACEID              lastWorkspace     = 0;
         std::vector<WORKSPACEID> normalWorkspaceIDs;
+        std::vector<std::string> normalWorkspaceKeys;
         std::vector<std::string> specialWorkspaceKeys;
         std::string              workspaceFilter;
     };
 
     struct SSessionState {
-        bool      active          = false;
-        bool      rendering       = false;
-        bool      closing         = false;
-        bool      zoomInitialized = false;
-        MONITORID monitorID       = MONITOR_INVALID;
-        double    zoom            = DEFAULT_ZOOM;
+        bool      active               = false;
+        bool      rendering            = false;
+        bool      closing              = false;
+        bool      zoomInitialized      = false;
+        MONITORID hostMonitorID        = MONITOR_INVALID;
+        MONITORID selectedMonitorID    = MONITOR_INVALID;
+        MONITORID pointerLockMonitorID = MONITOR_INVALID;
+        double    zoom                 = DEFAULT_ZOOM;
     };
 
     struct SInteractionState {
-        bool     dragging                = false;
-        double   dragStartCameraX        = 0.0;
-        double   dragStartSpecialCameraX = 0.0;
-        Vector2D dragStart               = {};
-        EDragRow dragRow                 = EDragRow::NONE;
+        bool      dragging                = false;
+        double    dragStartCameraX        = 0.0;
+        double    dragStartSpecialCameraX = 0.0;
+        Vector2D  dragStart               = {};
+        EDragRow  dragRow                 = EDragRow::NONE;
+        MONITORID pressedMonitorID        = MONITOR_INVALID;
     };
 
     struct SLayoutState {

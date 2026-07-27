@@ -13,6 +13,11 @@ namespace hyprdeck {
             const auto                   selectedRow = activePlugin()->selection().selectedRow();
             std::vector<SShortcutAction> actions;
 
+            actions.push_back({.command     = EShortcutCommand::CYCLE_MONITOR,
+                               .key         = "tab / shift+tab",
+                               .label       = "Output",
+                               .description = "Select the next or previous workspace destination output",
+                               .footer      = true});
             actions.push_back(
                 {.command = EShortcutCommand::MOVE_SELECTION, .key = "h/l, left/right", .label = "Move", .description = "Move selection across the current row", .footer = true});
 

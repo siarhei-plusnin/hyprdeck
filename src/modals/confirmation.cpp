@@ -21,7 +21,7 @@ namespace hyprdeck {
     namespace {
 
         void damageConfirmation(const PHLMONITOR& monitor) {
-            activePlugin()->hyprland().damageMonitor(monitor);
+            activePlugin()->overview().damageHost();
         }
 
         SP<Render::ITexture> confirmationTexture(const std::string& text, const int fontSize, const int weight, const CHyprColor& color = colors::textPrimary()) {
@@ -97,15 +97,16 @@ namespace hyprdeck {
         if (!confirmation.open)
             return;
 
-        const auto workspace = activePlugin()->hyprland().workspaceByID(confirmation.normalWorkspaceID);
+        const auto workspace        = activePlugin()->hyprland().workspaceByID(confirmation.normalWorkspaceID);
+        const auto workspaceMonitor = activePlugin()->workspaces().workspaceMonitor(workspace);
         resetState();
 
-        if (!activePlugin()->workspaces().isNormalWorkspace(workspace)) {
+        if (!activePlugin()->workspaces().isNormalWorkspace(workspace) || !workspaceMonitor) {
             damageConfirmation(monitor);
             return;
         }
 
-        activePlugin()->navigator().closeWorkspaceWindows(workspace, monitor);
+        activePlugin()->navigator().closeWorkspaceWindows(workspace, workspaceMonitor);
         activePlugin()->layout().invalidate();
         damageConfirmation(monitor);
     }
@@ -115,8 +116,11 @@ namespace hyprdeck {
         if (!confirmation.open)
             return;
 
-        const auto title    = confirmationTexture("Close all windows?", 22, 750);
-        const auto subtitle = confirmationTexture("Normal workspace " + std::to_string(confirmation.normalWorkspaceID), 18, 600, colors::textSecondary());
+        const auto workspace = activePlugin()->hyprland().workspaceByID(confirmation.normalWorkspaceID);
+        const auto label     = activePlugin()->workspaces().isNormalWorkspace(workspace) ? activePlugin()->workspaces().normalWorkspaceLabel(workspace) :
+                                                                                           std::to_string(confirmation.normalWorkspaceID);
+        const auto title     = confirmationTexture("Close all windows?", 22, 750);
+        const auto subtitle  = confirmationTexture("Normal workspace " + label, 18, 600, colors::textSecondary());
         if (!title || !title->ok() || !subtitle || !subtitle->ok())
             return;
 

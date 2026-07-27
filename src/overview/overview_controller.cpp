@@ -60,7 +60,7 @@ namespace hyprdeck {
             activePlugin()->layout().recalculateCards(monitor);
             const double stepZoom = activePlugin()->animations().zoomTarget(overview.zoom());
 
-            double target = ZOOM_PRESETS[0];
+            double       target = ZOOM_PRESETS[0];
             if (direction > 0) {
                 target = ZOOM_PRESETS[std::size(ZOOM_PRESETS) - 1];
                 for (const double preset : ZOOM_PRESETS) {
@@ -87,6 +87,8 @@ namespace hyprdeck {
         EShortcutCommand commandForKey(const IKeyboard::SKeyEvent event, const SKeyboardModifiers& modifiers) {
             if (event.keycode == KEY_ESC)
                 return EShortcutCommand::CLOSE_OVERLAY;
+            if (event.keycode == KEY_TAB && !modifiers.ctrl && !modifiers.alt)
+                return EShortcutCommand::CYCLE_MONITOR;
             if (modifiers.ctrl && (zoomInKey(event.keycode) || zoomOutKey(event.keycode)))
                 return EShortcutCommand::ZOOM_PRESET;
             if (modifiers.ctrl && event.keycode == KEY_F)
@@ -145,6 +147,7 @@ namespace hyprdeck {
         const auto command = commandForKey(event, modifiers);
         switch (command) {
             case EShortcutCommand::CLOSE_OVERLAY: activePlugin()->overview().close(); break;
+            case EShortcutCommand::CYCLE_MONITOR: activePlugin()->overview().cycleMonitor(modifiers.shift ? -1 : 1); break;
 
             case EShortcutCommand::ZOOM_PRESET: setPresetZoom(directionForKey(event.keycode), monitor); break;
 
@@ -168,9 +171,9 @@ namespace hyprdeck {
                     activePlugin()->layout().recalculateCards(monitor);
                     if (result.selectedSpecialID) {
                         activePlugin()->layout().centerSpecialCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), *result.selectedSpecialID));
-                        activePlugin()->animations().startSpecialCardAppearance(*result.selectedSpecialID, monitor);
+                        activePlugin()->animations().startSpecialCardAppearance(*result.selectedSpecialID, activePlugin()->overview().hostMonitor());
                     }
-                    activePlugin()->hyprland().damageMonitor(monitor);
+                    activePlugin()->overview().damageHost();
                 }
                 break;
             case EShortcutCommand::CREATE_NAMED_SPECIAL: activePlugin()->naming().openNamedSpecialPrompt(monitor); break;

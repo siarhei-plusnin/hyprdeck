@@ -20,9 +20,9 @@ namespace hyprdeck {
     class CWorkspacePreviewRenderer {
       public:
         SWorkspacePreviewSnapshot buildSnapshot(const PHLMONITOR& monitor) const;
-        void                      renderCard(const SWorkspaceCard& card, const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot) const;
-        void                      renderEmptyWorkspaceBackground(const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot) const;
-        void                      renderExternalOverlays(const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot) const;
+        void renderCard(const SWorkspaceCard& card, const PHLMONITOR& sourceMonitor, const PHLMONITOR& selectedMonitor, const SWorkspacePreviewSnapshot& snapshot) const;
+        void renderEmptyWorkspaceBackground(const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot) const;
+        void renderExternalOverlays(const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot) const;
     };
 
 } // namespace hyprdeck

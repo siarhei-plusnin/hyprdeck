@@ -60,7 +60,7 @@ namespace hyprdeck {
             return;
         }
 
-        const auto monitor = activePlugin()->overview().monitor();
+        const auto monitor = activePlugin()->overview().selectedMonitor();
         if (!monitor) {
             stop();
             return;

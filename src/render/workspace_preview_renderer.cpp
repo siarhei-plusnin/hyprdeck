@@ -1,12 +1,14 @@
 #include "workspace_preview_renderer.hpp"
 
 #include "colors.hpp"
+#include "config.hpp"
 #include "layout.hpp"
 #include "overlays.hpp"
 #include "plugin.hpp"
 #include "workspaces.hpp"
 
 #include <desktop/state/FocusState.hpp>
+#include <desktop/Workspace.hpp>
 #include <desktop/view/LayerSurface.hpp>
 #include <desktop/view/Window.hpp>
 #include <output/Monitor.hpp>
@@ -23,14 +25,24 @@ namespace hyprdeck {
             return activePlugin()->renderServices().textTexture("overview", label, colors::textPrimary(), fontSize, weight);
         }
 
+        CBox previewContentBox(const CBox& card, const PHLMONITOR& monitor) {
+            const auto   viewSize = monitor->m_transformedSize;
+            const double scale    = std::min(card.w / std::max(1.0, viewSize.x), card.h / std::max(1.0, viewSize.y));
+            const double width    = viewSize.x * scale;
+            const double height   = viewSize.y * scale;
+
+            return CBox{card.x + ((card.w - width) / 2.0), card.y + ((card.h - height) / 2.0), width, height};
+        }
+
         CBox scaleLogicalBoxToCard(const CBox& box, const CBox& card, const PHLMONITOR& monitor) {
             const auto   viewSize = monitor->m_transformedSize;
-            const double scaleX   = card.w / std::max(1.0, viewSize.x);
-            const double scaleY   = card.h / std::max(1.0, viewSize.y);
+            const auto   content  = previewContentBox(card, monitor);
+            const double scaleX   = content.w / std::max(1.0, viewSize.x);
+            const double scaleY   = content.h / std::max(1.0, viewSize.y);
 
             return CBox{
-                card.x + ((box.x - monitor->m_position.x) * monitor->m_scale * scaleX),
-                card.y + ((box.y - monitor->m_position.y) * monitor->m_scale * scaleY),
+                content.x + ((box.x - monitor->m_position.x) * monitor->m_scale * scaleX),
+                content.y + ((box.y - monitor->m_position.y) * monitor->m_scale * scaleY),
                 box.w * monitor->m_scale * scaleX,
                 box.h * monitor->m_scale * scaleY,
             };
@@ -124,13 +136,15 @@ namespace hyprdeck {
 
         void renderWindowPass(const SWorkspaceCard& card, const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot, const bool floatingPass) {
             PHLWINDOW  deferredFocusedWindow;
+            const auto workspaceFocusedWindow = card.workspace ? card.workspace->getLastFocusedWindow() : PHLWINDOW{};
+            const auto focusedWindow          = workspaceFocusedWindow ? workspaceFocusedWindow : snapshot.focusedWindow;
 
             const auto renderWindowList = [&](const std::vector<PHLWINDOW>& windows) {
                 for (const auto& window : windows) {
                     if (!shouldPreviewWindow(window, floatingPass))
                         continue;
 
-                    if (window == snapshot.focusedWindow) {
+                    if (window == focusedWindow) {
                         deferredFocusedWindow = window;
                         continue;
                     }
@@ -206,7 +220,8 @@ namespace hyprdeck {
         return snapshot;
     }
 
-    void CWorkspacePreviewRenderer::renderCard(const SWorkspaceCard& card, const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot) const {
+    void CWorkspacePreviewRenderer::renderCard(const SWorkspaceCard& card, const PHLMONITOR& monitor, const PHLMONITOR& selectedMonitor,
+                                               const SWorkspacePreviewSnapshot& snapshot) const {
         const bool current  = activePlugin()->workspaces().cardIsActive(card, monitor);
         const bool selected = activePlugin()->workspaces().cardIsSelected(card);
 
@@ -214,20 +229,29 @@ namespace hyprdeck {
             activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(card.box, current ? 11.0 : 7.0),
                                                      current ? colors::activeCardSelectionGlow() : colors::inactiveCardSelectionGlow());
 
-        activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(card.box, current ? 7.0 : 3.0),
-                                                 current ? colors::accent() : colors::inactiveCardBorder());
+        const auto activeColor = card.sourceOutputName.empty() ? colors::accent() : activePlugin()->config().outputColor(card.sourceOutputName);
+        activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(card.box, current ? 7.0 : 3.0), current ? activeColor : colors::inactiveCardBorder());
         renderWorkspacePreview(card, monitor, snapshot);
 
         if (card.label.empty())
             return;
 
-        const auto texture = labelTexture(card.label);
-        if (!texture || !texture->ok())
+        const auto texture      = labelTexture(card.label);
+        const bool showOwner    = !card.special && card.workspace && selectedMonitor && card.sourceMonitorID != selectedMonitor->m_id && !card.sourceOutputName.empty();
+        const auto ownerTexture = showOwner ? labelTexture(card.sourceOutputName, 16, 600) : SP<Render::ITexture>{};
+        if (!texture || !texture->ok() || (showOwner && (!ownerTexture || !ownerTexture->ok())))
             return;
 
-        const CBox labelBox{card.box.x + 22.0, card.box.y + 18.0, texture->m_size.x, texture->m_size.y};
+        const double ownerGap = showOwner ? 4.0 : 0.0;
+        const double contentW = showOwner ? std::max(texture->m_size.x, ownerTexture->m_size.x) : texture->m_size.x;
+        const double labelW   = std::min(contentW, std::max(1.0, card.box.w - 44.0));
+        const double labelH   = texture->m_size.y + ownerGap + (showOwner ? ownerTexture->m_size.y : 0.0);
+        const CBox   labelBox{card.box.x + 22.0, card.box.y + 18.0, labelW, labelH};
         activePlugin()->renderServices().addRect(activePlugin()->renderServices().expandedBox(labelBox, 8.0), colors::labelBackdrop(), 10);
-        activePlugin()->renderServices().addTexture(texture, labelBox, 1.0F);
+        activePlugin()->renderServices().addTexture(texture, CBox{labelBox.x, labelBox.y, texture->m_size.x, texture->m_size.y}, 1.0F, 0, labelBox);
+        if (showOwner)
+            activePlugin()->renderServices().addTexture(ownerTexture, CBox{labelBox.x, labelBox.y + texture->m_size.y + ownerGap, ownerTexture->m_size.x, ownerTexture->m_size.y},
+                                                        1.0F, 0, labelBox);
     }
 
     void CWorkspacePreviewRenderer::renderEmptyWorkspaceBackground(const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot) const {

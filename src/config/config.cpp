@@ -2,9 +2,11 @@
 
 #include "constants.hpp"
 #include "env.hpp"
+#include "colors.hpp"
 #include "strings.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <optional>
 #include <string_view>
 
@@ -90,6 +92,47 @@ namespace hyprdeck {
             return EShortcutsFooterMode::NONE;
 
         return EShortcutsFooterMode::FULL;
+    }
+
+    CHyprColor CConfigStore::outputColor(const std::string_view outputName) {
+        auto&             value     = configValue(m_outputColors, "plugin:hyprdeck:output_colors");
+        const std::string rawConfig = *value;
+
+        if (rawConfig != m_outputColorCache.raw) {
+            std::vector<std::pair<std::string, std::uint32_t>> configuredColors;
+            std::string_view                                   raw = rawConfig;
+
+            while (!raw.empty()) {
+                const auto    comma = raw.find(',');
+                const auto    entry = std::string_view{raw.data(), std::min(comma, raw.size())};
+                const auto    colon = entry.find(':');
+                const auto    name  = strings::trim(entry.substr(0, colon));
+                const auto    hex   = colon == std::string_view::npos ? std::string{} : strings::trim(entry.substr(colon + 1));
+                std::uint32_t rgb   = 0;
+
+                if (!name.empty() && hex.size() == 7 && hex.front() == '#') {
+                    const auto [end, error] = std::from_chars(hex.data() + 1, hex.data() + hex.size(), rgb, 16);
+                    if (error == std::errc{} && end == hex.data() + hex.size()) {
+                        const auto existing = std::ranges::find_if(configuredColors, [&name](const auto& configured) { return configured.first == name; });
+                        if (existing == configuredColors.end())
+                            configuredColors.emplace_back(name, rgb);
+                        else
+                            existing->second = rgb;
+                    }
+                }
+
+                if (comma == std::string_view::npos)
+                    break;
+
+                raw.remove_prefix(comma + 1);
+            }
+
+            m_outputColorCache.raw    = rawConfig;
+            m_outputColorCache.colors = std::move(configuredColors);
+        }
+
+        const auto configured = std::ranges::find_if(m_outputColorCache.colors, [outputName](const auto& entry) { return entry.first == outputName; });
+        return configured == m_outputColorCache.colors.end() ? colors::automaticOutputColor(outputName) : colors::rgb(configured->second);
     }
 
     const std::vector<std::string>& CConfigStore::blockingOverlayNames() {

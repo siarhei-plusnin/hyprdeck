@@ -3,6 +3,7 @@
 #include "hyprland_facade.hpp"
 #include "hook_registry.hpp"
 #include "input.hpp"
+#include "monitor_selector.hpp"
 #include "confirmation.hpp"
 #include "config.hpp"
 #include "layout.hpp"
@@ -36,62 +37,64 @@ namespace hyprdeck {
       public:
         explicit CHyprdeckPlugin(HANDLE handle);
 
-        void init();
-        void shutdown();
+        void                         init();
+        void                         shutdown();
 
-        SDispatchResult toggle(std::string args);
-        int             luaToggle(lua_State* state);
+        SDispatchResult              toggle(std::string args);
+        int                          luaToggle(lua_State* state);
 
-        COverviewController&  overview();
-        CNamingController&    naming();
-        CWorkspaceFilterController& workspaceFilter();
-        CConfirmationController& confirmation();
-        CShortcutMenuController& shortcuts();
-        CWorkspaceLayoutController& layout();
-        CSelectionController& selection();
-        COverviewPointerController& overviewPointer();
+        COverviewController&         overview();
+        CNamingController&           naming();
+        CWorkspaceFilterController&  workspaceFilter();
+        CConfirmationController&     confirmation();
+        CShortcutMenuController&     shortcuts();
+        CWorkspaceLayoutController&  layout();
+        CSelectionController&        selection();
+        COverviewPointerController&  overviewPointer();
         COverviewKeyboardController& overviewKeyboard();
-        CInputRouter& inputRouter();
-        CConfigStore& config();
-        COverlayPolicy& overlays();
-        CWorkspaceNavigator& navigator();
-        CWorkspaceRepository& workspaces();
-        CWorkspaceFilterMatcher& workspaceFilterMatcher();
-        CWorkspacePreviewRenderer& workspacePreviewRenderer();
-        CAnimationController& animations();
-        COverviewRenderer& renderer();
-        CShortcutCatalog&   shortcutCatalog();
-        CRenderServices&      renderServices();
-        CTextInputRepeater&   textInputRepeater();
-        CHyprlandFacade&      hyprland();
+        CInputRouter&                inputRouter();
+        CMonitorSelector&            monitorSelector();
+        CConfigStore&                config();
+        COverlayPolicy&              overlays();
+        CWorkspaceNavigator&         navigator();
+        CWorkspaceRepository&        workspaces();
+        CWorkspaceFilterMatcher&     workspaceFilterMatcher();
+        CWorkspacePreviewRenderer&   workspacePreviewRenderer();
+        CAnimationController&        animations();
+        COverviewRenderer&           renderer();
+        CShortcutCatalog&            shortcutCatalog();
+        CRenderServices&             renderServices();
+        CTextInputRepeater&          textInputRepeater();
+        CHyprlandFacade&             hyprland();
 
       private:
-        void registerConfig();
+        void                        registerConfig();
 
-        HANDLE         m_handle = nullptr;
-        CHyprlandFacade m_hyprland;
-        CTextInputRepeater m_textInputRepeater;
-        CRenderServices    m_renderServices;
-        CConfigStore       m_config;
-        COverlayPolicy     m_overlays;
-        CWorkspaceNavigator m_navigator;
-        CWorkspaceRepository m_workspaces;
-        CWorkspaceFilterMatcher m_workspaceFilterMatcher;
-        CWorkspacePreviewRenderer m_workspacePreviewRenderer;
-        CAnimationController m_animations;
-        COverviewRenderer  m_renderer;
-        CShortcutCatalog    m_shortcutCatalog;
-        COverviewController m_overview;
-        CNamingController   m_naming;
-        CWorkspaceFilterController m_workspaceFilter;
-        CConfirmationController m_confirmation;
-        CShortcutMenuController m_shortcuts;
-        CWorkspaceLayoutController m_layout;
-        CSelectionController m_selection;
-        COverviewPointerController m_overviewPointer;
+        HANDLE                      m_handle = nullptr;
+        CHyprlandFacade             m_hyprland;
+        CTextInputRepeater          m_textInputRepeater;
+        CRenderServices             m_renderServices;
+        CConfigStore                m_config;
+        COverlayPolicy              m_overlays;
+        CWorkspaceNavigator         m_navigator;
+        CWorkspaceRepository        m_workspaces;
+        CWorkspaceFilterMatcher     m_workspaceFilterMatcher;
+        CWorkspacePreviewRenderer   m_workspacePreviewRenderer;
+        CAnimationController        m_animations;
+        COverviewRenderer           m_renderer;
+        CShortcutCatalog            m_shortcutCatalog;
+        COverviewController         m_overview;
+        CNamingController           m_naming;
+        CWorkspaceFilterController  m_workspaceFilter;
+        CConfirmationController     m_confirmation;
+        CShortcutMenuController     m_shortcuts;
+        CWorkspaceLayoutController  m_layout;
+        CSelectionController        m_selection;
+        COverviewPointerController  m_overviewPointer;
         COverviewKeyboardController m_overviewKeyboard;
-        CInputRouter m_inputRouter;
-        CHookRegistry  m_hooks;
+        CInputRouter                m_inputRouter;
+        CMonitorSelector            m_monitorSelector;
+        CHookRegistry               m_hooks;
     };
 
     CHyprdeckPlugin* activePlugin();

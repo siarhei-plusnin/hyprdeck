@@ -13,9 +13,7 @@ namespace hyprdeck {
 
     class CInputRouter {
       public:
-        std::function<void(Vector2D, Event::SCallbackInfo&)> onMouseMove = [this](Vector2D position, Event::SCallbackInfo& info) {
-            handleMouseMove(position, info);
-        };
+        std::function<void(Vector2D, Event::SCallbackInfo&)>               onMouseMove = [this](Vector2D position, Event::SCallbackInfo& info) { handleMouseMove(position, info); };
         std::function<void(IPointer::SButtonEvent, Event::SCallbackInfo&)> onMouseButton = [this](IPointer::SButtonEvent event, Event::SCallbackInfo& info) {
             handleMouseButton(event, info);
         };
@@ -29,13 +27,14 @@ namespace hyprdeck {
         EInputMode activeInputMode() const;
 
       private:
-        PHLMONITOR activeInputMonitor() const;
+        PHLMONITOR activeHostMonitor() const;
+        PHLMONITOR activeSelectedMonitor() const;
         bool       inputBlockedByExternalOverlay(const PHLMONITOR& monitor) const;
 
-        void handleMouseMove(Vector2D position, Event::SCallbackInfo& info);
-        void handleMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info);
-        void handleMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info);
-        void handleKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info);
+        void       handleMouseMove(Vector2D position, Event::SCallbackInfo& info);
+        void       handleMouseButton(IPointer::SButtonEvent event, Event::SCallbackInfo& info);
+        void       handleMouseAxis(IPointer::SAxisEvent event, Event::SCallbackInfo& info);
+        void       handleKeyboard(IKeyboard::SKeyEvent event, Event::SCallbackInfo& info);
     };
 
 } // namespace hyprdeck
