@@ -114,6 +114,17 @@ namespace hyprdeck {
             activePlugin()->hyprland().damageMonitor(monitor);
     }
 
+    bool COverviewController::prepareWorkspaceCommit() {
+        if (!m_session.active || !m_session.rendering)
+            return false;
+
+        // Stop intercepting Hyprland's focus-induced pointer update, but keep the
+        // host software cursor locked until the output handoff is complete.
+        m_session.active = false;
+        resetInteractionState();
+        return true;
+    }
+
     void COverviewController::close(const bool instant) {
         if (!m_session.rendering)
             return;

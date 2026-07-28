@@ -25,6 +25,7 @@ namespace hyprdeck {
 
         void                              setZoom(double value);
         void                              open();
+        bool                              prepareWorkspaceCommit();
         void                              close(bool instant = false);
         void                              selectMonitor(const PHLMONITOR& monitor);
         void                              cycleMonitor(int direction);

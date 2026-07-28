@@ -34,8 +34,7 @@ namespace hyprdeck {
         void                          unlockSoftwarePointer(const PHLMONITOR& monitor) const;
         bool                          softwarePointerLockedFor(const PHLMONITOR& monitor) const;
         void                          damageCursor(const PHLMONITOR& monitor) const;
-        void                          moveCursor(const Vector2D& position) const;
-        void                          syncPointerFocus() const;
+        void                          refreshPointerFocus() const;
 
         Vector2D                      mouseCoords() const;
         Vector2D                      pointerPosition() const;
@@ -52,6 +51,7 @@ namespace hyprdeck {
         PHLWORKSPACE                  createWorkspace(WORKSPACEID id, MONITORID monitorID, const std::string& name, bool isEmpty) const;
         void                          moveWorkspaceToMonitor(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const;
         void                          focusMonitor(const PHLMONITOR& monitor) const;
+        void                          focusActiveWorkspace(const PHLMONITOR& monitor) const;
         void                          postWorkspaceRenameEvent(const PHLWORKSPACE& workspace) const;
 
         SKeyboardModifiers            keyboardModifiers() const;

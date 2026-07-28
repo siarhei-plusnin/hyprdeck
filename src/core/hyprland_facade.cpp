@@ -103,11 +103,7 @@ namespace hyprdeck {
             Pointer::mgr()->damageCursor(monitor);
     }
 
-    void CHyprlandFacade::moveCursor(const Vector2D& position) const {
-        static_cast<void>(Config::Actions::moveCursor(position));
-    }
-
-    void CHyprlandFacade::syncPointerFocus() const {
+    void CHyprlandFacade::refreshPointerFocus() const {
         if (g_pInputManager)
             g_pInputManager->simulateMouseMovement();
     }
@@ -168,6 +164,15 @@ namespace hyprdeck {
     void CHyprlandFacade::focusMonitor(const PHLMONITOR& monitor) const {
         if (monitor)
             static_cast<void>(Config::Actions::focusMonitor(monitor));
+    }
+
+    void CHyprlandFacade::focusActiveWorkspace(const PHLMONITOR& monitor) const {
+        if (!monitor || !Desktop::focusState())
+            return;
+
+        const auto workspace = monitor->m_activeSpecialWorkspace ? monitor->m_activeSpecialWorkspace : monitor->m_activeWorkspace;
+        Desktop::focusState()->fullWindowFocus(workspace ? workspace->getFocusCandidate() : nullptr, Desktop::FOCUS_REASON_KEYBIND);
+        Desktop::focusState()->rawMonitorFocus(monitor);
     }
 
     void CHyprlandFacade::postWorkspaceRenameEvent(const PHLWORKSPACE& workspace) const {

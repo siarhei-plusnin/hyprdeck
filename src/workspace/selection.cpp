@@ -149,14 +149,29 @@ namespace hyprdeck {
     }
 
     void CSelectionController::commitWorkspaceSelection(const PHLMONITOR& monitor) const {
-        activePlugin()->overview().close();
-        activePlugin()->hyprland().focusMonitor(monitor);
+        if (!monitor)
+            return;
 
-        const auto pointerMonitor = activePlugin()->hyprland().monitorFromCursor();
-        if (!pointerMonitor || pointerMonitor->m_id != monitor->m_id)
-            activePlugin()->hyprland().moveCursor(monitor->middle());
+        auto&      hyprland          = activePlugin()->hyprland();
+        auto&      overview          = activePlugin()->overview();
+        const auto focusedMonitor    = hyprland.activeMonitor();
+        const bool switchingOutput   = focusedMonitor && focusedMonitor->m_id != monitor->m_id;
+        const auto workspace         = monitor->m_activeSpecialWorkspace ? monitor->m_activeSpecialWorkspace : monitor->m_activeWorkspace;
+        const bool hasFocusCandidate = workspace && workspace->getFocusCandidate();
+
+        if (!overview.prepareWorkspaceCommit())
+            return;
+
+        if (switchingOutput)
+            hyprland.focusMonitor(monitor);
         else
-            activePlugin()->hyprland().syncPointerFocus();
+            hyprland.focusActiveWorkspace(monitor);
+
+        const auto pointerMonitor = hyprland.monitorFromCursor();
+        if (pointerMonitor && pointerMonitor->m_id == monitor->m_id && (!switchingOutput || !hasFocusCandidate))
+            hyprland.refreshPointerFocus();
+
+        overview.close();
     }
 
     void CSelectionController::selectWorkspaceAt(const Vector2D& position, const PHLMONITOR& monitor) {
