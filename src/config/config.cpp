@@ -62,6 +62,16 @@ namespace hyprdeck {
         return configuredCommaSeparatedNames(*value, m_namedSpecialWorkspaceCache, true, false, false);
     }
 
+    Config::INTEGER CConfigStore::minimumNumberedWorkspaces() {
+        auto& value = configValue(m_minimumNumberedWorkspaces, "plugin:hyprdeck:minimum_numbered_workspaces");
+        return std::clamp(*value, static_cast<Config::INTEGER>(0), static_cast<Config::INTEGER>(MAX_CONFIGURED_NUMBERED_WORKSPACES));
+    }
+
+    Config::INTEGER CConfigStore::numberedWorkspacesAfterLast() {
+        auto& value = configValue(m_numberedWorkspacesAfterLast, "plugin:hyprdeck:numbered_workspaces_after_last");
+        return std::clamp(*value, static_cast<Config::INTEGER>(0), static_cast<Config::INTEGER>(MAX_CONFIGURED_NUMBERED_WORKSPACES));
+    }
+
     double CConfigStore::defaultZoom() {
         auto& value = configValue(m_defaultZoom, "plugin:hyprdeck:default_zoom");
         return std::clamp(static_cast<double>(*value), MIN_ZOOM, MAX_ZOOM);

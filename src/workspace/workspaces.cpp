@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <desktop/Workspace.hpp>
 #include <desktop/view/Window.hpp>
+#include <limits>
 #include <output/Monitor.hpp>
 
 #include <string>
@@ -153,7 +154,12 @@ namespace hyprdeck {
                 highestExisting = std::max(highestExisting, workspace->m_id);
         }
 
-        return std::max<WORKSPACEID>(3, highestExisting + 1);
+        const auto minimum     = static_cast<WORKSPACEID>(activePlugin()->config().minimumNumberedWorkspaces());
+        const auto after       = static_cast<WORKSPACEID>(activePlugin()->config().numberedWorkspacesAfterLast());
+        const auto maximum     = std::numeric_limits<WORKSPACEID>::max();
+        const auto trailingEnd = highestExisting > maximum - after ? maximum : highestExisting + after;
+
+        return std::max(minimum, trailingEnd);
     }
 
     WORKSPACEID CWorkspaceRepository::activeNormalWorkspaceID(const PHLMONITOR& monitor) const {

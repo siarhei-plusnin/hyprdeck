@@ -13,6 +13,8 @@ if hl.plugin.hyprdeck then
         plugin = {
             hyprdeck = {
                 named_special_workspaces = "scratch, music",
+                minimum_numbered_workspaces = 3,
+                numbered_workspaces_after_last = 1,
                 active_workspace_background = false,
                 default_zoom = 0.48,
                 animations = true,
@@ -32,6 +34,8 @@ end
 
 `shortcuts_footer` accepts `full`, `hint`, or `none`.
 
+`minimum_numbered_workspaces` and `numbered_workspaces_after_last` accept values from `0` through `100`. The final numbered card is the greater of the configured minimum and the highest existing numbered workspace plus the configured trailing count.
+
 Set `animations = false` to disable hyprdeck's overview animations while keeping Hyprland's global animation config unchanged.
 
 `output_colors` accepts comma-separated `OUTPUT:#RRGGBB` mappings. Outputs without a configured color receive a deterministic rainbow color based on their name.
@@ -40,7 +44,7 @@ Set `animations = false` to disable hyprdeck's overview animations while keeping
 
 hyprdeck renders one overview at a time. Opening it from another focused output immediately moves the overview there. The output where it opens hosts the UI; the output boxes at the top-left always show their assigned colors, and the selected box controls the destination for workspace actions. Use `Tab` and `Shift+Tab` to cycle through outputs in Hyprland order.
 
-The normal row shows one global, contiguous workspace list, including numeric gaps and one empty workspace after the highest existing ID. Active workspace borders use their owner output's color. A foreign workspace also shows its output name and keeps a live, aspect-preserving preview of that output.
+The normal row shows one global, contiguous workspace list, including numeric gaps and a configurable numbered horizon. Active workspace borders use their owner output's color. A foreign workspace also shows its output name and keeps a live, aspect-preserving preview of that output.
 
 Existing name-based normal workspaces appear alphabetically at the left of the normal row. A thin divider separates them from numeric workspaces when both groups are visible. Renamed numeric workspaces display both their ID and custom name.
 

@@ -11,6 +11,7 @@
 #include "workspace_filter.hpp"
 
 #include <config/values/ConfigValues.hpp>
+#include <config/values/types/IntValue.hpp>
 #include <config/values/types/StringValue.hpp>
 
 #include <memory>
@@ -47,6 +48,14 @@ namespace hyprdeck {
         HyprlandAPI::addConfigValueV2(m_handle,
                                       Config::Values::makeConfigValue<Config::Values::CStringValue>(
                                           "plugin:hyprdeck:named_special_workspaces", "Comma-separated special workspace names shown by hyprdeck's named creator", ""));
+        HyprlandAPI::addConfigValueV2(m_handle,
+                                      Config::Values::makeConfigValue<Config::Values::CIntValue>(
+                                          "plugin:hyprdeck:minimum_numbered_workspaces", "Minimum number of contiguous numbered workspaces shown by hyprdeck",
+                                          DEFAULT_MINIMUM_NUMBERED_WORKSPACES, Config::Values::SIntValueOptions{.min = 0, .max = MAX_CONFIGURED_NUMBERED_WORKSPACES}));
+        HyprlandAPI::addConfigValueV2(m_handle,
+                                      Config::Values::makeConfigValue<Config::Values::CIntValue>(
+                                          "plugin:hyprdeck:numbered_workspaces_after_last", "Number of empty numbered workspaces shown after the highest existing ID",
+                                          DEFAULT_NUMBERED_WORKSPACES_AFTER_LAST, Config::Values::SIntValueOptions{.min = 0, .max = MAX_CONFIGURED_NUMBERED_WORKSPACES}));
         HyprlandAPI::addConfigValueV2(m_handle,
                                       Config::Values::makeConfigValue<Config::Values::CFloatValue>(
                                           "plugin:hyprdeck:default_zoom", "Default zoom used when opening hyprdeck", static_cast<Config::FLOAT>(DEFAULT_ZOOM),
