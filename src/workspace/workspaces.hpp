@@ -26,6 +26,7 @@ namespace hyprdeck {
         WORKSPACEID               specialWorkspaceId(const PHLWORKSPACE& workspace) const;
         std::string               specialWorkspaceLabel(const PHLWORKSPACE& workspace) const;
         std::vector<PHLWORKSPACE> specialWorkspacesToShow() const;
+        PHLWORKSPACE              specialWorkspaceInDirection(WORKSPACEID id, int direction) const;
         bool                      moveSpecialWorkspaceInOrder(WORKSPACEID id, int direction);
         WORKSPACEID               lastWorkspaceToShow() const;
         WORKSPACEID               activeNormalWorkspaceID(const PHLMONITOR& monitor) const;

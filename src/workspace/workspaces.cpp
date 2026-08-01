@@ -169,22 +169,31 @@ namespace hyprdeck {
         return workspaces;
     }
 
-    bool CWorkspaceRepository::moveSpecialWorkspaceInOrder(const WORKSPACEID id, const int direction) {
+    PHLWORKSPACE CWorkspaceRepository::specialWorkspaceInDirection(const WORKSPACEID id, const int direction) const {
         const auto visible = specialWorkspacesToShow();
         const auto current = std::ranges::find_if(visible, [id](const auto& workspace) { return workspace->m_id == id; });
         if (current == visible.end())
-            return false;
+            return nullptr;
 
         const auto index     = std::distance(visible.begin(), current);
         const auto nextIndex = index + (direction < 0 ? -1 : 1);
         if (nextIndex < 0 || nextIndex >= static_cast<std::ptrdiff_t>(visible.size()))
+            return nullptr;
+
+        return visible[nextIndex];
+    }
+
+    bool CWorkspaceRepository::moveSpecialWorkspaceInOrder(const WORKSPACEID id, const int direction) {
+        const auto current = activePlugin()->hyprland().workspaceByID(id);
+        const auto next    = specialWorkspaceInDirection(id, direction);
+        if (!current || !next)
             return false;
 
         const auto findOrdered = [this](const PHLWORKSPACE& workspace) {
             return std::ranges::find_if(m_specialWorkspaceOrder, [&workspace](const auto& weak) { return weak.lock() == workspace; });
         };
-        const auto currentOrder = findOrdered(*current);
-        const auto nextOrder    = findOrdered(visible[nextIndex]);
+        const auto currentOrder = findOrdered(current);
+        const auto nextOrder    = findOrdered(next);
         if (currentOrder == m_specialWorkspaceOrder.end() || nextOrder == m_specialWorkspaceOrder.end())
             return false;
 

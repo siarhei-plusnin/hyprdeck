@@ -15,6 +15,7 @@
 #include <config/values/types/StringValue.hpp>
 
 #include <memory>
+#include <string_view>
 #include <utility>
 
 extern "C" {
@@ -33,11 +34,34 @@ namespace hyprdeck {
             return g_plugin->toggle(std::move(args));
         }
 
+        SDispatchResult dispatchFocusSpecial(std::string args) {
+            if (!g_plugin)
+                return SDispatchResult{.passEvent = false, .success = false};
+
+            return g_plugin->focusSpecial(std::move(args));
+        }
+
+        int specialWorkspaceDirection(const std::string_view direction) {
+            if (direction == "l" || direction == "left")
+                return -1;
+            if (direction == "r" || direction == "right")
+                return 1;
+
+            return 0;
+        }
+
         int luaDispatchToggle(lua_State* state) {
             if (!g_plugin)
                 return 0;
 
             return g_plugin->luaToggle(state);
+        }
+
+        int luaDispatchFocusSpecial(lua_State* state) {
+            if (!g_plugin)
+                return 0;
+
+            return g_plugin->luaFocusSpecial(state);
         }
 
     } // namespace
@@ -88,7 +112,9 @@ namespace hyprdeck {
         registerConfig();
 
         HyprlandAPI::addDispatcherV2(m_handle, "hyprdeck:toggle", dispatchToggle);
+        HyprlandAPI::addDispatcherV2(m_handle, "hyprdeck:focus_special", dispatchFocusSpecial);
         HyprlandAPI::addLuaFunction(m_handle, "hyprdeck", "toggle", luaDispatchToggle);
+        HyprlandAPI::addLuaFunction(m_handle, "hyprdeck", "focus_special", luaDispatchFocusSpecial);
         m_hooks.registerHooks(m_overview.onRenderStage, m_inputRouter.onMouseMove, m_inputRouter.onMouseButton, m_inputRouter.onMouseAxis, m_inputRouter.onKeyboard,
                               m_overview.onStateChanged, m_overview.onMonitorRemoved);
 
@@ -107,16 +133,38 @@ namespace hyprdeck {
         m_renderServices.clearTextTextureCache();
         m_renderServices.clearCursorCache();
 
-        if (m_handle)
+        if (m_handle) {
             HyprlandAPI::removeDispatcher(m_handle, "hyprdeck:toggle");
+            HyprlandAPI::removeDispatcher(m_handle, "hyprdeck:focus_special");
+        }
     }
 
     SDispatchResult CHyprdeckPlugin::toggle(std::string args) {
         return m_overview.toggle(std::move(args));
     }
 
+    SDispatchResult CHyprdeckPlugin::focusSpecial(std::string args) {
+        const int direction = specialWorkspaceDirection(args);
+        return SDispatchResult{.passEvent = false, .success = direction != 0 && m_navigator.focusSpecialWorkspaceInOrder(direction, m_hyprland.activeMonitor())};
+    }
+
     int CHyprdeckPlugin::luaToggle(lua_State* state) {
         return m_overview.luaToggle(state);
+    }
+
+    int CHyprdeckPlugin::luaFocusSpecial(lua_State* state) {
+        if (!state)
+            return 0;
+
+        bool focused = false;
+        if (lua_gettop(state) >= 1 && lua_type(state, 1) == LUA_TSTRING) {
+            const int step = specialWorkspaceDirection(lua_tostring(state, 1));
+            if (step != 0)
+                focused = m_navigator.focusSpecialWorkspaceInOrder(step, m_hyprland.activeMonitor());
+        }
+
+        lua_pushboolean(state, focused);
+        return 1;
     }
 
     COverviewController& CHyprdeckPlugin::overview() {

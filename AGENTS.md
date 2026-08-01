@@ -11,7 +11,7 @@
 - This is a Hyprland C++ plugin named `hyprdeck`; HyprPM expects the artifact at `build/hyprdeck.so`.
 - Treat `build/` as generated output except for reading `compile_commands.json`; source of truth is `CMakeLists.txt`, `hyprpm.toml`, and `src/`.
 - Plugin entrypoints are in `src/main.cpp`: `PLUGIN_API_VERSION`, `PLUGIN_INIT`, and `PLUGIN_EXIT`.
-- `PLUGIN_INIT` registers dispatcher `hyprdeck:toggle`, Lua function `hyprdeck.toggle`, config keys `plugin:hyprdeck:named_special_workspaces`, `plugin:hyprdeck:minimum_numbered_workspaces`, `plugin:hyprdeck:numbered_workspaces_after_last`, `plugin:hyprdeck:default_zoom`, `plugin:hyprdeck:active_workspace_background`, `plugin:hyprdeck:font_family`, `plugin:hyprdeck:shortcuts_footer`, `plugin:hyprdeck:blocking_overlays`, `plugin:hyprdeck:non_blocking_overlays`, and `plugin:hyprdeck:display_capture_overlays`, and render/input hooks.
+- `PLUGIN_INIT` registers dispatchers `hyprdeck:toggle` and `hyprdeck:focus_special`, Lua functions `hyprdeck.toggle` and `hyprdeck.focus_special`, config keys `plugin:hyprdeck:named_special_workspaces`, `plugin:hyprdeck:minimum_numbered_workspaces`, `plugin:hyprdeck:numbered_workspaces_after_last`, `plugin:hyprdeck:default_zoom`, `plugin:hyprdeck:active_workspace_background`, `plugin:hyprdeck:font_family`, `plugin:hyprdeck:shortcuts_footer`, `plugin:hyprdeck:blocking_overlays`, `plugin:hyprdeck:non_blocking_overlays`, and `plugin:hyprdeck:display_capture_overlays`, and render/input hooks.
 - Global runtime state is `hyprdeck::state()` in `src/state.*`; use nested groups (`session`, `interaction`, `layout`, `selection`, `naming`, `filter`, `confirmation`, `shortcuts`, `renderCache`, `hooks`) directly.
 
 ## Module Map

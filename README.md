@@ -52,6 +52,10 @@ Existing name-based normal workspaces appear alphabetically at the left of the n
 
 On the special row, `Ctrl+h`/`Ctrl+Left` and `Ctrl+l`/`Ctrl+Right` move the selected workspace within hyprdeck's runtime order. Add `Shift` to move it directly to the leftmost or rightmost position. The order survives closing and reopening the overview but resets when the plugin is reloaded or Hyprland exits. Reordering is disabled while a workspace filter is active.
 
+Lua bindings can call `hl.plugin.hyprdeck.focus_special("l")` or `hl.plugin.hyprdeck.focus_special("r")` to focus the adjacent visible special workspace in the same runtime order. The function returns whether a workspace was focused.
+
+The same action is registered as the `hyprdeck:focus_special` dispatcher with an `l`/`left` or `r`/`right` argument. With Hyprland's Lua config provider, invoke it from a shell through `hyprctl eval 'hl.plugin.hyprdeck.focus_special("l")'`; direct `hyprctl dispatch NAME ARG` lookup is only available through the legacy config provider.
+
 ## Animation Leaves
 
 hyprdeck reads Hyprland animation leaves directly for enabled state and interpolation timing/curve. Animation `style` values are ignored.

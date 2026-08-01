@@ -41,7 +41,9 @@ namespace hyprdeck {
         void                         shutdown();
 
         SDispatchResult              toggle(std::string args);
+        SDispatchResult              focusSpecial(std::string args);
         int                          luaToggle(lua_State* state);
+        int                          luaFocusSpecial(lua_State* state);
 
         COverviewController&         overview();
         CNamingController&           naming();

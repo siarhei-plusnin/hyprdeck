@@ -18,6 +18,7 @@ namespace hyprdeck {
       public:
         SWorkspaceNavigationResult switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor);
         SWorkspaceNavigationResult hideActiveSpecialWorkspace(const PHLMONITOR& monitor, bool animateIfEmpty = true);
+        bool                       focusSpecialWorkspaceInOrder(int direction, const PHLMONITOR& monitor);
         void                       closeWorkspaceWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor = nullptr);
         SWorkspaceNavigationResult createSimpleSpecialWorkspace(const PHLMONITOR& monitor);
         SWorkspaceNavigationResult createNamedSpecialWorkspace(const std::string& name, const PHLMONITOR& monitor);

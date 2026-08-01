@@ -174,6 +174,22 @@ namespace hyprdeck {
         return result;
     }
 
+    bool CWorkspaceNavigator::focusSpecialWorkspaceInOrder(const int direction, const PHLMONITOR& monitor) {
+        if (!monitor || !monitor->m_activeSpecialWorkspace)
+            return false;
+
+        const auto workspace = activePlugin()->workspaces().specialWorkspaceInDirection(monitor->m_activeSpecialWorkspace->m_id, direction);
+        if (!workspace)
+            return false;
+
+        const auto owner = activePlugin()->workspaces().workspaceMonitor(workspace);
+        if (owner && owner->m_id != monitor->m_id)
+            activePlugin()->hyprland().moveWorkspaceToMonitor(workspace, monitor);
+
+        monitor->setSpecialWorkspace(workspace);
+        return true;
+    }
+
     SWorkspaceNavigationResult CWorkspaceNavigator::switchWorkspaceCard(const SWorkspaceCard& card, const PHLMONITOR& monitor) {
         auto       workspace                = card.workspace;
         const bool specialWasActiveOnTarget = card.special && workspace && monitor && monitor->m_activeSpecialWorkspace == workspace;
