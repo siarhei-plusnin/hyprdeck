@@ -62,6 +62,13 @@ namespace hyprdeck {
                                    .footer      = true});
                 actions.push_back(
                     {.command = EShortcutCommand::RENAME_SPECIAL, .key = "r", .label = "Rename", .description = "Rename the selected special workspace", .footer = true});
+                if (!activePlugin()->workspaceFilter().applied()) {
+                    actions.push_back({.command     = EShortcutCommand::MOVE_SPECIAL_WORKSPACE,
+                                       .key         = "ctrl+h/l, ctrl+shift+h/l",
+                                       .label       = "Reorder",
+                                       .description = "Move the selected special workspace one place or to the row edge",
+                                       .footer      = true});
+                }
                 actions.push_back({.command     = EShortcutCommand::CLOSE_SPECIAL_WORKSPACE_WINDOWS,
                                    .key         = "q",
                                    .label       = "Close apps",

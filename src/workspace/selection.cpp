@@ -6,6 +6,7 @@
 #include "navigation.hpp"
 #include "overview.hpp"
 #include "plugin.hpp"
+#include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
 #include <desktop/Workspace.hpp>
@@ -438,6 +439,22 @@ namespace hyprdeck {
 
         if (applyNavigationResult(activePlugin()->navigator().switchWorkspaceCard(*target, monitor)))
             activePlugin()->overview().damageHost();
+    }
+
+    void CSelectionController::moveSelectedSpecialWorkspace(const int direction, const bool toEdge, const PHLMONITOR& monitor) {
+        if (m_state.selectedRow != ESelectedRow::SPECIAL || activePlugin()->workspaceFilter().applied())
+            return;
+
+        activePlugin()->layout().recalculateCards(monitor);
+        if (!activePlugin()->workspaces().moveSpecialWorkspaceInOrder(m_state.selectedSpecialID, direction))
+            return;
+        while (toEdge && activePlugin()->workspaces().moveSpecialWorkspaceInOrder(m_state.selectedSpecialID, direction)) {}
+
+        activePlugin()->animations().cancelSpecialCameraAnimation();
+        activePlugin()->layout().invalidate();
+        activePlugin()->layout().recalculateCards(monitor);
+        activePlugin()->layout().centerSpecialCard(activePlugin()->workspaces().cardIndexByID(activePlugin()->layout().specialCards(), m_state.selectedSpecialID));
+        activePlugin()->overview().damageHost();
     }
 
     void CSelectionController::jumpSelection(const int direction, const PHLMONITOR& monitor) {

@@ -12,21 +12,21 @@ namespace hyprdeck {
 
     class CSelectionController {
       public:
-        SSelectionState snapshot() const;
-        ESelectedRow    selectedRow() const;
-        WORKSPACEID     selectedNormalID() const;
-        WORKSPACEID     selectedSpecialID() const;
-        WORKSPACEID     lastActiveNormalID() const;
-        WORKSPACEID     lastActiveSpecialID() const;
-        void            resetState();
-        void            setSelectedRow(ESelectedRow row);
-        void            setSelectedNormalID(WORKSPACEID id);
-        void            setSelectedSpecialID(WORKSPACEID id);
-        void            setLastActiveNormalID(WORKSPACEID id);
-        void            setLastActiveSpecialID(WORKSPACEID id);
-        void            setActiveSelection(WORKSPACEID activeNormalID, WORKSPACEID activeSpecialID);
-        void            ensureSelection(const PHLMONITOR& monitor);
-        bool            applyNavigationResult(const SWorkspaceNavigationResult& result);
+        SSelectionState       snapshot() const;
+        ESelectedRow          selectedRow() const;
+        WORKSPACEID           selectedNormalID() const;
+        WORKSPACEID           selectedSpecialID() const;
+        WORKSPACEID           lastActiveNormalID() const;
+        WORKSPACEID           lastActiveSpecialID() const;
+        void                  resetState();
+        void                  setSelectedRow(ESelectedRow row);
+        void                  setSelectedNormalID(WORKSPACEID id);
+        void                  setSelectedSpecialID(WORKSPACEID id);
+        void                  setLastActiveNormalID(WORKSPACEID id);
+        void                  setLastActiveSpecialID(WORKSPACEID id);
+        void                  setActiveSelection(WORKSPACEID activeNormalID, WORKSPACEID activeSpecialID);
+        void                  ensureSelection(const PHLMONITOR& monitor);
+        bool                  applyNavigationResult(const SWorkspaceNavigationResult& result);
 
         const SWorkspaceCard* selectedSpecialCard() const;
         const SWorkspaceCard* selectedNormalCard() const;
@@ -39,6 +39,7 @@ namespace hyprdeck {
         void                  closeSelectedNormalWorkspaceWindows(const PHLMONITOR& monitor);
         void                  closeSelectedSpecialWorkspaceWindows(const PHLMONITOR& monitor);
         void                  moveSelection(int direction, const PHLMONITOR& monitor);
+        void                  moveSelectedSpecialWorkspace(int direction, bool toEdge, const PHLMONITOR& monitor);
         void                  jumpSelection(int direction, const PHLMONITOR& monitor);
 
       private:

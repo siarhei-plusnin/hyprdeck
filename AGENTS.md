@@ -33,14 +33,14 @@
 - `textinput.*` owns reusable text state, key-to-character mapping, cursor movement, and word/line editing helpers.
 - `textinput_repeat.*` owns shared text input key-repeat timers used by modal text inputs.
 - `ui.*` owns render-pass primitives and shared text texture rendering/cache behavior.
-- `workspaces.*` filters normal numeric workspaces and special workspaces for the active monitor.
+- `workspaces.*` filters normal numeric workspaces and visible global special workspaces, and owns the runtime special-row order.
 - `rendering.*` draws workspace previews, cursor overlay, and labels; it builds per-render window/layer snapshots before drawing cards, and prompt drawing is delegated to `naming.*`.
 
 ## Behavior Gotchas
 - When adding, removing, renaming, or changing defaults/accepted values for plugin config options, update `README.md` in the same change.
 - Named special workspace config is read from the Hyprland config string; current behavior trims whitespace, strips a leading `special:`, and de-duplicates names.
 - `plugin:hyprdeck:active_workspace_background = false` draws an empty-workspace backdrop by rendering the monitor background layer surfaces, so wallpaper remains visible without active workspace windows.
-- The normal row only shows positive numeric workspaces; the special row only shows special workspaces on the current monitor that are active or have windows.
+- The normal row only shows positive numeric workspaces; the global special row shows special workspaces that are active or have windows. Its custom order lasts until plugin unload.
 - Layout recalculation is cached by a signature of monitor geometry, visible workspace lists, zoom/camera, and selection state; call `invalidateLayout()` after direct mutations to those inputs.
 - Rendering happens on `RENDER_LAST_MOMENT` for the overview monitor; state/layout changes generally need `g_pHyprRenderer->damageMonitor(monitor)`.
 

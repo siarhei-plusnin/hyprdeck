@@ -50,6 +50,8 @@ Existing name-based normal workspaces appear alphabetically at the left of the n
 
 `h`/`l` and the arrow keys focus foreign normal workspaces without switching to them. `Enter`/`f` moves the focused workspace to the selected output, activates it, and closes hyprdeck; `Space` or a click moves and activates it while keeping hyprdeck open. A numeric shortcut focuses a foreign workspace on the first press and moves it when that workspace is already focused. Existing active or non-empty special workspaces are visible across all outputs and move to the selected output when activated.
 
+On the special row, `Ctrl+h`/`Ctrl+Left` and `Ctrl+l`/`Ctrl+Right` move the selected workspace within hyprdeck's runtime order. Add `Shift` to move it directly to the leftmost or rightmost position. The order survives closing and reopening the overview but resets when the plugin is reloaded or Hyprland exits. Reordering is disabled while a workspace filter is active.
+
 ## Animation Leaves
 
 hyprdeck reads Hyprland animation leaves directly for enabled state and interpolation timing/curve. Animation `style` values are ignored.

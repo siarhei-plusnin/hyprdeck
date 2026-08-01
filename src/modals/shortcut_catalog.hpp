@@ -11,6 +11,7 @@ namespace hyprdeck {
         NONE,
         CYCLE_MONITOR,
         MOVE_SELECTION,
+        MOVE_SPECIAL_WORKSPACE,
         JUMP_SELECTION,
         SELECT_SPECIAL_ROW,
         SELECT_NORMAL_ROW,

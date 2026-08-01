@@ -97,6 +97,9 @@ namespace hyprdeck {
                 return EShortcutCommand::CLEAR_WORKSPACE_FILTER;
             if (normalWorkspaceKey(event.keycode) != WORKSPACE_INVALID)
                 return EShortcutCommand::SWITCH_NORMAL_WORKSPACE;
+            if (modifiers.ctrl && !modifiers.alt && activePlugin()->selection().selectedRow() == ESelectedRow::SPECIAL && !activePlugin()->workspaceFilter().applied() &&
+                (event.keycode == KEY_H || event.keycode == KEY_LEFT || event.keycode == KEY_L || event.keycode == KEY_RIGHT))
+                return EShortcutCommand::MOVE_SPECIAL_WORKSPACE;
             if (event.keycode == KEY_H || event.keycode == KEY_LEFT || event.keycode == KEY_L || event.keycode == KEY_RIGHT)
                 return modifiers.shift ? EShortcutCommand::JUMP_SELECTION : EShortcutCommand::MOVE_SELECTION;
             if (event.keycode == KEY_SPACE)
@@ -157,6 +160,9 @@ namespace hyprdeck {
             case EShortcutCommand::SWITCH_NORMAL_WORKSPACE: activePlugin()->selection().switchNormalWorkspaceByID(normalWorkspaceKey(event.keycode), monitor); break;
 
             case EShortcutCommand::MOVE_SELECTION: activePlugin()->selection().moveSelection(directionForKey(event.keycode), monitor); break;
+            case EShortcutCommand::MOVE_SPECIAL_WORKSPACE:
+                activePlugin()->selection().moveSelectedSpecialWorkspace(directionForKey(event.keycode), modifiers.shift, monitor);
+                break;
             case EShortcutCommand::JUMP_SELECTION: activePlugin()->selection().jumpSelection(directionForKey(event.keycode), monitor); break;
             case EShortcutCommand::TOGGLE_SELECTION: activePlugin()->selection().toggleSelection(monitor); break;
             case EShortcutCommand::OPEN_SELECTION: activePlugin()->selection().openSelection(monitor); break;

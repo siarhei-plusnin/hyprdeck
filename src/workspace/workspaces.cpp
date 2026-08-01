@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <desktop/Workspace.hpp>
 #include <desktop/view/Window.hpp>
+#include <iterator>
 #include <limits>
 #include <output/Monitor.hpp>
 
@@ -129,22 +130,66 @@ namespace hyprdeck {
         return label.empty() ? "special" : label;
     }
 
-    std::vector<PHLWORKSPACE> CWorkspaceRepository::specialWorkspacesToShow() const {
-        std::vector<PHLWORKSPACE> workspaces;
+    void CWorkspaceRepository::reconcileSpecialWorkspaceOrder() const {
+        std::vector<PHLWORKSPACE> current;
         for (const auto& workspace : activePlugin()->hyprland().workspacesCopy()) {
-            if (!workspace || !workspace->m_isSpecialWorkspace)
+            if (workspace && workspace->m_isSpecialWorkspace)
+                current.push_back(workspace);
+        }
+
+        std::ranges::sort(current, [this](const auto& lhs, const auto& rhs) { return specialWorkspaceId(lhs) < specialWorkspaceId(rhs); });
+
+        std::erase_if(m_specialWorkspaceOrder, [&current](const auto& weak) {
+            const auto workspace = weak.lock();
+            return !workspace || std::ranges::find(current, workspace) == current.end();
+        });
+
+        for (const auto& workspace : current) {
+            const auto known = std::ranges::find_if(m_specialWorkspaceOrder, [&workspace](const auto& weak) { return weak.lock() == workspace; });
+            if (known == m_specialWorkspaceOrder.end())
+                m_specialWorkspaceOrder.emplace_back(workspace);
+        }
+    }
+
+    std::vector<PHLWORKSPACE> CWorkspaceRepository::specialWorkspacesToShow() const {
+        reconcileSpecialWorkspaceOrder();
+
+        std::vector<PHLWORKSPACE> workspaces;
+        for (const auto& weak : m_specialWorkspaceOrder) {
+            const auto workspace = weak.lock();
+            if (!workspace)
                 continue;
 
             const bool active =
                 std::ranges::any_of(activePlugin()->hyprland().monitors(), [&](const auto& monitor) { return monitor && monitor->m_activeSpecialWorkspace == workspace; });
-            if (!workspaceHasAnyWindows(workspace) && !active)
-                continue;
-
-            workspaces.push_back(workspace);
+            if (workspaceHasAnyWindows(workspace) || active)
+                workspaces.push_back(workspace);
         }
 
-        std::ranges::sort(workspaces, [this](const auto& lhs, const auto& rhs) { return specialWorkspaceId(lhs) < specialWorkspaceId(rhs); });
         return workspaces;
+    }
+
+    bool CWorkspaceRepository::moveSpecialWorkspaceInOrder(const WORKSPACEID id, const int direction) {
+        const auto visible = specialWorkspacesToShow();
+        const auto current = std::ranges::find_if(visible, [id](const auto& workspace) { return workspace->m_id == id; });
+        if (current == visible.end())
+            return false;
+
+        const auto index     = std::distance(visible.begin(), current);
+        const auto nextIndex = index + (direction < 0 ? -1 : 1);
+        if (nextIndex < 0 || nextIndex >= static_cast<std::ptrdiff_t>(visible.size()))
+            return false;
+
+        const auto findOrdered = [this](const PHLWORKSPACE& workspace) {
+            return std::ranges::find_if(m_specialWorkspaceOrder, [&workspace](const auto& weak) { return weak.lock() == workspace; });
+        };
+        const auto currentOrder = findOrdered(*current);
+        const auto nextOrder    = findOrdered(visible[nextIndex]);
+        if (currentOrder == m_specialWorkspaceOrder.end() || nextOrder == m_specialWorkspaceOrder.end())
+            return false;
+
+        std::iter_swap(currentOrder, nextOrder);
+        return true;
     }
 
     WORKSPACEID CWorkspaceRepository::lastWorkspaceToShow() const {
