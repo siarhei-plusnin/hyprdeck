@@ -51,7 +51,6 @@ namespace hyprdeck {
         PHLWORKSPACE                  createWorkspace(WORKSPACEID id, MONITORID monitorID, const std::string& name, bool isEmpty) const;
         void                          moveWorkspaceToMonitor(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const;
         void                          focusMonitor(const PHLMONITOR& monitor) const;
-        void                          focusActiveWorkspace(const PHLMONITOR& monitor) const;
         void                          postWorkspaceRenameEvent(const PHLWORKSPACE& workspace) const;
 
         SKeyboardModifiers            keyboardModifiers() const;

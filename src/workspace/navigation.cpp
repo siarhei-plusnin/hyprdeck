@@ -226,7 +226,7 @@ namespace hyprdeck {
             result.selectedRow      = ESelectedRow::NORMAL;
             result.selectedNormalID = workspace->m_id;
 
-            monitor->changeWorkspace(workspace, false, true, true);
+            monitor->changeWorkspace(workspace, false, true, false);
         }
 
         activePlugin()->hyprland().focusMonitor(activePlugin()->overview().hostMonitor());

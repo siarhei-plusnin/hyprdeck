@@ -165,8 +165,6 @@ namespace hyprdeck {
 
         if (switchingOutput)
             hyprland.focusMonitor(monitor);
-        else
-            hyprland.focusActiveWorkspace(monitor);
 
         const auto pointerMonitor = hyprland.monitorFromCursor();
         if (pointerMonitor && pointerMonitor->m_id == monitor->m_id && (!switchingOutput || !hasFocusCandidate))
