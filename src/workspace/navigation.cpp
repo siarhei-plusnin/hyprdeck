@@ -1,5 +1,6 @@
 #include "navigation.hpp"
 
+#include "SharedDefs.hpp"
 #include "plugin.hpp"
 #include "strings.hpp"
 #include "workspace_filter.hpp"
@@ -160,11 +161,15 @@ namespace hyprdeck {
         };
 
         if (willDisappear) {
-            result.selectedSpecialID = nextSpecialSelectionAfterRemoving(workspace);
+            WORKSPACEID currentlySelectedSpecialID = activePlugin()->selection().selectedSpecialID();
+
+            result.selectedSpecialID = workspace->m_id != currentlySelectedSpecialID
+                ? currentlySelectedSpecialID
+                : nextSpecialSelectionAfterRemoving(workspace);
+
             if (*result.selectedSpecialID == WORKSPACE_INVALID)
                 result.selectedRow = ESelectedRow::NORMAL;
-        } else
-            result.selectedSpecialID = workspace->m_id;
+        }
 
         if (animateIfEmpty && willDisappear)
             animateSpecialCloseIfEmpty(workspace, monitor);
