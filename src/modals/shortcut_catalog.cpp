@@ -27,8 +27,11 @@ namespace hyprdeck {
                                    .label       = "Special row",
                                    .description = "Move focus to the special workspace row",
                                    .footer      = true});
-                actions.push_back(
-                    {.command = EShortcutCommand::SWITCH_NORMAL_WORKSPACE, .key = "1-0", .label = "Switch", .description = "Switch to normal workspace 1-10", .footer = true});
+                actions.push_back({.command     = EShortcutCommand::SWITCH_NORMAL_WORKSPACE,
+                                   .key         = "1-0",
+                                   .label       = "Switch",
+                                   .description = "Switch to normal workspace 1-10; press again to enter",
+                                   .footer      = true});
                 actions.push_back({.command     = EShortcutCommand::TOGGLE_SELECTION,
                                    .key         = "space",
                                    .label       = "Hide special",
