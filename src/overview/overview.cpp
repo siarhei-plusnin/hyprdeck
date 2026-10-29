@@ -268,11 +268,11 @@ namespace hyprdeck {
             selectMonitor(monitors.front());
     }
 
-    void COverviewController::handleRenderStage(const eRenderStage stage) {
-        if (!m_session.rendering || stage != RENDER_LAST_MOMENT)
+    void COverviewController::handleRenderStage(const Event::SRenderStageEvent& event) {
+        if (!m_session.rendering || event.stage != RENDER_LAST_MOMENT)
             return;
 
-        const auto renderMonitor = activePlugin()->hyprland().renderMonitor();
+        const auto renderMonitor = event.monitor;
         const auto host          = hostMonitor();
         if (!renderMonitor || !host)
             return;

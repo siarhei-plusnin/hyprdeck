@@ -5,7 +5,7 @@
 #include "strings.hpp"
 
 #include <desktop/view/LayerSurface.hpp>
-#include <desktop/view/Window.hpp>
+#include <desktop/view/window/Window.hpp>
 #include <output/Monitor.hpp>
 #include <managers/input/InputManager.hpp>
 
@@ -23,11 +23,11 @@ namespace hyprdeck {
         }
 
         bool layerReadyForDetection(const PHLLS& layer) {
-            return layer && layer->m_mapped;
+            return layer && layer->mapped();
         }
 
         bool windowReadyForDetection(const PHLWINDOW& window) {
-            return window && window->m_isMapped && !window->isHidden();
+            return window && window->mapped() && !window->isHidden();
         }
 
         bool layerVisibleOnMonitor(const PHLLS& layer, const PHLMONITOR& monitor) {
@@ -66,15 +66,15 @@ namespace hyprdeck {
         }
 
         bool windowIsNotificationOverlay(const PHLWINDOW& window) {
-            return window && (namespaceMatchesNotificationOverlay(window->m_class) || namespaceMatchesNotificationOverlay(window->m_initialClass));
+            return window && (namespaceMatchesNotificationOverlay(window->metadata().appID()) || namespaceMatchesNotificationOverlay(window->metadata().initialAppID()));
         }
 
         bool layerBlocksOverviewInput(const PHLLS& layer) {
-            return layer && (namespaceMatchesInputOverlay(layer->m_namespace) || (layer->m_interactivity != 0 && !layerIsNotificationOverlay(layer)));
+            return layer && (namespaceMatchesInputOverlay(layer->m_namespace) || (layer->m_keyboardInteractivity != 0 && !layerIsNotificationOverlay(layer)));
         }
 
         bool windowBlocksOverviewInput(const PHLWINDOW& window) {
-            return window && (namespaceMatchesInputOverlay(window->m_class) || namespaceMatchesInputOverlay(window->m_initialClass));
+            return window && (namespaceMatchesInputOverlay(window->metadata().appID()) || namespaceMatchesInputOverlay(window->metadata().initialAppID()));
         }
 
         bool externalOverlayLayerActive(const PHLMONITOR& monitor) {
@@ -114,7 +114,7 @@ namespace hyprdeck {
 
     bool COverlayPolicy::layerIsExternalOverlay(const PHLLS& layer) const {
         return layer &&
-            (layer->m_interactivity != 0 || namespaceMatchesInputOverlay(layer->m_namespace) || namespaceMatchesNotificationOverlay(layer->m_namespace) ||
+            (layer->m_keyboardInteractivity != 0 || namespaceMatchesInputOverlay(layer->m_namespace) || namespaceMatchesNotificationOverlay(layer->m_namespace) ||
              namespaceMatchesHiddenCaptureOverlay(layer->m_namespace));
     }
 
@@ -127,8 +127,8 @@ namespace hyprdeck {
 
     bool COverlayPolicy::windowIsExternalOverlay(const PHLWINDOW& window) const {
         return window &&
-            (namespaceMatchesInputOverlay(window->m_class) || namespaceMatchesInputOverlay(window->m_initialClass) || namespaceMatchesNotificationOverlay(window->m_class) ||
-             namespaceMatchesNotificationOverlay(window->m_initialClass));
+            (namespaceMatchesInputOverlay(window->metadata().appID()) || namespaceMatchesInputOverlay(window->metadata().initialAppID()) ||
+             namespaceMatchesNotificationOverlay(window->metadata().appID()) || namespaceMatchesNotificationOverlay(window->metadata().initialAppID()));
     }
 
     bool COverlayPolicy::externalOverlayActive(const PHLMONITOR& monitor) const {

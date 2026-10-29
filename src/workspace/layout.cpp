@@ -6,10 +6,10 @@
 #include "workspace_filter_match.hpp"
 #include "workspaces.hpp"
 
-#include <desktop/Workspace.hpp>
 #include <output/Monitor.hpp>
 #include <managers/input/InputManager.hpp>
 #include <render/Renderer.hpp>
+#include <workspace/HLWorkspace.hpp>
 
 #include <algorithm>
 #include <optional>
@@ -55,7 +55,7 @@ namespace hyprdeck {
             ids.reserve(namedWorkspaces.size() + static_cast<size_t>(std::max<WORKSPACEID>(0, lastWorkspace)));
 
             for (const auto& workspace : namedWorkspaces)
-                ids.push_back(workspace->m_id);
+                ids.push_back(activePlugin()->workspaces().workspaceId(workspace));
 
             for (WORKSPACEID id = 1; id <= lastWorkspace; ++id)
                 ids.push_back(id);
@@ -68,9 +68,9 @@ namespace hyprdeck {
             keys.reserve(ids.size());
 
             for (const auto id : ids) {
-                const auto workspace = activePlugin()->hyprland().workspaceByID(id);
+                const auto workspace = activePlugin()->workspaces().workspaceById(id);
                 const auto owner     = activePlugin()->workspaces().workspaceMonitor(workspace);
-                keys.push_back(std::to_string(id) + ":" + (workspace ? workspace->m_name : std::string{}) + ":" + std::to_string(owner ? owner->m_id : MONITOR_INVALID));
+                keys.push_back(std::to_string(id) + ":" + (workspace ? workspace->displayName() : std::string{}) + ":" + std::to_string(owner ? owner->m_id : MONITOR_INVALID));
             }
 
             return keys;
@@ -82,7 +82,7 @@ namespace hyprdeck {
 
             for (const auto& workspace : workspaces) {
                 const auto owner = activePlugin()->workspaces().workspaceMonitor(workspace);
-                keys.push_back(std::to_string(workspace->m_id) + ":" + workspace->m_name + ":" + std::to_string(owner ? owner->m_id : MONITOR_INVALID));
+                keys.push_back(workspace->addressableName() + ":" + workspace->displayName() + ":" + std::to_string(owner ? owner->m_id : MONITOR_INVALID));
             }
 
             return keys;
@@ -202,7 +202,7 @@ namespace hyprdeck {
 
         std::optional<size_t> workspaceIndex(const std::vector<PHLWORKSPACE>& workspaces, const WORKSPACEID id) {
             for (size_t i = 0; i < workspaces.size(); ++i) {
-                if (workspaces[i] && workspaces[i]->m_id == id)
+                if (workspaces[i] && activePlugin()->workspaces().workspaceId(workspaces[i]) == id)
                     return i;
             }
 
@@ -250,7 +250,7 @@ namespace hyprdeck {
                 const auto   id        = ids[i];
                 const double worldX    = static_cast<double>(i) * layout.stepX;
                 const double x         = (metrics.viewSize.x / 2.0) - (metrics.cardW / 2.0) + worldX - layout.cameraX;
-                auto         workspace = activePlugin()->hyprland().workspaceByID(id);
+                auto         workspace = activePlugin()->workspaces().workspaceById(id);
                 if (!activePlugin()->workspaces().isNormalWorkspace(workspace))
                     workspace = nullptr;
                 const auto sourceMonitor = workspace ? activePlugin()->workspaces().workspaceMonitor(workspace) : selectedMonitor;
@@ -295,7 +295,7 @@ namespace hyprdeck {
                 const auto   sourceMonitor = activePlugin()->workspaces().workspaceMonitor(workspace);
 
                 layout.specialCards.push_back(SWorkspaceCard{
-                    .id               = workspace->m_id,
+                    .id               = activePlugin()->workspaces().specialWorkspaceId(workspace),
                     .box              = CBox{x, metrics.specialY, metrics.specialW, metrics.specialH},
                     .workspace        = workspace,
                     .sourceMonitorID  = sourceMonitor ? sourceMonitor->m_id : MONITOR_INVALID,

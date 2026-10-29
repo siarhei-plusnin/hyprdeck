@@ -5,25 +5,25 @@
 #include "strings.hpp"
 
 #include <algorithm>
-#include <desktop/Workspace.hpp>
-#include <desktop/view/Window.hpp>
+#include <desktop/view/window/Window.hpp>
 #include <iterator>
 #include <limits>
 #include <output/Monitor.hpp>
+#include <workspace/HLWorkspace.hpp>
 
 #include <string>
 
 namespace hyprdeck {
     bool CWorkspaceRepository::isNormalWorkspace(const PHLWORKSPACE& workspace) const {
-        return workspace && !workspace->m_isSpecialWorkspace && workspace->m_id != WORKSPACE_INVALID;
+        return workspace && workspace->type() == Workspace::eWorkspaceType::NORMAL;
     }
 
     bool CWorkspaceRepository::isNumericNormalWorkspace(const PHLWORKSPACE& workspace) const {
-        return isNormalWorkspace(workspace) && workspace->m_id > 0;
+        return isNormalWorkspace(workspace) && workspace->numberedID().has_value();
     }
 
     bool CWorkspaceRepository::isNamedNormalWorkspace(const PHLWORKSPACE& workspace) const {
-        return isNormalWorkspace(workspace) && workspace->m_id <= 0;
+        return isNormalWorkspace(workspace) && !workspace->numberedID().has_value();
     }
 
     std::string CWorkspaceRepository::normalWorkspaceLabel(const PHLWORKSPACE& workspace) const {
@@ -31,10 +31,10 @@ namespace hyprdeck {
             return "";
 
         if (isNamedNormalWorkspace(workspace))
-            return workspace->m_name;
+            return workspace->displayName();
 
-        const auto id = std::to_string(workspace->m_id);
-        return workspace->m_name.empty() || workspace->m_name == id ? id : id + ": " + workspace->m_name;
+        const auto id = std::to_string(*workspace->numberedID());
+        return workspace->displayName().empty() || workspace->displayName() == id ? id : id + ": " + workspace->displayName();
     }
 
     std::vector<PHLWORKSPACE> CWorkspaceRepository::namedNormalWorkspacesToShow() const {
@@ -44,7 +44,7 @@ namespace hyprdeck {
                 workspaces.push_back(workspace);
         }
 
-        std::ranges::sort(workspaces, [](const auto& lhs, const auto& rhs) { return strings::lower(lhs->m_name) < strings::lower(rhs->m_name); });
+        std::ranges::sort(workspaces, [](const auto& lhs, const auto& rhs) { return strings::lower(lhs->displayName()) < strings::lower(rhs->displayName()); });
         return workspaces;
     }
 
@@ -92,7 +92,7 @@ namespace hyprdeck {
             return false;
 
         for (const auto& window : activePlugin()->hyprland().windows()) {
-            if (!window || !window->m_isMapped || window->isHidden())
+            if (!window || !window->mapped() || window->isHidden())
                 continue;
 
             if (windowBelongsToMonitor(window, monitor) && windowBelongsToWorkspace(window, workspace))
@@ -107,25 +107,69 @@ namespace hyprdeck {
             return false;
 
         for (const auto& window : activePlugin()->hyprland().windows()) {
-            if (window && window->m_isMapped && !window->isHidden() && windowBelongsToWorkspace(window, workspace))
+            if (window && window->mapped() && !window->isHidden() && windowBelongsToWorkspace(window, workspace))
                 return true;
         }
 
         return false;
     }
 
-    WORKSPACEID CWorkspaceRepository::specialWorkspaceId(const PHLWORKSPACE& workspace) const {
+    WORKSPACEID CWorkspaceRepository::workspaceId(const PHLWORKSPACE& workspace) const {
         if (!workspace)
             return WORKSPACE_INVALID;
 
-        return workspace->m_id;
+        if (const auto numbered = workspace->numberedID(); numbered)
+            return static_cast<WORKSPACEID>(*numbered);
+
+        std::erase_if(m_workspaceIds, [](const auto& entry) { return !entry.first; });
+        if (const auto known = std::ranges::find_if(m_workspaceIds, [&](const auto& entry) { return entry.first.lock() == workspace; }); known != m_workspaceIds.end())
+            return known->second;
+
+        const auto id = m_nextSyntheticWorkspaceId--;
+        m_workspaceIds.emplace_back(workspace, id);
+        return id;
+    }
+
+    PHLWORKSPACE CWorkspaceRepository::workspaceById(const WORKSPACEID id) const {
+        if (id == WORKSPACE_INVALID)
+            return nullptr;
+
+        if (id > 0)
+            return activePlugin()->hyprland().numberedWorkspaceByID(id);
+
+        const auto known = std::ranges::find_if(m_workspaceIds, [id](const auto& entry) { return entry.second == id; });
+        return known != m_workspaceIds.end() ? known->first.lock() : nullptr;
+    }
+
+    void CWorkspaceRepository::replaceSpecialWorkspace(const PHLWORKSPACE& previous, const PHLWORKSPACE& replacement) {
+        if (!previous || !replacement || previous->type() != Workspace::eWorkspaceType::SPECIAL || replacement->type() != Workspace::eWorkspaceType::SPECIAL)
+            return;
+
+        const auto id    = workspaceId(previous);
+        const auto known = std::ranges::find_if(m_workspaceIds, [id](const auto& entry) { return entry.second == id; });
+        if (known != m_workspaceIds.end())
+            known->first = replacement;
+
+        for (auto& weak : m_specialWorkspaceOrder) {
+            if (weak.lock() == previous) {
+                weak = replacement;
+                break;
+            }
+        }
+    }
+
+    WORKSPACEID CWorkspaceRepository::specialWorkspaceId(const PHLWORKSPACE& workspace) const {
+        if (!workspace || workspace->type() != Workspace::eWorkspaceType::SPECIAL)
+            return WORKSPACE_INVALID;
+
+        return workspaceId(workspace);
     }
 
     std::string CWorkspaceRepository::specialWorkspaceLabel(const PHLWORKSPACE& workspace) const {
         if (!workspace)
             return "special";
 
-        auto label = strings::stripPrefix(workspace->m_name, "special:");
+        auto label = strings::stripPrefix(workspace->displayName(), "special:");
 
         return label.empty() ? "special" : label;
     }
@@ -133,11 +177,9 @@ namespace hyprdeck {
     void CWorkspaceRepository::reconcileSpecialWorkspaceOrder() const {
         std::vector<PHLWORKSPACE> current;
         for (const auto& workspace : activePlugin()->hyprland().workspacesCopy()) {
-            if (workspace && workspace->m_isSpecialWorkspace)
+            if (workspace && workspace->type() == Workspace::eWorkspaceType::SPECIAL)
                 current.push_back(workspace);
         }
-
-        std::ranges::sort(current, [this](const auto& lhs, const auto& rhs) { return specialWorkspaceId(lhs) < specialWorkspaceId(rhs); });
 
         std::erase_if(m_specialWorkspaceOrder, [&current](const auto& weak) {
             const auto workspace = weak.lock();
@@ -171,7 +213,7 @@ namespace hyprdeck {
 
     PHLWORKSPACE CWorkspaceRepository::specialWorkspaceInDirection(const WORKSPACEID id, const int direction) const {
         const auto visible = specialWorkspacesToShow();
-        const auto current = std::ranges::find_if(visible, [id](const auto& workspace) { return workspace->m_id == id; });
+        const auto current = std::ranges::find_if(visible, [&](const auto& workspace) { return specialWorkspaceId(workspace) == id; });
         if (current == visible.end())
             return nullptr;
 
@@ -184,7 +226,7 @@ namespace hyprdeck {
     }
 
     bool CWorkspaceRepository::moveSpecialWorkspaceInOrder(const WORKSPACEID id, const int direction) {
-        const auto current = activePlugin()->hyprland().workspaceByID(id);
+        const auto current = workspaceById(id);
         const auto next    = specialWorkspaceInDirection(id, direction);
         if (!current || !next)
             return false;
@@ -205,7 +247,7 @@ namespace hyprdeck {
         WORKSPACEID highestExisting = 0;
         for (const auto& workspace : activePlugin()->hyprland().workspacesCopy()) {
             if (isNumericNormalWorkspace(workspace))
-                highestExisting = std::max(highestExisting, workspace->m_id);
+                highestExisting = std::max(highestExisting, static_cast<WORKSPACEID>(*workspace->numberedID()));
         }
 
         const auto minimum     = static_cast<WORKSPACEID>(activePlugin()->config().minimumNumberedWorkspaces());
@@ -218,14 +260,14 @@ namespace hyprdeck {
 
     WORKSPACEID CWorkspaceRepository::activeNormalWorkspaceID(const PHLMONITOR& monitor) const {
         if (isNormalWorkspace(monitor->m_activeWorkspace))
-            return monitor->m_activeWorkspace->m_id;
+            return workspaceId(monitor->m_activeWorkspace);
 
         return 1;
     }
 
     WORKSPACEID CWorkspaceRepository::activeSpecialWorkspaceID(const PHLMONITOR& monitor) const {
         if (monitor->m_activeSpecialWorkspace)
-            return monitor->m_activeSpecialWorkspace->m_id;
+            return specialWorkspaceId(monitor->m_activeSpecialWorkspace);
 
         return WORKSPACE_INVALID;
     }

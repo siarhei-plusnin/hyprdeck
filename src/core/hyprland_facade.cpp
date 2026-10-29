@@ -2,11 +2,9 @@
 
 #include <desktop/state/FocusState.hpp>
 #include <desktop/state/ViewState.hpp>
-#include <desktop/Workspace.hpp>
 #include <config/shared/actions/ConfigActions.hpp>
 #include <devices/IKeyboard.hpp>
 #include <hyprutils/memory/UniquePtr.hpp>
-#include <managers/EventManager.hpp>
 #include <managers/SeatManager.hpp>
 #include <managers/eventLoop/EventLoopManager.hpp>
 #include <managers/eventLoop/EventLoopTimer.hpp>
@@ -17,6 +15,7 @@
 #include <state/MonitorState.hpp>
 #include <state/WorkspacePlacementController.hpp>
 #include <state/WorkspaceState.hpp>
+#include <workspace/HLWorkspace.hpp>
 
 using Hyprutils::Memory::makeUnique;
 
@@ -28,11 +27,11 @@ namespace hyprdeck {
             return EMPTY;
         }
 
-        void applyModifiers(SKeyboardModifiers& modifiers, const uint32_t activeModifiers) {
-            modifiers.ctrl  = modifiers.ctrl || (activeModifiers & HL_MODIFIER_CTRL);
-            modifiers.shift = modifiers.shift || (activeModifiers & HL_MODIFIER_SHIFT);
-            modifiers.super = modifiers.super || (activeModifiers & HL_MODIFIER_META);
-            modifiers.alt   = modifiers.alt || (activeModifiers & HL_MODIFIER_ALT);
+        void applyModifiers(SKeyboardModifiers& modifiers, const Input::ModifierMask activeModifiers) {
+            modifiers.ctrl  = modifiers.ctrl || static_cast<bool>(activeModifiers & Input::HL_MODIFIER_CTRL);
+            modifiers.shift = modifiers.shift || static_cast<bool>(activeModifiers & Input::HL_MODIFIER_SHIFT);
+            modifiers.super = modifiers.super || static_cast<bool>(activeModifiers & Input::HL_MODIFIER_META);
+            modifiers.alt   = modifiers.alt || static_cast<bool>(activeModifiers & Input::HL_MODIFIER_ALT);
         }
 
     } // namespace
@@ -53,7 +52,7 @@ namespace hyprdeck {
     }
 
     PHLMONITOR CHyprlandFacade::renderMonitor() const {
-        return g_pHyprRenderer ? g_pHyprRenderer->m_renderData.pMonitor.lock() : nullptr;
+        return g_pHyprRenderer ? g_pHyprRenderer->context().m_data.pMonitor.lock() : nullptr;
     }
 
     std::vector<PHLMONITOR> CHyprlandFacade::monitors() const {
@@ -136,24 +135,26 @@ namespace hyprdeck {
         return State::workspaceState() ? State::workspaceState()->workspacesCopy() : std::vector<PHLWORKSPACE>{};
     }
 
-    PHLWORKSPACE CHyprlandFacade::workspaceByID(const WORKSPACEID id) const {
-        return State::workspaceState() ? State::workspaceState()->query().id(id).run() : nullptr;
+    PHLWORKSPACE CHyprlandFacade::numberedWorkspaceByID(const WORKSPACEID id) const {
+        if (!State::workspaceState() || id <= 0)
+            return nullptr;
+
+        return State::workspaceState()->query().numbered(Workspace::SWorkspaceNumberedID{static_cast<Workspace::WorkspaceIDContainer>(id)}).run();
     }
 
-    PHLWORKSPACE CHyprlandFacade::workspaceByName(const std::string& name) const {
-        return State::workspaceState() ? State::workspaceState()->query().name(name).run() : nullptr;
+    PHLWORKSPACE CHyprlandFacade::workspaceByAddress(const std::string& address) const {
+        return State::workspaceState() ? State::workspaceState()->query().address(address).run() : nullptr;
     }
 
-    WORKSPACEID CHyprlandFacade::newSpecialWorkspaceID() const {
-        return State::workspaceState() ? State::workspaceState()->newSpecialID() : WORKSPACE_INVALID;
+    PHLWORKSPACE CHyprlandFacade::createNumberedWorkspace(const WORKSPACEID id, const PHLMONITOR& monitor, const std::string& displayName, const bool isEmpty) const {
+        if (!State::workspaceState() || !monitor || id <= 0)
+            return nullptr;
+
+        return State::workspaceState()->createNumbered(Workspace::SWorkspaceNumberedID{static_cast<Workspace::WorkspaceIDContainer>(id)}, monitor, displayName, isEmpty);
     }
 
-    bool CHyprlandFacade::isSpecialWorkspaceID(const WORKSPACEID id) const {
-        return State::workspaceState() && State::workspaceState()->isSpecial(id);
-    }
-
-    PHLWORKSPACE CHyprlandFacade::createWorkspace(const WORKSPACEID id, const MONITORID monitorID, const std::string& name, const bool isEmpty) const {
-        return State::workspaceState() ? State::workspaceState()->create(id, monitorID, name, isEmpty) : nullptr;
+    PHLWORKSPACE CHyprlandFacade::createSpecialWorkspace(const std::string& address, const PHLMONITOR& monitor, const bool isEmpty) const {
+        return State::workspaceState() && monitor ? State::workspaceState()->createSpecial(address, monitor, isEmpty) : nullptr;
     }
 
     void CHyprlandFacade::moveWorkspaceToMonitor(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const {
@@ -164,11 +165,6 @@ namespace hyprdeck {
     void CHyprlandFacade::focusMonitor(const PHLMONITOR& monitor) const {
         if (monitor)
             static_cast<void>(Config::Actions::focusMonitor(monitor));
-    }
-
-    void CHyprlandFacade::postWorkspaceRenameEvent(const PHLWORKSPACE& workspace) const {
-        if (g_pEventManager && workspace)
-            g_pEventManager->postEvent({.event = "renameworkspace", .data = std::to_string(workspace->m_id) + "," + workspace->m_name});
     }
 
     SKeyboardModifiers CHyprlandFacade::keyboardModifiers() const {
@@ -213,17 +209,17 @@ namespace hyprdeck {
 
     void CHyprlandFacade::addRectPass(CRectPassElement::SRectData data) const {
         if (g_pHyprRenderer)
-            g_pHyprRenderer->m_renderPass.add(makeUnique<CRectPassElement>(std::move(data)));
+            g_pHyprRenderer->addPassElement(g_pHyprRenderer->context(), makeUnique<CRectPassElement>(std::move(data)));
     }
 
     void CHyprlandFacade::addRendererHintsPass(CRendererHintsPassElement::SData data) const {
         if (g_pHyprRenderer)
-            g_pHyprRenderer->m_renderPass.add(makeUnique<CRendererHintsPassElement>(std::move(data)));
+            g_pHyprRenderer->addPassElement(g_pHyprRenderer->context(), makeUnique<CRendererHintsPassElement>(std::move(data)));
     }
 
     void CHyprlandFacade::addTexturePass(CTexPassElement::SRenderData data) const {
         if (g_pHyprRenderer)
-            g_pHyprRenderer->m_renderPass.add(makeUnique<CTexPassElement>(std::move(data)));
+            g_pHyprRenderer->addPassElement(g_pHyprRenderer->context(), makeUnique<CTexPassElement>(std::move(data)));
     }
 
     SP<Render::ITexture> CHyprlandFacade::renderText(const std::string& text, const CHyprColor& color, const int fontSize, const std::string& fontFamily, const int weight) const {

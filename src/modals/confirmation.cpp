@@ -7,10 +7,10 @@
 #include "runtime_types.hpp"
 #include "workspaces.hpp"
 
-#include <desktop/Workspace.hpp>
 #include <output/Monitor.hpp>
 #include <render/Renderer.hpp>
 #include <render/Texture.hpp>
+#include <workspace/HLWorkspace.hpp>
 
 #include <algorithm>
 #include <linux/input-event-codes.h>
@@ -97,7 +97,7 @@ namespace hyprdeck {
         if (!confirmation.open)
             return;
 
-        const auto workspace        = activePlugin()->hyprland().workspaceByID(confirmation.normalWorkspaceID);
+        const auto workspace        = activePlugin()->workspaces().workspaceById(confirmation.normalWorkspaceID);
         const auto workspaceMonitor = activePlugin()->workspaces().workspaceMonitor(workspace);
         resetState();
 
@@ -116,7 +116,7 @@ namespace hyprdeck {
         if (!confirmation.open)
             return;
 
-        const auto workspace = activePlugin()->hyprland().workspaceByID(confirmation.normalWorkspaceID);
+        const auto workspace = activePlugin()->workspaces().workspaceById(confirmation.normalWorkspaceID);
         const auto label     = activePlugin()->workspaces().isNormalWorkspace(workspace) ? activePlugin()->workspaces().normalWorkspaceLabel(workspace) :
                                                                                            std::to_string(confirmation.normalWorkspaceID);
         const auto title     = confirmationTexture("Close all windows?", 22, 750);

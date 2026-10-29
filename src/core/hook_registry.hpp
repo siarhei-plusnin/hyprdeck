@@ -6,7 +6,7 @@ namespace hyprdeck {
 
     class CHookRegistry {
       public:
-        void registerHooks(const std::function<void(eRenderStage)> renderHook, const std::function<void(Vector2D, Event::SCallbackInfo&)> mouseMoveHook,
+        void registerHooks(const std::function<void(Event::SRenderStageEvent)> renderHook, const std::function<void(Vector2D, Event::SCallbackInfo&)> mouseMoveHook,
                            const std::function<void(IPointer::SButtonEvent, Event::SCallbackInfo&)> mouseButtonHook,
                            const std::function<void(IPointer::SAxisEvent, Event::SCallbackInfo&)>   mouseAxisHook,
                            const std::function<void(IKeyboard::SKeyEvent, Event::SCallbackInfo&)> keyboardKeyHook, const std::function<void()>& stateChangedHook,

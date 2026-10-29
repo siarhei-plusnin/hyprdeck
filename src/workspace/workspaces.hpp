@@ -23,6 +23,9 @@ namespace hyprdeck {
         bool                      windowBelongsToWorkspace(const PHLWINDOW& window, const PHLWORKSPACE& workspace) const;
         bool                      workspaceHasAnyWindows(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const;
         bool                      workspaceHasAnyWindows(const PHLWORKSPACE& workspace) const;
+        WORKSPACEID               workspaceId(const PHLWORKSPACE& workspace) const;
+        PHLWORKSPACE              workspaceById(WORKSPACEID id) const;
+        void                      replaceSpecialWorkspace(const PHLWORKSPACE& previous, const PHLWORKSPACE& replacement);
         WORKSPACEID               specialWorkspaceId(const PHLWORKSPACE& workspace) const;
         std::string               specialWorkspaceLabel(const PHLWORKSPACE& workspace) const;
         std::vector<PHLWORKSPACE> specialWorkspacesToShow() const;
@@ -37,9 +40,11 @@ namespace hyprdeck {
         bool                      cardIsSelected(const SWorkspaceCard& card) const;
 
       private:
-        void                                 reconcileSpecialWorkspaceOrder() const;
+        void                                                         reconcileSpecialWorkspaceOrder() const;
 
-        mutable std::vector<PHLWORKSPACEREF> m_specialWorkspaceOrder;
+        mutable std::vector<std::pair<PHLWORKSPACEREF, WORKSPACEID>> m_workspaceIds;
+        mutable WORKSPACEID                                          m_nextSyntheticWorkspaceId = WORKSPACE_INVALID - 1;
+        mutable std::vector<PHLWORKSPACEREF>                         m_specialWorkspaceOrder;
     };
 
 } // namespace hyprdeck

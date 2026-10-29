@@ -2,6 +2,7 @@
 
 #include "constants.hpp"
 #include "textinput.hpp"
+#include "workspace_key.hpp"
 #include <SharedDefs.hpp>
 #include <desktop/DesktopTypes.hpp>
 #include <helpers/math/Math.hpp>

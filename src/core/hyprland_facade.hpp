@@ -1,6 +1,7 @@
 #pragma once
 
 #include "keyboard.hpp"
+#include "workspace_key.hpp"
 
 #include <SharedDefs.hpp>
 #include <desktop/DesktopTypes.hpp>
@@ -44,14 +45,12 @@ namespace hyprdeck {
 
         const std::vector<PHLWINDOW>& windows() const;
         std::vector<PHLWORKSPACE>     workspacesCopy() const;
-        PHLWORKSPACE                  workspaceByID(WORKSPACEID id) const;
-        PHLWORKSPACE                  workspaceByName(const std::string& name) const;
-        WORKSPACEID                   newSpecialWorkspaceID() const;
-        bool                          isSpecialWorkspaceID(WORKSPACEID id) const;
-        PHLWORKSPACE                  createWorkspace(WORKSPACEID id, MONITORID monitorID, const std::string& name, bool isEmpty) const;
+        PHLWORKSPACE                  numberedWorkspaceByID(WORKSPACEID id) const;
+        PHLWORKSPACE                  workspaceByAddress(const std::string& address) const;
+        PHLWORKSPACE                  createNumberedWorkspace(WORKSPACEID id, const PHLMONITOR& monitor, const std::string& displayName, bool isEmpty) const;
+        PHLWORKSPACE                  createSpecialWorkspace(const std::string& address, const PHLMONITOR& monitor, bool isEmpty) const;
         void                          moveWorkspaceToMonitor(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const;
         void                          focusMonitor(const PHLMONITOR& monitor) const;
-        void                          postWorkspaceRenameEvent(const PHLWORKSPACE& workspace) const;
 
         SKeyboardModifiers            keyboardModifiers() const;
         int                           keyboardRepeatRate() const;

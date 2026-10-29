@@ -4,7 +4,7 @@
 
 namespace hyprdeck {
 
-    void CHookRegistry::registerHooks(const std::function<void(eRenderStage)> renderHook, const std::function<void(Vector2D, Event::SCallbackInfo&)> mouseMoveHook,
+    void CHookRegistry::registerHooks(const std::function<void(Event::SRenderStageEvent)> renderHook, const std::function<void(Vector2D, Event::SCallbackInfo&)> mouseMoveHook,
                                       const std::function<void(IPointer::SButtonEvent, Event::SCallbackInfo&)> mouseButtonHook,
                                       const std::function<void(IPointer::SAxisEvent, Event::SCallbackInfo&)>   mouseAxisHook,
                                       const std::function<void(IKeyboard::SKeyEvent, Event::SCallbackInfo&)> keyboardKeyHook, const std::function<void()>& stateChangedHook,
@@ -26,7 +26,7 @@ namespace hyprdeck {
         m_workspaceMoveHook          = Event::bus()->m_events.workspace.moveToMonitor.listen([stateChangedHook](PHLWORKSPACE, PHLMONITOR) { stateChangedHook(); });
         m_workspaceActiveHook        = Event::bus()->m_events.workspace.active.listen([stateChangedHook](PHLWORKSPACE) { stateChangedHook(); });
         m_workspaceSpecialActiveHook = Event::bus()->m_events.workspace.specialActive.listen([stateChangedHook](PHLWORKSPACE, PHLMONITOR) { stateChangedHook(); });
-        m_workspaceCreatedHook       = Event::bus()->m_events.workspace.created.listen([stateChangedHook](PHLWORKSPACEREF) { stateChangedHook(); });
+        m_workspaceCreatedHook       = Event::bus()->m_events.workspace.createdLate.listen([stateChangedHook](PHLWORKSPACEREF) { stateChangedHook(); });
         m_workspaceRemovedHook       = Event::bus()->m_events.workspace.removed.listen([stateChangedHook](PHLWORKSPACEREF) { stateChangedHook(); });
         m_windowOpenHook             = Event::bus()->m_events.window.open.listen([stateChangedHook](PHLWINDOW) { stateChangedHook(); });
         m_windowCloseHook            = Event::bus()->m_events.window.close.listen([stateChangedHook](PHLWINDOW) { stateChangedHook(); });

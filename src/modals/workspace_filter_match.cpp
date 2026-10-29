@@ -6,9 +6,9 @@
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
-#include <desktop/Workspace.hpp>
-#include <desktop/view/Window.hpp>
+#include <desktop/view/window/Window.hpp>
 #include <output/Monitor.hpp>
+#include <workspace/HLWorkspace.hpp>
 
 #include <algorithm>
 #include <string_view>
@@ -18,19 +18,21 @@ namespace hyprdeck {
     namespace {
 
         bool windowReadyForFilter(const PHLWINDOW& window) {
-            if (!window || !window->m_isMapped || window->isHidden() || window->m_pinned || activePlugin()->overlays().windowIsExternalOverlay(window))
+            if (!window || !window->mapped() || window->isHidden() || static_cast<bool>(window->m_state & Desktop::View::WINDOW_STATE_PINNED) ||
+                activePlugin()->overlays().windowIsExternalOverlay(window))
                 return false;
 
             return true;
         }
 
         bool windowTextMatchesFilter(const PHLWINDOW& window, std::string_view loweredQuery) {
-            return strings::containsLowered(window->m_class, loweredQuery) || strings::containsLowered(window->m_initialClass, loweredQuery) ||
-                strings::containsLowered(window->m_title, loweredQuery) || strings::containsLowered(window->m_initialTitle, loweredQuery);
+            const auto& metadata = window->metadata();
+            return strings::containsLowered(metadata.appID(), loweredQuery) || strings::containsLowered(metadata.initialAppID(), loweredQuery) ||
+                strings::containsLowered(metadata.title(), loweredQuery) || strings::containsLowered(metadata.initialTitle(), loweredQuery);
         }
 
         bool workspaceNameMatchesFilter(const PHLWORKSPACE& workspace, std::string_view loweredQuery) {
-            return workspace && strings::containsLowered(workspace->m_name, loweredQuery);
+            return workspace && (strings::containsLowered(workspace->displayName(), loweredQuery) || strings::containsLowered(workspace->addressableName(), loweredQuery));
         }
 
         bool workspaceMatchesFilter(const PHLWORKSPACE& workspace, std::string_view loweredQuery) {
@@ -56,7 +58,7 @@ namespace hyprdeck {
             ids.reserve(candidates.size());
 
             for (const auto id : candidates) {
-                const auto workspace = activePlugin()->hyprland().workspaceByID(id);
+                const auto workspace = activePlugin()->workspaces().workspaceById(id);
                 if (activePlugin()->workspaces().isNormalWorkspace(workspace) && workspaceMatchesFilter(workspace, loweredQuery))
                     ids.push_back(id);
             }

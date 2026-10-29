@@ -1,5 +1,7 @@
 #pragma once
 
+#include "workspace_key.hpp"
+
 #include <SharedDefs.hpp>
 #include <desktop/DesktopTypes.hpp>
 

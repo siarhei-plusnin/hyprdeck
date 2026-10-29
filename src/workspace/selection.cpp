@@ -9,8 +9,8 @@
 #include "workspace_filter.hpp"
 #include "workspaces.hpp"
 
-#include <desktop/Workspace.hpp>
 #include <render/Renderer.hpp>
+#include <workspace/HLWorkspace.hpp>
 
 #include <algorithm>
 
@@ -93,9 +93,10 @@ namespace hyprdeck {
             if (activePlugin()->workspaces().cardIndexByID(specialCards, selection.selectedSpecialID) >= 0)
                 return;
 
-            const auto activeSpecial = monitor->m_activeSpecialWorkspace;
-            if (activeSpecial && activePlugin()->workspaces().cardIndexByID(specialCards, activeSpecial->m_id) >= 0)
-                selection.selectedSpecialID = activeSpecial->m_id;
+            const auto activeSpecial   = monitor->m_activeSpecialWorkspace;
+            const auto activeSpecialID = activePlugin()->workspaces().specialWorkspaceId(activeSpecial);
+            if (activeSpecial && activePlugin()->workspaces().cardIndexByID(specialCards, activeSpecialID) >= 0)
+                selection.selectedSpecialID = activeSpecialID;
             else
                 selection.selectedSpecialID = specialCards.front().id;
 
@@ -344,7 +345,7 @@ namespace hyprdeck {
         if (!owner || !activePlugin()->workspaces().workspaceHasAnyWindows(card->workspace, owner))
             return;
 
-        activePlugin()->confirmation().openCloseNormalWorkspaceConfirmation(card->workspace->m_id, owner);
+        activePlugin()->confirmation().openCloseNormalWorkspaceConfirmation(activePlugin()->workspaces().workspaceId(card->workspace), owner);
     }
 
     void CSelectionController::closeSelectedSpecialWorkspaceWindows(const PHLMONITOR& monitor) {

@@ -8,12 +8,13 @@
 #include "workspaces.hpp"
 
 #include <desktop/state/FocusState.hpp>
-#include <desktop/Workspace.hpp>
 #include <desktop/view/LayerSurface.hpp>
-#include <desktop/view/Window.hpp>
+#include <desktop/view/window/Window.hpp>
+#include <desktop/view/window/WindowPresentation.hpp>
 #include <output/Monitor.hpp>
 #include <protocols/core/Compositor.hpp>
 #include <render/Texture.hpp>
+#include <workspace/HLWorkspace.hpp>
 
 #include <algorithm>
 #include <string>
@@ -82,7 +83,7 @@ namespace hyprdeck {
         }
 
         bool layerVisibleOnMonitor(const PHLLS& layer, const PHLMONITOR& monitor) {
-            if (!layer || !layer->m_mapped)
+            if (!layer || !layer->mapped())
                 return false;
 
             const auto layerMonitor = layer->m_monitor.lock();
@@ -118,10 +119,10 @@ namespace hyprdeck {
         }
 
         bool shouldPreviewWindow(const PHLWINDOW& window, const bool floatingPass) {
-            if (!window || !window->m_isMapped || window->isHidden())
+            if (!window || !window->mapped() || window->isHidden())
                 return false;
 
-            return window->m_isFloating == floatingPass;
+            return window->isFloating() == floatingPass;
         }
 
         void renderWindowPreview(const PHLWINDOW& window, const SWorkspaceCard& card, const PHLMONITOR& monitor) {
@@ -130,8 +131,8 @@ namespace hyprdeck {
                 return;
 
             const CBox box      = window->getWindowMainSurfaceBox();
-            const int  rounding = window->rounding() * monitor->m_scale * (card.box.w / monitor->m_transformedSize.x);
-            drawSurfaceTree(root, box, card.box, monitor, std::clamp(window->effectiveAlpha(), 0.0F, 1.0F), rounding);
+            const int  rounding = window->presentation().rounding() * monitor->m_scale * (card.box.w / monitor->m_transformedSize.x);
+            drawSurfaceTree(root, box, card.box, monitor, std::clamp(window->presentation().alphaTotal(), 0.0F, 1.0F), rounding);
         }
 
         void renderWindowPass(const SWorkspaceCard& card, const PHLMONITOR& monitor, const SWorkspacePreviewSnapshot& snapshot, const bool floatingPass) {
@@ -154,7 +155,7 @@ namespace hyprdeck {
             };
 
             if (card.workspace) {
-                if (const auto it = snapshot.workspaceWindows.find(card.workspace->m_id); it != snapshot.workspaceWindows.end())
+                if (const auto it = snapshot.workspaceWindows.find(activePlugin()->workspaces().workspaceId(card.workspace)); it != snapshot.workspaceWindows.end())
                     renderWindowList(it->second);
             }
 
@@ -203,7 +204,7 @@ namespace hyprdeck {
         }
 
         for (const auto& window : activePlugin()->hyprland().windows()) {
-            if (!window || !window->m_isMapped || window->isHidden())
+            if (!window || !window->mapped() || window->isHidden())
                 continue;
 
             if (!activePlugin()->workspaces().windowBelongsToMonitor(window, monitor))
@@ -211,10 +212,10 @@ namespace hyprdeck {
 
             if (activePlugin()->overlays().windowIsExternalOverlay(window))
                 snapshot.externalWindows.push_back(window);
-            else if (window->m_pinned)
+            else if (static_cast<bool>(window->m_state & Desktop::View::WINDOW_STATE_PINNED))
                 snapshot.pinnedWindows.push_back(window);
             else if (window->m_workspace)
-                snapshot.workspaceWindows[window->m_workspace->m_id].push_back(window);
+                snapshot.workspaceWindows[activePlugin()->workspaces().workspaceId(window->m_workspace)].push_back(window);
         }
 
         return snapshot;
