@@ -141,23 +141,6 @@ namespace hyprdeck {
         return known != m_workspaceIds.end() ? known->first.lock() : nullptr;
     }
 
-    void CWorkspaceRepository::replaceSpecialWorkspace(const PHLWORKSPACE& previous, const PHLWORKSPACE& replacement) {
-        if (!previous || !replacement || previous->type() != Workspace::eWorkspaceType::SPECIAL || replacement->type() != Workspace::eWorkspaceType::SPECIAL)
-            return;
-
-        const auto id    = workspaceId(previous);
-        const auto known = std::ranges::find_if(m_workspaceIds, [id](const auto& entry) { return entry.second == id; });
-        if (known != m_workspaceIds.end())
-            known->first = replacement;
-
-        for (auto& weak : m_specialWorkspaceOrder) {
-            if (weak.lock() == previous) {
-                weak = replacement;
-                break;
-            }
-        }
-    }
-
     WORKSPACEID CWorkspaceRepository::specialWorkspaceId(const PHLWORKSPACE& workspace) const {
         if (!workspace || workspace->type() != Workspace::eWorkspaceType::SPECIAL)
             return WORKSPACE_INVALID;

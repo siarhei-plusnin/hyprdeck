@@ -25,7 +25,6 @@ namespace hyprdeck {
         bool                      workspaceHasAnyWindows(const PHLWORKSPACE& workspace) const;
         WORKSPACEID               workspaceId(const PHLWORKSPACE& workspace) const;
         PHLWORKSPACE              workspaceById(WORKSPACEID id) const;
-        void                      replaceSpecialWorkspace(const PHLWORKSPACE& previous, const PHLWORKSPACE& replacement);
         WORKSPACEID               specialWorkspaceId(const PHLWORKSPACE& workspace) const;
         std::string               specialWorkspaceLabel(const PHLWORKSPACE& workspace) const;
         std::vector<PHLWORKSPACE> specialWorkspacesToShow() const;

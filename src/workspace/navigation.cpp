@@ -86,42 +86,13 @@ namespace hyprdeck {
             if (!workspace || workspace->type() != Workspace::eWorkspaceType::SPECIAL)
                 return {};
 
-            const auto address = "special:" + normalizedName;
-            if (const auto existing = activePlugin()->hyprland().workspaceByAddress(address); existing) {
-                if (existing != workspace)
-                    return {};
-
-                return SWorkspaceNavigationResult{
-                    .success           = true,
-                    .selectedRow       = ESelectedRow::SPECIAL,
-                    .selectedSpecialID = activePlugin()->workspaces().specialWorkspaceId(workspace),
-                };
-            }
-
-            const auto owner = activePlugin()->workspaces().workspaceMonitor(workspace);
-            if (!owner)
+            if (!activePlugin()->hyprland().renameSpecialWorkspace(workspace, "special:" + normalizedName))
                 return {};
-
-            const auto renamed = activePlugin()->hyprland().createSpecialWorkspace(address, owner, true);
-            if (!renamed)
-                return {};
-
-            activePlugin()->workspaces().replaceSpecialWorkspace(workspace, renamed);
-
-            const bool wasActive = owner->m_activeSpecialWorkspace == workspace;
-            for (const auto& window : activePlugin()->hyprland().windows()) {
-                if (activePlugin()->workspaces().windowBelongsToWorkspace(window, workspace))
-                    window->moveToWorkspace(renamed);
-            }
-
-            if (wasActive)
-                owner->setSpecialWorkspace(renamed);
-            renamed->ready();
 
             return SWorkspaceNavigationResult{
                 .success           = true,
                 .selectedRow       = ESelectedRow::SPECIAL,
-                .selectedSpecialID = activePlugin()->workspaces().specialWorkspaceId(renamed),
+                .selectedSpecialID = activePlugin()->workspaces().specialWorkspaceId(workspace),
             };
         }
 

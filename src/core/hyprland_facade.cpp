@@ -2,9 +2,14 @@
 
 #include <desktop/state/FocusState.hpp>
 #include <desktop/state/ViewState.hpp>
+#include <desktop/history/WorkspaceHistoryTracker.hpp>
+#include <desktop/view/window/Window.hpp>
 #include <config/shared/actions/ConfigActions.hpp>
+#include <config/supplementary/propRefresher/PropRefresher.hpp>
 #include <devices/IKeyboard.hpp>
+#include <event/EventBus.hpp>
 #include <hyprutils/memory/UniquePtr.hpp>
+#include <ipc/s2/S2.hpp>
 #include <managers/SeatManager.hpp>
 #include <managers/eventLoop/EventLoopManager.hpp>
 #include <managers/eventLoop/EventLoopTimer.hpp>
@@ -15,6 +20,7 @@
 #include <state/MonitorState.hpp>
 #include <state/WorkspacePlacementController.hpp>
 #include <state/WorkspaceState.hpp>
+#include <state/workspace/LifecyclePolicyAdapter.hpp>
 #include <workspace/HLWorkspace.hpp>
 
 using Hyprutils::Memory::makeUnique;
@@ -155,6 +161,41 @@ namespace hyprdeck {
 
     PHLWORKSPACE CHyprlandFacade::createSpecialWorkspace(const std::string& address, const PHLMONITOR& monitor, const bool isEmpty) const {
         return State::workspaceState() && monitor ? State::workspaceState()->createSpecial(address, monitor, isEmpty) : nullptr;
+    }
+
+    bool CHyprlandFacade::renameSpecialWorkspace(const PHLWORKSPACE& workspace, const std::string& address) const {
+        if (!workspace || workspace->type() != Workspace::eWorkspaceType::SPECIAL || !address.starts_with("special:") || address.size() <= 8)
+            return false;
+
+        if (const auto existing = workspaceByAddress(address); existing && existing != workspace)
+            return false;
+
+        if (workspace->addressableName() == address)
+            return true;
+
+        const State::Workspace::SWorkspaceIdentity oldIdentity{workspace->id(), workspace->addressableName(), workspace->type()};
+        auto                                      newAddress = address;
+        auto                                      newName    = address;
+
+        // Hyprland 0.57's rename() rejects specials. These getters reference mutable CHLWorkspace strings.
+        // Update both names in place so the workspace, layout tree, targets, groups, and focus remain intact.
+        const_cast<std::string&>(workspace->addressableName()).swap(newAddress);
+        const_cast<std::string&>(workspace->displayName()).swap(newName);
+
+        State::Workspace::workspaceIdentityChanged(oldIdentity, {workspace->id(), workspace->addressableName(), workspace->type()});
+        Desktop::History::workspaceTracker()->workspaceIdentityChanged(workspace);
+
+        for (const auto& window : windows()) {
+            if (window && window->m_workspace == workspace)
+                window->syncInitialWorkspaceToken(workspace);
+        }
+
+        Config::Supplementary::refresher()->scheduleRefresh(Config::Supplementary::REFRESH_WINDOW_STATES | Config::Supplementary::REFRESH_LAYOUTS);
+        if (IPC::Socket2::sock())
+            IPC::Socket2::sock()->postEvent({.event = "renameworkspace", .data = workspace->addressableName() + "," + workspace->displayName()});
+        workspace->m_events.renamed.emit();
+        Event::bus()->m_events.workspace.renamed.emit(workspace);
+        return true;
     }
 
     void CHyprlandFacade::moveWorkspaceToMonitor(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const {

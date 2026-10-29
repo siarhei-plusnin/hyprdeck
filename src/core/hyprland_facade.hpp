@@ -49,6 +49,7 @@ namespace hyprdeck {
         PHLWORKSPACE                  workspaceByAddress(const std::string& address) const;
         PHLWORKSPACE                  createNumberedWorkspace(WORKSPACEID id, const PHLMONITOR& monitor, const std::string& displayName, bool isEmpty) const;
         PHLWORKSPACE                  createSpecialWorkspace(const std::string& address, const PHLMONITOR& monitor, bool isEmpty) const;
+        bool                          renameSpecialWorkspace(const PHLWORKSPACE& workspace, const std::string& address) const;
         void                          moveWorkspaceToMonitor(const PHLWORKSPACE& workspace, const PHLMONITOR& monitor) const;
         void                          focusMonitor(const PHLMONITOR& monitor) const;
 
